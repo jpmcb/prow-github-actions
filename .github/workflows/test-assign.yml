@@ -1,0 +1,16 @@
+name: "Test self assign"
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  test: 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: npm install
+      - run: npm run build
+      - uses: ./
+        with:
+          prow-command: '/assign'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"

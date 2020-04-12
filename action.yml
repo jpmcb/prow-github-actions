@@ -1,10 +1,13 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'prow-github-actions'
+description: 'Prow inspired github CI/CD actions'
+author: 'John McBride'
 inputs:
-  myInput:              # change this
-    description: 'input description here'
-    default: 'default value if applicable'
+  github-token:
+    description: "Github token"
+    required: true
+  prow-command:
+    description: "Comment keyword/command to look for"
+    required: true
 runs:
   using: 'node12'
   main: 'dist/index.js'
