@@ -3525,6 +3525,7 @@ function run() {
             const token = core.getInput("github-token");
             const command = core.getInput("prow-command", { required: true });
             core.debug(`command: ${command}`);
+            console.log(github.context.payload);
             const issueNumber = (_a = github.context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
             const commentBody = github.context.payload["comment"]["body"];
             const commenterId = github.context.payload["user"]["id"];

@@ -9,6 +9,8 @@ async function run(): Promise<void> {
     
     core.debug(`command: ${command}`)
 
+    console.log(github.context.payload)
+
     const issueNumber: number | undefined = github.context.payload.issue?.number
     const commentBody: string = github.context.payload["comment"]["body"]
     const commenterId: string = github.context.payload["user"]["id"]
