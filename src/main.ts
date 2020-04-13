@@ -5,7 +5,7 @@ async function run(): Promise<void> {
   try {
   
     const token = core.getInput("github-token");
-    const command = core.getInput("command", { required: true })
+    const command = core.getInput("prow-command", { required: true })
     
     core.debug(`command: ${command}`)
 
