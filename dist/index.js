@@ -3524,11 +3524,10 @@ function run() {
         try {
             const token = core.getInput("github-token");
             const command = core.getInput("prow-command", { required: true });
-            core.debug(`command: ${command}`);
-            console.log(github.context.payload);
+            core.debug(JSON.stringify(github.context.payload));
             const issueNumber = (_a = github.context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
             const commentBody = github.context.payload["comment"]["body"];
-            const commenterId = github.context.payload["user"]["id"];
+            const commenterId = github.context.payload["comment"]["user"]["login"];
             if (commentBody.includes(command)) {
                 const octokit = new github.GitHub(token);
                 yield octokit.issues.addAssignees(Object.assign(Object.assign({}, github.context.repo), { 'issue_number': issueNumber, 'assignees': [commenterId] }));
