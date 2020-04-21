@@ -3,7 +3,7 @@ import * as core from '@actions/core'
 
 import {Context} from '@actions/github/lib/context'
 
-export const assign = async (
+export const unassign = async (
   context: Context = github.context
 ): Promise<void> => {
   const token = core.getInput('github-token', {required: true})
@@ -13,7 +13,7 @@ export const assign = async (
 
   const octokit = new github.GitHub(token)
 
-  await octokit.issues.addAssignees({
+  await octokit.issues.removeAssignees({
     ...context.repo,
     issue_number: issueNumber!,
     assignees: [commenterId]

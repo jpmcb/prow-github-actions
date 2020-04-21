@@ -4,6 +4,7 @@ import * as github from '@actions/github'
 import {Context} from '@actions/github/lib/context'
 
 import {assign} from './assign'
+import {unassign} from './unassign'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -15,6 +16,10 @@ export const handleIssueComment = async (
     switch (command) {
       case '/assign':
         await assign(context)
+        break
+
+      case '/unassign':
+        await unassign(context)
         break
 
       default:
