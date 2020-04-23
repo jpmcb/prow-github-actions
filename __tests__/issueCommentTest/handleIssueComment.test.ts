@@ -1,4 +1,4 @@
-import * as utils from '../utils'
+import * as utils from '../testUtils'
 import * as assign from '../../src/issueComment/assign'
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 

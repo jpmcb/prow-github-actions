@@ -1,18 +1,18 @@
 import nock from 'nock'
 
-import * as utils from '../utils'
+import * as utils from '../testUtils'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 
 import issueUnassignedResp from '../fixtures/issues/unassign/issueUnassignedResponse.json'
-import issueCommentEventSelfUnassign from '../fixtures/issues/unassign/issueCommentEventUnassign.json'
+import issueCommentEventUnassign from '../fixtures/issues/unassign/issueCommentEventUnassign.json'
 
 describe('/unassign', () => {
     beforeEach(()=>{
       utils.setupActionsEnv('/unassign')
     })
     
-    it('unassigns the user who commented', async () => {
+    it('handles self unassignment with comment /unassign', async () => {
       nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
         expect(body).toMatchObject({
@@ -22,7 +22,61 @@ describe('/unassign', () => {
       })
       .reply(201, issueUnassignedResp)
       
-      const commentContext = new utils.mockContext(issueCommentEventSelfUnassign)
+      const commentContext = new utils.mockContext(issueCommentEventUnassign)
+
+      await handleIssueComment(commentContext)
+      expect.assertions(1)
+    })
+
+    it('handles unassign another user with /unassign @username', async () => {
+      issueCommentEventUnassign.comment.body = '/unassign @some-user'
+
+      nock(utils.api)
+      .delete('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
+        expect(body).toMatchObject({
+          assignees: ['some-user']
+        })
+        return true
+      })
+      .reply(201, issueUnassignedResp)
+      
+      const commentContext = new utils.mockContext(issueCommentEventUnassign)
+
+      await handleIssueComment(commentContext)
+      expect.assertions(1)
+    })
+
+    it('handles unassigning another user with /unassign username', async () => {
+      issueCommentEventUnassign.comment.body = '/unassign some-user'
+
+      nock(utils.api)
+      .delete('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
+        expect(body).toMatchObject({
+          assignees: ['some-user']
+        })
+        return true
+      })
+      .reply(201, issueUnassignedResp)
+      
+      const commentContext = new utils.mockContext(issueCommentEventUnassign)
+
+      await handleIssueComment(commentContext)
+      expect.assertions(1)
+    })
+
+    it('handles unassigning multiple users', async () => {
+      issueCommentEventUnassign.comment.body = '/unassign @some-user @other-user'
+
+      nock(utils.api)
+      .delete('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
+        expect(body).toMatchObject({
+          assignees: ['some-user', 'other-user']
+        })
+        return true
+      })
+      .reply(201, issueUnassignedResp)
+      
+      const commentContext = new utils.mockContext(issueCommentEventUnassign)
 
       await handleIssueComment(commentContext)
       expect.assertions(1)

@@ -7565,6 +7565,43 @@ module.exports = factory();
 
 /***/ }),
 
+/***/ 535:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getCommandArgs = (command, body) => {
+    const bodyArray = body.split(' ');
+    const toReturn = [];
+    let i = 0;
+    while (bodyArray[i] !== command && i < bodyArray.length) {
+        i++;
+    }
+    // advance the index to the next as we've found the command
+    i++;
+    while (bodyArray[i] !== '\n' && i < bodyArray.length) {
+        toReturn.push(bodyArray[i]);
+        i++;
+    }
+    return stripAtSign(toReturn);
+};
+const stripAtSign = (args) => {
+    const toReturn = [];
+    for (const e of args) {
+        if (e.startsWith('@')) {
+            toReturn.push(e.replace('@', ''));
+        }
+        else {
+            toReturn.push(e);
+        }
+    }
+    return toReturn;
+};
+
+
+/***/ }),
+
 /***/ 536:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -8244,13 +8281,26 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
 exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commenterId = context.payload['comment']['user']['login'];
-    const octokit = new github.GitHub(token);
-    yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: [commenterId] }));
+    const commentBody = context.payload['comment']['body'];
+    if (issueNumber === undefined) {
+        // TODO - Bail, issue number not defined :(
+        //    want some error messaging here?
+        return;
+    }
+    const commentArgs = command_1.getCommandArgs('/unassign', commentBody);
+    // no arguments after command provided
+    if (commentArgs.length === 0) {
+        yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: [commenterId] }));
+        return;
+    }
+    yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: commentArgs }));
 });
 
 
@@ -9138,6 +9188,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
 exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -9150,7 +9201,7 @@ exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0,
         //    want some error messaging here?
         return;
     }
-    const commentArgs = getCommandArgs('/assign', commentBody);
+    const commentArgs = command_1.getCommandArgs('/assign', commentBody);
     // no arguments after command provided
     if (commentArgs.length === 0) {
         yield selfAssign(octokit, context, issueNumber, commenterId);
@@ -9170,33 +9221,6 @@ exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0,
             break;
     }
 });
-const getCommandArgs = (command, body) => {
-    const bodyArray = body.split(' ');
-    const toReturn = [];
-    let i = 0;
-    while (bodyArray[i] !== command && i < bodyArray.length) {
-        i++;
-    }
-    // advance the index to the next as we've found the command
-    i++;
-    while (bodyArray[i] !== '\n' && i < bodyArray.length) {
-        toReturn.push(bodyArray[i]);
-        i++;
-    }
-    return stripAtSign(toReturn);
-};
-const stripAtSign = (args) => {
-    const toReturn = [];
-    for (const e of args) {
-        if (e.startsWith('@')) {
-            toReturn.push(e.replace('@', ''));
-        }
-        else {
-            toReturn.push(e);
-        }
-    }
-    return toReturn;
-};
 const checkOrgMember = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (context.payload.repository === undefined) {
