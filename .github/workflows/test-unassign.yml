@@ -1,0 +1,16 @@
+name: "Test self unassign"
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  test: 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: npm install
+      - run: npm run build
+      - uses: ./
+        with:
+          prow-command: '/unassign'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"

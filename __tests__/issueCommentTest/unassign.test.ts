@@ -4,8 +4,8 @@ import * as utils from '../utils'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 
-import issueUnassignedResp from '../fixtures/issues/issueUnassignedResponse.json'
-import issueCommentEventSelfUnassign from '../fixtures/issues/issueCommentEvent-selfUnassign.json'
+import issueUnassignedResp from '../fixtures/issues/unassign/issueUnassignedResponse.json'
+import issueCommentEventSelfUnassign from '../fixtures/issues/unassign/issueCommentEventUnassign.json'
 
 describe('/unassign', () => {
     beforeEach(()=>{
