@@ -12,5 +12,5 @@ jobs:
       - run: npm run build
       - uses: ./
         with:
-          prow-commands: '/assign /unassign'
+          prow-commands: '/assign /unassign /approve'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
