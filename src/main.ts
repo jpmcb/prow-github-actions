@@ -4,10 +4,14 @@ import {handleIssueComment} from './issueComment/handleIssueComment'
 
 async function run(): Promise<void> {
   try {
-    if (github.context.eventName == 'issue_comment') {
-      handleIssueComment()
-    } else {
-      core.error(`${github.context.eventName} not yet supported`)
+    switch (github.context.eventName) {
+      case 'issue_comment':
+        handleIssueComment()
+        break
+
+      default:
+        core.error(`${github.context.eventName} not yet supported`)
+        break
     }
   } catch (error) {
     core.setFailed(error.message)

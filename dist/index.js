@@ -3522,11 +3522,13 @@ const handleIssueComment_1 = __webpack_require__(755);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            if (github.context.eventName == 'issue_comment') {
-                handleIssueComment_1.handleIssueComment();
-            }
-            else {
-                core.error(`${github.context.eventName} not yet supported`);
+            switch (github.context.eventName) {
+                case 'issue_comment':
+                    handleIssueComment_1.handleIssueComment();
+                    break;
+                default:
+                    core.error(`${github.context.eventName} not yet supported`);
+                    break;
             }
         }
         catch (error) {
@@ -7572,8 +7574,17 @@ module.exports = factory();
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCommandArgs = (command, body) => {
-    const bodyArray = body.split(' ');
     const toReturn = [];
+    const lineArray = body.split('\n');
+    let bodyArray = undefined;
+    for (const iterator of lineArray) {
+        if (iterator.includes(command)) {
+            bodyArray = iterator.split(' ');
+        }
+    }
+    if (bodyArray === undefined) {
+        throw new Error(`command ${command} missing from body`);
+    }
     let i = 0;
     while (bodyArray[i] !== command && i < bodyArray.length) {
         i++;
@@ -8439,6 +8450,46 @@ module.exports = parse;
 
 /***/ }),
 
+/***/ 575:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    if (issueNumber === undefined) {
+        // TODO - Bail, issue number (pr) not defined :(
+        //    want some error messaging here?
+        return;
+    }
+    octokit.pulls.createReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, event: 'APPROVE', comments: [] }));
+});
+
+
+/***/ }),
+
 /***/ 577:
 /***/ (function(module) {
 
@@ -9046,21 +9097,29 @@ const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const assign_1 = __webpack_require__(797);
 const unassign_1 = __webpack_require__(567);
+const approve_1 = __webpack_require__(575);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
-    const command = core.getInput('prow-command', { required: true });
+    const commandConfig = core
+        .getInput('prow-commands', { required: true })
+        .split(' ');
     const commentBody = context.payload['comment']['body'];
-    if (commentBody.includes(command)) {
-        switch (command) {
-            case '/assign':
-                yield assign_1.assign(context);
-                break;
-            case '/unassign':
-                yield unassign_1.unassign(context);
-                break;
-            default:
-                core.error(`could not execute ${command}. May not be supported - please refer to docs`);
+    yield Promise.all(commandConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
+        if (commentBody.includes(command)) {
+            switch (command) {
+                case '/assign':
+                    yield assign_1.assign(context);
+                    break;
+                case '/unassign':
+                    yield unassign_1.unassign(context);
+                    break;
+                case '/approve':
+                    yield approve_1.approve(context);
+                    break;
+                default:
+                    core.error(`could not execute ${command}. May not be supported - please refer to docs`);
+            }
         }
-    }
+    })));
 });
 
 

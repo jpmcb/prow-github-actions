@@ -1,10 +1,10 @@
-name: "Test self assign"
+name: "Test issue comments"
 on:
   issue_comment:
     types: [created]
 
 jobs:
-  test: 
+  execute:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -12,5 +12,5 @@ jobs:
       - run: npm run build
       - uses: ./
         with:
-          prow-command: '/assign'
+          prow-commands: '/assign /unassign'
           github-token: "${{ secrets.GITHUB_TOKEN }}"

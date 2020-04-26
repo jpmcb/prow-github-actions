@@ -1,7 +1,6 @@
 import nock from 'nock'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
-import * as assign from '../../src/issueComment/assign'
 import * as utils from '../testUtils'
 
 import issueAssignedResp from '../fixtures/issues/assign/issueAssignedResponse.json'

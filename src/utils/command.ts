@@ -1,6 +1,17 @@
 export const getCommandArgs = (command: string, body: string): string[] => {
-  const bodyArray = body.split(' ')
   const toReturn = []
+  const lineArray = body.split('\n')
+  let bodyArray = undefined
+
+  for (const iterator of lineArray) {
+    if (iterator.includes(command)) {
+      bodyArray = iterator.split(' ')
+    }
+  }
+
+  if (bodyArray === undefined) {
+    throw new Error(`command ${command} missing from body`)
+  }
 
   let i = 0
   while (bodyArray[i] !== command && i < bodyArray.length) {

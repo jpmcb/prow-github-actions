@@ -5,8 +5,8 @@ inputs:
   github-token:
     description: "Github token"
     required: true
-  prow-command:
-    description: "Comment keyword/command to look for"
+  prow-commands:
+    description: "Comment keywords/commands to look for. Space delimited. Expect commands on own line."
     required: true
 runs:
   using: 'node12'
