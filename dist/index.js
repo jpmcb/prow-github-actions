@@ -8293,6 +8293,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
+const auth_1 = __webpack_require__(683);
 exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -8311,7 +8312,19 @@ exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 
         yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: [commenterId] }));
         return;
     }
-    yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: commentArgs }));
+    const isAuthUser = yield checkCommenterAuth(octokit, context, issueNumber, commenterId);
+    if (isAuthUser) {
+        yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: commentArgs }));
+    }
+});
+const checkCommenterAuth = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
+    const isOrgMember = yield auth_1.checkOrgMember(octokit, context, user);
+    const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
+    const hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, user);
+    if (isOrgMember || isCollaborator || hasCommented) {
+        return true;
+    }
+    return false;
 });
 
 
@@ -8793,6 +8806,79 @@ module.exports = function btoa(str) {
 
 /***/ }),
 
+/***/ 683:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.checkOrgMember = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (context.payload.repository === undefined) {
+            // TODO - repository is broken, error message?
+            return false;
+        }
+        yield octokit.orgs.checkMembership({
+            org: context.payload.repository.owner.login,
+            username: user
+        });
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+});
+exports.checkCollaborator = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield octokit.repos.checkCollaborator(Object.assign(Object.assign({}, context.repo), { username: user }));
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+});
+// will this just always be true ...? Should it not check the last one where they've ... commented?
+exports.checkIssueComments = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const comments = yield octokit.issues.listComments(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum }));
+        for (const e of comments.data) {
+            if (e.user.login === user) {
+                return true;
+            }
+        }
+        return false;
+    }
+    catch (e) {
+        return false;
+    }
+});
+exports.checkAssignee = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const assignees = yield octokit.issues.listAssignees(Object.assign({}, context.repo));
+        for (const a of assignees.data) {
+            if (a.login === user) {
+                return true;
+            }
+        }
+        return false;
+    }
+    catch (e) {
+        return false;
+    }
+});
+
+
+/***/ }),
+
 /***/ 692:
 /***/ (function(__unusedmodule, exports) {
 
@@ -8904,6 +8990,67 @@ function sync (path, options) {
     }
   }
 }
+
+
+/***/ }),
+
+/***/ 745:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+const auth_1 = __webpack_require__(683);
+exports.retitle = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commenterId = context.payload['comment']['user']['login'];
+    const commentBody = context.payload['comment']['body'];
+    if (issueNumber === undefined) {
+        // TODO - Bail, issue number not defined :(
+        //    want some error messaging here?
+        return;
+    }
+    const commentArgs = command_1.getCommandArgs('/retitle', commentBody);
+    // no arguments after command provided. Can't retitle!
+    if (commentArgs.length === 0) {
+        return;
+    }
+    // Only users who:
+    // - are collaborators
+    const isAuthUser = yield checkCommenterAuth(octokit, context, commenterId);
+    if (isAuthUser) {
+        yield octokit.issues.update(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, title: commentArgs.join(' ') }));
+    }
+});
+const checkCommenterAuth = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
+    const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
+    if (isCollaborator) {
+        return true;
+    }
+    return false;
+});
 
 
 /***/ }),
@@ -9098,6 +9245,7 @@ const github = __importStar(__webpack_require__(469));
 const assign_1 = __webpack_require__(797);
 const unassign_1 = __webpack_require__(567);
 const approve_1 = __webpack_require__(575);
+const retitle_1 = __webpack_require__(745);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: true })
@@ -9114,6 +9262,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/approve':
                     yield approve_1.approve(context);
+                    break;
+                case '/retitle':
+                    yield retitle_1.retitle(context);
                     break;
                 default:
                     core.error(`could not execute ${command}. May not be supported - please refer to docs`);
@@ -9248,6 +9399,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
+const auth_1 = __webpack_require__(683);
 exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -9266,7 +9418,7 @@ exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0,
         yield selfAssign(octokit, context, issueNumber, commenterId);
         return;
     }
-    // Only users who:
+    // Only target users who:
     // - are members of the org
     // - are collaborators
     // - have previously commented on this issue
@@ -9280,51 +9432,12 @@ exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0,
             break;
     }
 });
-const checkOrgMember = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        if (context.payload.repository === undefined) {
-            // TODO - repository is broken, error message?
-            return false;
-        }
-        yield octokit.orgs.checkMembership({
-            org: context.payload.repository.owner.login,
-            username: user
-        });
-        return true;
-    }
-    catch (e) {
-        return false;
-    }
-});
-const checkCollaborator = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        yield octokit.repos.checkCollaborator(Object.assign(Object.assign({}, context.repo), { username: user }));
-        return true;
-    }
-    catch (e) {
-        return false;
-    }
-});
-const checkIssueComments = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const comments = yield octokit.issues.listComments(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum }));
-        for (const e of comments.data) {
-            if (e.user.login === user) {
-                return true;
-            }
-        }
-        return false;
-    }
-    catch (e) {
-        return false;
-    }
-});
 const getAuthUsers = (octokit, context, issueNum, args) => __awaiter(void 0, void 0, void 0, function* () {
     const toReturn = [];
     yield Promise.all(args.map((arg) => __awaiter(void 0, void 0, void 0, function* () {
-        const isOrgMember = yield checkOrgMember(octokit, context, arg);
-        const isCollaborator = yield checkCollaborator(octokit, context, arg);
-        const hasCommented = yield checkIssueComments(octokit, context, issueNum, arg);
+        const isOrgMember = yield auth_1.checkOrgMember(octokit, context, arg);
+        const isCollaborator = yield auth_1.checkCollaborator(octokit, context, arg);
+        const hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, arg);
         if (isOrgMember || isCollaborator || hasCommented) {
             toReturn.push(arg);
         }
@@ -9332,9 +9445,9 @@ const getAuthUsers = (octokit, context, issueNum, args) => __awaiter(void 0, voi
     return toReturn;
 });
 const selfAssign = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
-    const isOrgMember = yield checkOrgMember(octokit, context, user);
-    const isCollaborator = yield checkCollaborator(octokit, context, user);
-    const hasCommented = yield checkIssueComments(octokit, context, issueNum, user);
+    const isOrgMember = yield auth_1.checkOrgMember(octokit, context, user);
+    const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
+    const hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, user);
     if (isOrgMember || isCollaborator || hasCommented) {
         yield octokit.issues.addAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, assignees: [user] }));
     }

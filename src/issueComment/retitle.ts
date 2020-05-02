@@ -4,13 +4,9 @@ import * as core from '@actions/core'
 import {Context} from '@actions/github/lib/context'
 
 import {getCommandArgs} from '../utils/command'
-import {
-  checkCollaborator,
-  checkIssueComments,
-  checkOrgMember
-} from '../utils/auth'
+import {checkCollaborator} from '../utils/auth'
 
-export const unassign = async (
+export const retitle = async (
   context: Context = github.context
 ): Promise<void> => {
   const token = core.getInput('github-token', {required: true})
@@ -26,31 +22,22 @@ export const unassign = async (
     return
   }
 
-  const commentArgs: string[] = getCommandArgs('/unassign', commentBody)
+  const commentArgs: string[] = getCommandArgs('/retitle', commentBody)
 
-  // no arguments after command provided
+  // no arguments after command provided. Can't retitle!
   if (commentArgs.length === 0) {
-    await octokit.issues.removeAssignees({
-      ...context.repo,
-      issue_number: issueNumber,
-      assignees: [commenterId]
-    })
-
     return
   }
 
-  const isAuthUser = await checkCommenterAuth(
-    octokit,
-    context,
-    issueNumber,
-    commenterId
-  )
+  // Only users who:
+  // - are collaborators
+  const isAuthUser = await checkCommenterAuth(octokit, context, commenterId)
 
   if (isAuthUser) {
-    await octokit.issues.removeAssignees({
+    await octokit.issues.update({
       ...context.repo,
       issue_number: issueNumber,
-      assignees: commentArgs
+      title: commentArgs.join(' ')
     })
   }
 }
@@ -58,19 +45,11 @@ export const unassign = async (
 const checkCommenterAuth = async (
   octokit: github.GitHub,
   context: Context,
-  issueNum: number,
   user: string
 ): Promise<Boolean> => {
-  const isOrgMember = await checkOrgMember(octokit, context, user)
   const isCollaborator = await checkCollaborator(octokit, context, user)
-  const hasCommented = await checkIssueComments(
-    octokit,
-    context,
-    issueNum,
-    user
-  )
 
-  if (isOrgMember || isCollaborator || hasCommented) {
+  if (isCollaborator) {
     return true
   }
 

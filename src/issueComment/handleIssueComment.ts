@@ -6,6 +6,7 @@ import {Context} from '@actions/github/lib/context'
 import {assign} from './assign'
 import {unassign} from './unassign'
 import {approve} from './approve'
+import {retitle} from './retitle'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -29,6 +30,10 @@ export const handleIssueComment = async (
 
           case '/approve':
             await approve(context)
+            break
+
+          case '/retitle':
+            await retitle(context)
             break
 
           default:

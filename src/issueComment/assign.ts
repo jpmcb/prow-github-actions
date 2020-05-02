@@ -1,9 +1,14 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 
-import {getCommandArgs} from '../utils/command'
-
 import {Context} from '@actions/github/lib/context'
+
+import {getCommandArgs} from '../utils/command'
+import {
+  checkCollaborator,
+  checkIssueComments,
+  checkOrgMember
+} from '../utils/auth'
 
 export const assign = async (
   context: Context = github.context
@@ -29,7 +34,7 @@ export const assign = async (
     return
   }
 
-  // Only users who:
+  // Only target users who:
   // - are members of the org
   // - are collaborators
   // - have previously commented on this issue
@@ -52,69 +57,6 @@ export const assign = async (
         assignees: authUsers
       })
       break
-  }
-}
-
-const checkOrgMember = async (
-  octokit: github.GitHub,
-  context: Context,
-  user: string
-): Promise<boolean> => {
-  try {
-    if (context.payload.repository === undefined) {
-      // TODO - repository is broken, error message?
-      return false
-    }
-
-    await octokit.orgs.checkMembership({
-      org: context.payload.repository.owner.login,
-      username: user
-    })
-
-    return true
-  } catch (e) {
-    return false
-  }
-}
-
-const checkCollaborator = async (
-  octokit: github.GitHub,
-  context: Context,
-  user: string
-): Promise<boolean> => {
-  try {
-    await octokit.repos.checkCollaborator({
-      ...context.repo,
-      username: user
-    })
-
-    return true
-  } catch (e) {
-    return false
-  }
-}
-
-const checkIssueComments = async (
-  octokit: github.GitHub,
-  context: Context,
-  issueNum: number,
-  user: string
-): Promise<boolean> => {
-  try {
-    const comments = await octokit.issues.listComments({
-      ...context.repo,
-      issue_number: issueNum
-    })
-
-    for (const e of comments.data) {
-      if (e.user.login === user) {
-        return true
-      }
-    }
-
-    return false
-  } catch (e) {
-    return false
   }
 }
 
