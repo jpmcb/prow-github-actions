@@ -8603,11 +8603,12 @@ const getAreaLabels = (octokit, context) => __awaiter(void 0, void 0, void 0, fu
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/LABELS' }));
     const toReturn = [];
-    if (!response.data.content) {
+    if (!response.data.content || !response.data.encoding) {
         // TODO error state we have no content
-        return [];
+        throw new Error(`area: error parsing data from content response`);
     }
-    const lineArray = response.data.content.split('\n');
+    const line = Buffer.from(response.data.content, response.data.encoding).toString();
+    const lineArray = line.split('\n');
     let i = 0;
     while (lineArray[i] !== 'area:' && i < lineArray.length) {
         i++;

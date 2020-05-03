@@ -65,12 +65,16 @@ const getAreaLabels = async (
   })
 
   const toReturn: string[] = []
-  if (!response.data.content) {
+  if (!response.data.content || !response.data.encoding) {
     // TODO error state we have no content
-    return []
+    throw new Error(`area: error parsing data from content response`)
   }
 
-  const lineArray = response.data.content.split('\n')
+  const line = Buffer.from(
+    response.data.content,
+    response.data.encoding
+  ).toString()
+  const lineArray = line.split('\n')
 
   let i = 0
   while (lineArray[i] !== 'area:' && i < lineArray.length) {
