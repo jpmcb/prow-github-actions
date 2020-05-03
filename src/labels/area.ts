@@ -48,6 +48,9 @@ const addAreaPrefix = (args: string[]): string[] => {
   return toReturn
 }
 
+// -----------
+// TODO - update / create labels if they don't exist yo!!
+
 // This method has some eslint ignores related to
 // no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
 const getAreaLabels = async (
@@ -69,11 +72,11 @@ const getAreaLabels = async (
   const lineArray = response.data.content.split('\n')
 
   let i = 0
-  while (lineArray[i] !== 'area:' && i < lineArray.length()) {
+  while (lineArray[i] !== 'area:' && i < lineArray.length) {
     i++
   }
 
-  // advance the index to the next as we've 'area:'
+  // advance the index to the next as we're at the 'area:'
   i++
   while (lineArray[i] !== '' && i < lineArray.length) {
     toReturn.push(lineArray[i])
