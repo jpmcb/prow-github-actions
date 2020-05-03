@@ -8577,14 +8577,14 @@ exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     }
     let commentArgs = command_1.getCommandArgs('/area', commentBody);
     const areaLabels = yield getAreaLabels(octokit, context);
+    core.info(`area: found labels ${areaLabels}`);
     commentArgs = commentArgs.filter(e => {
         return areaLabels.includes(e);
     });
     commentArgs = addAreaPrefix(commentArgs);
     // no arguments after command provided
     if (commentArgs.length === 0) {
-        // TODO this is an error state, no comment after /area
-        return;
+        throw new Error(`area: command args missing from body`);
     }
     exports.labelIssue(octokit, context, issueNumber, commentArgs);
 });
@@ -8625,7 +8625,7 @@ exports.labelIssue = (octokit, context, issueNum, labels) => __awaiter(void 0, v
         yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, labels }));
     }
     catch (e) {
-        // TODO on error
+        throw new Error(`area: ${e}`);
     }
 });
 

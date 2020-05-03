@@ -23,6 +23,8 @@ export const area = async (
   let commentArgs: string[] = getCommandArgs('/area', commentBody)
 
   const areaLabels = await getAreaLabels(octokit, context)
+  core.info(`area: found labels ${areaLabels}`)
+
   commentArgs = commentArgs.filter(e => {
     return areaLabels.includes(e)
   })
@@ -31,8 +33,7 @@ export const area = async (
 
   // no arguments after command provided
   if (commentArgs.length === 0) {
-    // TODO this is an error state, no comment after /area
-    return
+    throw new Error(`area: command args missing from body`)
   }
 
   labelIssue(octokit, context, issueNumber, commentArgs)
@@ -99,6 +100,6 @@ export const labelIssue = async (
       labels
     })
   } catch (e) {
-    // TODO on error
+    throw new Error(`area: ${e}`)
   }
 }
