@@ -8539,6 +8539,97 @@ module.exports = require("events");
 
 /***/ }),
 
+/***/ 616:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commentBody = context.payload['comment']['body'];
+    if (issueNumber === undefined) {
+        // TODO - Bail, issue number not defined :(
+        //    want some error messaging here?
+        return;
+    }
+    let commentArgs = command_1.getCommandArgs('/area', commentBody);
+    const areaLabels = yield getAreaLabels(octokit, context);
+    commentArgs = commentArgs.filter(e => {
+        return areaLabels.includes(e);
+    });
+    commentArgs = addAreaPrefix(commentArgs);
+    // no arguments after command provided
+    if (commentArgs.length === 0) {
+        // TODO this is an error state, no comment after /area
+        return;
+    }
+    exports.labelIssue(octokit, context, issueNumber, commentArgs);
+});
+const addAreaPrefix = (args) => {
+    const toReturn = [];
+    for (const arg of args) {
+        toReturn.push(`area/${arg}`);
+    }
+    return toReturn;
+};
+// This method has some eslint ignores related to
+// no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
+const getAreaLabels = (octokit, context) => __awaiter(void 0, void 0, void 0, function* () {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/LABELS' }));
+    const toReturn = [];
+    if (!response.data.content) {
+        // TODO error state we have no content
+        return [];
+    }
+    const lineArray = response.data.content.split('\n');
+    let i = 0;
+    while (lineArray[i] !== 'area:' && i < lineArray.length()) {
+        i++;
+    }
+    // advance the index to the next as we've 'area:'
+    i++;
+    while (lineArray[i] !== '' && i < lineArray.length) {
+        toReturn.push(lineArray[i]);
+        i++;
+    }
+    return toReturn;
+});
+exports.labelIssue = (octokit, context, issueNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, labels }));
+    }
+    catch (e) {
+        // TODO on error
+    }
+});
+
+
+/***/ }),
+
 /***/ 621:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -9246,6 +9337,7 @@ const assign_1 = __webpack_require__(797);
 const unassign_1 = __webpack_require__(567);
 const approve_1 = __webpack_require__(575);
 const retitle_1 = __webpack_require__(745);
+const area_1 = __webpack_require__(616);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: true })
@@ -9265,6 +9357,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/retitle':
                     yield retitle_1.retitle(context);
+                    break;
+                case '/area':
+                    yield area_1.area(context);
                     break;
                 default:
                     core.error(`could not execute ${command}. May not be supported - please refer to docs`);

@@ -7,6 +7,7 @@ import {assign} from './assign'
 import {unassign} from './unassign'
 import {approve} from './approve'
 import {retitle} from './retitle'
+import {area} from '../labels/area'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -34,6 +35,10 @@ export const handleIssueComment = async (
 
           case '/retitle':
             await retitle(context)
+            break
+
+          case '/area':
+            await area(context)
             break
 
           default:
