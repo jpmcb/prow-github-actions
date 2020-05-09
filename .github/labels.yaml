@@ -1,0 +1,9 @@
+area:
+  - 'bug'
+  - 'important'
+
+tests:
+  - '__tests__/*'
+
+source:
+  - 'src/*'

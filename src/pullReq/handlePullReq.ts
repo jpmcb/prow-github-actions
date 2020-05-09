@@ -4,18 +4,22 @@ import * as core from '@actions/core'
 
 import {Context} from '@actions/github/lib/context'
 
-export const handleIssueComment = async (
+import {labelPr} from './prLabeler'
+
+export const handlePullReq = async (
   context: Context = github.context
 ): Promise<void> => {
-  const commandConfig = core
-    .getInput('prow-commands', {required: true})
-    .split(' ')
-  const commentBody: string = context.payload['comment']['body']
+  const runConfig = core.getInput('auto-run', {required: false}).split(' ')
 
   await Promise.all(
-    commandConfig.map(async command => {
-      if (commentBody.includes(command)) {
-        return
+    runConfig.map(async command => {
+      switch (command) {
+        case 'pr-labeler':
+          await labelPr(context)
+          break
+
+        default:
+          break
       }
     })
   )

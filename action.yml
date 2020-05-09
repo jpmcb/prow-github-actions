@@ -7,7 +7,10 @@ inputs:
     required: true
   prow-commands:
     description: "Comment keywords/commands to look for. Space delimited. Expect commands on own line."
-    required: true
+    required: false
+  auto-run:
+    description: "Jobs to automatically run on event. Space delimited. Expect commands on own line."
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'

@@ -2,6 +2,7 @@ import * as github from '@actions/github'
 
 import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
+import * as yaml from 'js-yaml'
 
 import {getCommandArgs} from '../utils/command'
 
@@ -61,34 +62,26 @@ const getAreaLabels = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const response: any = await octokit.repos.getContents({
     ...context.repo,
-    path: '.github/LABELS'
+    path: '.github/labels.yaml'
   })
 
-  const toReturn: string[] = []
   if (!response.data.content || !response.data.encoding) {
     // TODO error state we have no content
     throw new Error(`area: error parsing data from content response`)
   }
 
-  const line = Buffer.from(
+  const decoded = Buffer.from(
     response.data.content,
     response.data.encoding
   ).toString()
-  const lineArray = line.split('\n')
 
-  let i = 0
-  while (lineArray[i] !== 'area:' && i < lineArray.length) {
-    i++
+  const content = yaml.safeLoad(decoded)
+
+  if (!content['area'] && !(content['area'] instanceof Array)) {
+    throw new Error(`area: yaml malformed, expected 'area' top level key`)
   }
 
-  // advance the index to the next as we're at the 'area:'
-  i++
-  while (lineArray[i] !== '' && i < lineArray.length) {
-    toReturn.push(lineArray[i])
-    i++
-  }
-
-  return toReturn
+  return content['area']
 }
 
 export const labelIssue = async (

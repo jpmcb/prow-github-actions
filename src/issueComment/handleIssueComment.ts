@@ -13,7 +13,7 @@ export const handleIssueComment = async (
   context: Context = github.context
 ): Promise<void> => {
   const commandConfig = core
-    .getInput('prow-commands', {required: true})
+    .getInput('prow-commands', {required: false})
     .split(' ')
   const commentBody: string = context.payload['comment']['body']
 

@@ -1,0 +1,16 @@
+name: "Test issue comments"
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: npm install
+      - run: npm run build
+      - uses: ./
+        with:
+          auto-run: 'pr-labeler'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"

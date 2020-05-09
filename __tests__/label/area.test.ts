@@ -17,7 +17,7 @@ describe('area', () => {
   })
 
   it('labels the issue with the label', async () => {
-    issueCommentEvent.comment.body = '/area meow'
+    issueCommentEvent.comment.body = '/area important'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
@@ -29,18 +29,18 @@ describe('area', () => {
       .reply(200)
     
     nock(api)
-      .get('/repos/Codertocat/Hello-World/contents/.github/LABELS')
+      .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(200, labelFileContents)
 
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
-      labels: ['area/meow']
+      labels: ['area/important']
     })
     expect(scope.isDone()).toBe(true)
   })
 
   it('handles multiple labels', async () => {
-    issueCommentEvent.comment.body = '/area meow important'
+    issueCommentEvent.comment.body = '/area bug important'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
@@ -52,18 +52,18 @@ describe('area', () => {
       .reply(200)
 
     nock(api)
-      .get('/repos/Codertocat/Hello-World/contents/.github/LABELS')
+      .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(200, labelFileContents)
 
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
-      labels: ['area/meow', 'area/important']
+      labels: ['area/bug', 'area/important']
     })
     expect(scope.isDone()).toBe(true)
   })
 
   it('only adds labels for files in .github/labels.yaml', async () => {
-    issueCommentEvent.comment.body = '/area meow bad important'
+    issueCommentEvent.comment.body = '/area bug bad important'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
@@ -75,13 +75,21 @@ describe('area', () => {
       .reply(200)
 
     nock(api)
-      .get('/repos/Codertocat/Hello-World/contents/.github/LABELS')
+      .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(200, labelFileContents)
 
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
-      labels: ['area/meow', 'area/important']
+      labels: ['area/bug', 'area/important']
     })
     expect(scope.isDone()).toBe(true)
+  })
+
+  xit('can read from both .yaml and .yml label files', ()=> {
+
+  })
+
+  xit('can error correctly on malformed label.yaml', ()=> {
+
   })
 })

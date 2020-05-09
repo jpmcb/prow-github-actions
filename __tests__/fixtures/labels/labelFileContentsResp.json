@@ -2,17 +2,17 @@
     "type": "file",
     "encoding": "base64",
     "size": 5362,
-    "name": "LABELS",
-    "path": ".github/LABELS",
-    "content": "YXJlYToKbWVvdwppbXBvcnRhbnQKCgo=",
+    "name": "labels.yaml",
+    "path": ".github/labels.yaml",
+    "content": "YXJlYToKICAtICdidWcnCiAgLSAnaW1wb3J0YW50JwoKdGVzdHM6CiAgLSAnX190ZXN0c19fLyonCgpzb3VyY2U6CiAgLSAnc3JjLyonCg==",
     "sha": "3d21ec53a331a6f037a91c368710b99387d012c1",
-    "url": "https://api.github.com/repos/octokit/octokit.rb/contents/.github.com/LABELS",
+    "url": "https://api.github.com/repos/octokit/octokit.rb/contents/.github.com/labels.yaml",
     "git_url": "https://api.github.com/repos/octokit/octokit.rb/git/blobs/3d21ec53a331a6f037a91c368710b99387d012c1",
-    "html_url": "https://github.com/octokit/octokit.rb/blob/master/.github.com/LABELS",
-    "download_url": "https://raw.githubusercontent.com/octokit/octokit.rb/master/.github.com/LABELS",
+    "html_url": "https://github.com/octokit/octokit.rb/blob/master/.github.com/labels.yaml",
+    "download_url": "https://raw.githubusercontent.com/octokit/octokit.rb/master/.github.com/labels.yaml",
     "_links": {
       "git": "https://api.github.com/repos/octokit/octokit.rb/git/blobs/3d21ec53a331a6f037a91c368710b99387d012c1",
-      "self": "https://api.github.com/repos/octokit/octokit.rb/contents/.github.com/LABELS",
-      "html": "https://github.com/octokit/octokit.rb/blob/master/.github.com/LABELS"
+      "self": "https://api.github.com/repos/octokit/octokit.rb/contents/.github.com/labels.yaml",
+      "html": "https://github.com/octokit/octokit.rb/blob/master/.github.com/labels.yaml"
     }
   }
