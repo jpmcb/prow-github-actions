@@ -29087,6 +29087,12 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const yaml = __importStar(__webpack_require__(414));
 const minimatch = __importStar(__webpack_require__(595));
+/**
+ * Inspired by https://github.com/actions/labeler
+ *    - Uses js-yaml to load labeler.yaml
+ *    - Uses Minimatch to match globs to changed files
+ * @param context - the Github context for pull req event
+ */
 exports.labelPr = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });

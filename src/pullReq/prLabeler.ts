@@ -6,6 +6,12 @@ import * as core from '@actions/core'
 import * as yaml from 'js-yaml'
 import * as minimatch from 'minimatch'
 
+/**
+ * Inspired by https://github.com/actions/labeler
+ *    - Uses js-yaml to load labeler.yaml
+ *    - Uses Minimatch to match globs to changed files
+ * @param context - the Github context for pull req event
+ */
 export const labelPr = async (
   context: Context = github.context
 ): Promise<void> => {
