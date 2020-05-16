@@ -9,6 +9,8 @@ test('runs with no options', () => {
     env: process.env
   }
 
+  console.log('testing pr labeler')
+
   expect(cp.execSync(`node ${ip}`, options).toString()).toContain(
     'not yet supported'
   )
