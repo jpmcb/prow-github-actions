@@ -2,7 +2,7 @@ name: 'prow-github-actions'
 description: 'Prow inspired github CI/CD actions'
 author: 'John McBride'
 inputs:
-  bot-token:
+  github-token:
     description: "Token used by prow actions to accomplish jobs and tasks. May be a bot user access token or the limited scope Github token"
     required: true
   prow-commands:

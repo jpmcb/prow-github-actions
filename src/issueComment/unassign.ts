@@ -13,7 +13,7 @@ import {
 export const unassign = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('bot-token', {required: true})
+  const token = core.getInput('github-token', {required: true})
   const octokit = new github.GitHub(token)
 
   const issueNumber: number | undefined = context.payload.issue?.number

@@ -13,4 +13,4 @@ jobs:
       - uses: ./
         with:
           prow-commands: '/assign /unassign /approve /retitle /area'
-          bot-token: "${{ secrets.PROW_BOT_TOKEN }}"
+          github-token: "${{ secrets.GITHUB_TOKEN }}"

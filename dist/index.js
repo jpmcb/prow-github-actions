@@ -2561,14 +2561,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
-const prLabeler_1 = __webpack_require__(857);
 exports.handlePullReq = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const runConfig = core.getInput('jobs', { required: false }).split(' ');
     yield Promise.all(runConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
+        core.debug(`${context}`);
         switch (command) {
-            case 'pr-labeler':
-                yield prLabeler_1.labelPr(context);
-                break;
             case '':
                 throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);
             default:
@@ -3954,6 +3951,131 @@ module.exports = opts => {
 
 /***/ }),
 
+/***/ 175:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const yaml = __importStar(__webpack_require__(414));
+const minimatch = __importStar(__webpack_require__(595));
+let jobsDone = 0;
+// Inspired by the actions/stale repository
+exports.cronLabelPr = (currentPage, context) => __awaiter(void 0, void 0, void 0, function* () {
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    // Get next batch
+    const prs = yield getPrs(octokit, context, currentPage);
+    if (prs.length <= 0) {
+        // All done!
+        return jobsDone;
+    }
+    yield Promise.all(prs.map((pr) => __awaiter(void 0, void 0, void 0, function* () {
+        if (pr.state === 'closed') {
+            return;
+        }
+        if (pr.state === 'locked') {
+            return;
+        }
+        yield exports.labelPr(pr.id, context, octokit);
+        jobsDone++;
+    })));
+    // Recurse, continue to next page
+    return exports.cronLabelPr(currentPage + 1, context);
+});
+// grab issues from github in baches of 100
+const getPrs = (octokit, context = github.context, page) => __awaiter(void 0, void 0, void 0, function* () {
+    const prResults = yield octokit.pulls.list(Object.assign(Object.assign({}, context.repo), { page }));
+    return prResults.data;
+});
+/**
+ * Inspired by https://github.com/actions/labeler
+ *    - Uses js-yaml to load labeler.yaml
+ *    - Uses Minimatch to match globs to changed files
+ * @param context - the Github context for pull req event
+ */
+exports.labelPr = (prNum, context = github.context, octokit) => __awaiter(void 0, void 0, void 0, function* () {
+    const changedFiles = yield getChangedFiles(octokit, context, prNum);
+    const labels = yield getLabelsFromFileGlobs(octokit, context, changedFiles);
+    if (labels.length === 0) {
+        core.info('pr-labeler: no labels matched file globs');
+    }
+    yield exports.sendLabels(octokit, context, prNum, labels);
+});
+const getChangedFiles = (octokit, context, prNum) => __awaiter(void 0, void 0, void 0, function* () {
+    const listFilesResponse = yield octokit.pulls.listFiles(Object.assign(Object.assign({}, context.repo), { pull_number: prNum }));
+    const changedFiles = listFilesResponse.data.map(f => f.filename);
+    return changedFiles;
+});
+const getLabelsFromFileGlobs = (octokit, context, files) => __awaiter(void 0, void 0, void 0, function* () {
+    const toReturn = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
+    if (!response.data.content || !response.data.encoding) {
+        throw new Error(`area: error parsing data from content response: ${response.data}`);
+    }
+    const decoded = Buffer.from(response.data.content, response.data.encoding).toString();
+    const content = yaml.safeLoad(decoded);
+    const labelMap = new Map();
+    for (const label in content) {
+        if (typeof content[label] === 'string') {
+            labelMap.set(label, [content[label]]);
+        }
+        else if (content[label] instanceof Array) {
+            labelMap.set(label, content[label]);
+        }
+        else {
+            throw Error(`pr-labeler: found unexpected type for label ${label} (should be string or array of globs)`);
+        }
+    }
+    for (const [label, globs] of labelMap.entries()) {
+        if (checkGlobs(files, globs)) {
+            toReturn.push(label);
+        }
+    }
+    return toReturn;
+});
+const checkGlobs = (files, globs) => {
+    for (const glob of globs) {
+        const matcher = new minimatch.Minimatch(glob);
+        for (const file of files) {
+            if (matcher.match(file)) {
+                return true;
+            }
+        }
+    }
+    return false;
+};
+exports.sendLabels = (octokit, context, prNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: prNum, labels }));
+    }
+    catch (e) {
+        throw new Error(`pr-labeler: ${e}`);
+    }
+});
+
+
+/***/ }),
+
 /***/ 181:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -4163,6 +4285,7 @@ const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const handleIssueComment_1 = __webpack_require__(755);
 const handlePullReq_1 = __webpack_require__(109);
+const handleCronJob_1 = __webpack_require__(779);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -4172,6 +4295,9 @@ function run() {
                     break;
                 case 'pull_request':
                     handlePullReq_1.handlePullReq();
+                    break;
+                case 'schedule':
+                    handleCronJob_1.handleCronJobs();
                     break;
                 default:
                     core.error(`${github.context.eventName} not yet supported`);
@@ -10392,7 +10518,7 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 exports.cancel = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('bot-token', { required: true });
+    const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     const commenterId = context.payload['comment']['user']['login'];
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
@@ -11299,7 +11425,7 @@ const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
 exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('bot-token', { required: true });
+    const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commenterId = context.payload['comment']['user']['login'];
@@ -11506,7 +11632,7 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('bot-token', { required: true });
+    const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     if (issueNumber === undefined) {
@@ -12563,7 +12689,7 @@ const yaml = __importStar(__webpack_require__(414));
 const command_1 = __webpack_require__(535);
 exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('bot-token', { required: true });
+    const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commentBody = context.payload['comment']['body'];
@@ -14125,7 +14251,7 @@ const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
 exports.retitle = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('bot-token', { required: true });
+    const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commenterId = context.payload['comment']['user']['login'];
@@ -14455,6 +14581,50 @@ function getFirstPage (octokit, link, headers) {
 
 /***/ }),
 
+/***/ 779:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const prLabeler_1 = __webpack_require__(175);
+exports.handleCronJobs = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    const runConfig = core.getInput('jobs', { required: false }).split(' ');
+    yield Promise.all(runConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
+        switch (command) {
+            case 'pr-labeler':
+                yield prLabeler_1.cronLabelPr(0, context);
+                break;
+            case '':
+                throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);
+            default:
+                throw new Error(`could not execute ${command}. May not be supported - please refer to docs`);
+        }
+    })));
+    return;
+});
+
+
+/***/ }),
+
 /***/ 796:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -14513,7 +14683,7 @@ const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
 exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('bot-token', { required: true });
+    const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commenterId = context.payload['comment']['user']['login'];
@@ -29099,110 +29269,6 @@ function registerPlugin(plugins, pluginFunction) {
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
 module.exports = __webpack_require__(141);
-
-
-/***/ }),
-
-/***/ 857:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const github = __importStar(__webpack_require__(469));
-const core = __importStar(__webpack_require__(470));
-const yaml = __importStar(__webpack_require__(414));
-const minimatch = __importStar(__webpack_require__(595));
-/**
- * Inspired by https://github.com/actions/labeler
- *    - Uses js-yaml to load labeler.yaml
- *    - Uses Minimatch to match globs to changed files
- * @param context - the Github context for pull req event
- */
-exports.labelPr = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    const token = core.getInput('bot-token', { required: true });
-    const octokit = new github.GitHub(token);
-    const prNumber = (_a = context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
-    if (prNumber === undefined) {
-        throw new Error(`github context payload missing PR number: ${context.payload}`);
-    }
-    const changedFiles = yield getChangedFiles(octokit, context, prNumber);
-    const labels = yield getLabelsFromFileGlobs(octokit, context, changedFiles);
-    // no arguments after command provided
-    if (labels.length === 0) {
-        core.info('pr-labeler: no labels matched file globs');
-    }
-    yield exports.sendLabels(octokit, context, prNumber, labels);
-});
-const getChangedFiles = (octokit, context, prNum) => __awaiter(void 0, void 0, void 0, function* () {
-    const listFilesResponse = yield octokit.pulls.listFiles(Object.assign(Object.assign({}, context.repo), { pull_number: prNum }));
-    const changedFiles = listFilesResponse.data.map(f => f.filename);
-    return changedFiles;
-});
-const getLabelsFromFileGlobs = (octokit, context, files) => __awaiter(void 0, void 0, void 0, function* () {
-    const toReturn = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
-    if (!response.data.content || !response.data.encoding) {
-        throw new Error(`area: error parsing data from content response: ${response.data}`);
-    }
-    const decoded = Buffer.from(response.data.content, response.data.encoding).toString();
-    const content = yaml.safeLoad(decoded);
-    const labelMap = new Map();
-    for (const label in content) {
-        if (typeof content[label] === 'string') {
-            labelMap.set(label, [content[label]]);
-        }
-        else if (content[label] instanceof Array) {
-            labelMap.set(label, content[label]);
-        }
-        else {
-            throw Error(`pr-labeler: found unexpected type for label ${label} (should be string or array of globs)`);
-        }
-    }
-    for (const [label, globs] of labelMap.entries()) {
-        if (checkGlobs(files, globs)) {
-            toReturn.push(label);
-        }
-    }
-    return toReturn;
-});
-function checkGlobs(files, globs) {
-    for (const glob of globs) {
-        const matcher = new minimatch.Minimatch(glob);
-        for (const file of files) {
-            if (matcher.match(file)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-exports.sendLabels = (octokit, context, prNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: prNum, labels }));
-    }
-    catch (e) {
-        throw new Error(`pr-labeler: ${e}`);
-    }
-});
 
 
 /***/ }),

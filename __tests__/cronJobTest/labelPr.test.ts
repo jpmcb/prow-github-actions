@@ -1,9 +1,10 @@
 import nock from 'nock'
 
-import {handlePullReq} from '../../src/pullReq/handlePullReq'
+import {handleCronJobs} from '../../src/cronJobs/handleCronJob'
 import * as utils from '../testUtils'
 
-import prOpenedEvent from '../fixtures/pullReq/pullReqOpenedEvent.json'
+import pullReqOpenedEvent from '../fixtures/pullReq/pullReqOpenedEvent.json'
+import listPullReqs from '../fixtures/pullReq/pullReqListPulls.json'
 import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
 import prListFiles from '../fixtures/pullReq/pullReqListFiles.json'
 
@@ -11,7 +12,7 @@ nock.disableNetConnect()
 
 const api = 'https://api.github.com'
 
-describe('labelPr', () => {
+describe('cronLabelPr', () => {
   beforeEach(() => {
     nock.cleanAll()
     utils.setupActionsEnv('/area')
@@ -19,7 +20,18 @@ describe('labelPr', () => {
 
   it('labels the PR with the correct file labels', async () => {
     utils.setupJobsEnv('pr-labeler')
-    const prContext = new utils.mockContext(prOpenedEvent)
+
+    // We can use any context here as "schedule" sends no webhook payload
+    // Instead, we use it to gain the repo owner and url
+    const context = new utils.mockContext(pullReqOpenedEvent)
+    
+    nock(api)
+      .get('/repos/Codertocat/Hello-World/pulls?page=0')
+      .reply(200, listPullReqs)
+
+    nock(api)
+      .get('/repos/Codertocat/Hello-World/pulls?page=1')
+      .reply(200, [])
 
     let parsedBody = undefined
     const scope = nock(api)
@@ -28,7 +40,7 @@ describe('labelPr', () => {
         return body
       })
       .reply(200)
-    
+
     nock(api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(200, labelFileContents)
@@ -37,7 +49,7 @@ describe('labelPr', () => {
       .get('/repos/Codertocat/Hello-World/pulls/2/files')
       .reply(200, prListFiles)
 
-    await handlePullReq(prContext)
+    await handleCronJobs(context)
     expect(parsedBody).toEqual({
       labels: ['source']
     })

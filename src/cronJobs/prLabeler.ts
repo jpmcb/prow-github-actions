@@ -1,10 +1,62 @@
 import * as github from '@actions/github'
+import {Octokit} from '@octokit/rest'
 
 import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
 import * as yaml from 'js-yaml'
 import * as minimatch from 'minimatch'
+
+let jobsDone = 0
+
+// Inspired by the actions/stale repository
+export const cronLabelPr = async (
+  currentPage: number,
+  context: Context
+): Promise<number> => {
+  const token = core.getInput('github-token', {required: true})
+  const octokit = new github.GitHub(token)
+
+  // Get next batch
+  const prs = await getPrs(octokit, context, currentPage)
+
+  if (prs.length <= 0) {
+    // All done!
+    return jobsDone
+  }
+
+  await Promise.all(
+    prs.map(async pr => {
+      if (pr.state === 'closed') {
+        return
+      }
+
+      if (pr.state === 'locked') {
+        return
+      }
+
+      await labelPr(pr.id, context, octokit)
+      jobsDone++
+    })
+  )
+
+  // Recurse, continue to next page
+  return cronLabelPr(currentPage + 1, context)
+}
+
+// grab issues from github in baches of 100
+const getPrs = async (
+  octokit: github.GitHub,
+  context: Context = github.context,
+  page: number
+): Promise<Octokit.PullsListResponse> => {
+  const prResults = await octokit.pulls.list({
+    ...context.repo,
+    page
+  })
+
+  return prResults.data
+}
 
 /**
  * Inspired by https://github.com/actions/labeler
@@ -13,28 +65,18 @@ import * as minimatch from 'minimatch'
  * @param context - the Github context for pull req event
  */
 export const labelPr = async (
-  context: Context = github.context
+  prNum: number,
+  context: Context = github.context,
+  octokit: github.GitHub
 ): Promise<void> => {
-  const token = core.getInput('bot-token', {required: true})
-  const octokit = new github.GitHub(token)
-
-  const prNumber: number | undefined = context.payload.pull_request?.number
-
-  if (prNumber === undefined) {
-    throw new Error(
-      `github context payload missing PR number: ${context.payload}`
-    )
-  }
-
-  const changedFiles = await getChangedFiles(octokit, context, prNumber)
+  const changedFiles = await getChangedFiles(octokit, context, prNum)
   const labels = await getLabelsFromFileGlobs(octokit, context, changedFiles)
 
-  // no arguments after command provided
   if (labels.length === 0) {
     core.info('pr-labeler: no labels matched file globs')
   }
 
-  await sendLabels(octokit, context, prNumber, labels)
+  await sendLabels(octokit, context, prNum, labels)
 }
 
 const getChangedFiles = async (
@@ -101,7 +143,7 @@ const getLabelsFromFileGlobs = async (
   return toReturn
 }
 
-function checkGlobs(files: string[], globs: string[]): boolean {
+const checkGlobs = (files: string[], globs: string[]): boolean => {
   for (const glob of globs) {
     const matcher = new minimatch.Minimatch(glob)
     for (const file of files) {
