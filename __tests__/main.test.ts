@@ -8,6 +8,8 @@ test('runs with no options', () => {
   const options: cp.ExecSyncOptions = {
     env: process.env
   }
+  
+  console.log('some test changes for pr label')
 
   expect(cp.execSync(`node ${ip}`, options).toString()).toContain(
     'not yet supported'
