@@ -13,4 +13,4 @@ jobs:
       - uses: ./
         with:
           jobs: 'pr-labeler'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          bot-token: "${{ secrets.PROW_BOT_TOKEN }}"

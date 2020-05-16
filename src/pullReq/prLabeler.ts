@@ -15,7 +15,7 @@ import * as minimatch from 'minimatch'
 export const labelPr = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', {required: true})
+  const token = core.getInput('bot-token', {required: true})
   const octokit = new github.GitHub(token)
 
   const prNumber: number | undefined = context.payload.pull_request?.number

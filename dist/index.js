@@ -10392,7 +10392,7 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 exports.cancel = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('github-token', { required: true });
+    const token = core.getInput('bot-token', { required: true });
     const octokit = new github.GitHub(token);
     const commenterId = context.payload['comment']['user']['login'];
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
@@ -11299,7 +11299,7 @@ const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
 exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('github-token', { required: true });
+    const token = core.getInput('bot-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commenterId = context.payload['comment']['user']['login'];
@@ -11506,7 +11506,7 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('github-token', { required: true });
+    const token = core.getInput('bot-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     if (issueNumber === undefined) {
@@ -12563,7 +12563,7 @@ const yaml = __importStar(__webpack_require__(414));
 const command_1 = __webpack_require__(535);
 exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('github-token', { required: true });
+    const token = core.getInput('bot-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commentBody = context.payload['comment']['body'];
@@ -14125,7 +14125,7 @@ const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
 exports.retitle = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('github-token', { required: true });
+    const token = core.getInput('bot-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commenterId = context.payload['comment']['user']['login'];
@@ -14513,7 +14513,7 @@ const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
 exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('github-token', { required: true });
+    const token = core.getInput('bot-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commenterId = context.payload['comment']['user']['login'];
@@ -29137,7 +29137,7 @@ const minimatch = __importStar(__webpack_require__(595));
  */
 exports.labelPr = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = core.getInput('github-token', { required: true });
+    const token = core.getInput('bot-token', { required: true });
     const octokit = new github.GitHub(token);
     const prNumber = (_a = context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
     if (prNumber === undefined) {
