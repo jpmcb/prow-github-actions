@@ -32,8 +32,4 @@ describe('/approve', () => {
     expect(nock.isDone()).toBe(true)
     expect.assertions(2)
   })
-
-  xit('removes approval with the /approve cancel command', async () => {
-    // TODO - implement
-  })
 })

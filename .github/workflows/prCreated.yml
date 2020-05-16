@@ -12,5 +12,5 @@ jobs:
       - run: npm run build
       - uses: ./
         with:
-          auto-run: 'pr-labeler'
+          jobs: 'pr-labeler'
           github-token: "${{ secrets.GITHUB_TOKEN }}"

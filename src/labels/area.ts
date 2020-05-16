@@ -16,9 +16,9 @@ export const area = async (
   const commentBody: string = context.payload['comment']['body']
 
   if (issueNumber === undefined) {
-    // TODO - Bail, issue number not defined :(
-    //    want some error messaging here?
-    return
+    throw new Error(
+      `github context payload missing issue number: ${context.payload}`
+    )
   }
 
   let commentArgs: string[] = getCommandArgs('/area', commentBody)
@@ -50,9 +50,6 @@ const addAreaPrefix = (args: string[]): string[] => {
   return toReturn
 }
 
-// -----------
-// TODO - update / create labels if they don't exist yo!!
-
 // This method has some eslint ignores related to
 // no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
 const getAreaLabels = async (
@@ -66,8 +63,9 @@ const getAreaLabels = async (
   })
 
   if (!response.data.content || !response.data.encoding) {
-    // TODO error state we have no content
-    throw new Error(`area: error parsing data from content response`)
+    throw new Error(
+      `area: error parsing data from content response: ${response.data}`
+    )
   }
 
   const decoded = Buffer.from(

@@ -6,6 +6,7 @@ import {Context} from '@actions/github/lib/context'
 import {assign} from './assign'
 import {unassign} from './unassign'
 import {approve} from './approve'
+import {cancel} from './cancel'
 import {retitle} from './retitle'
 import {area} from '../labels/area'
 
@@ -33,6 +34,10 @@ export const handleIssueComment = async (
             await approve(context)
             break
 
+          case '/cancel':
+            await cancel(context)
+            break
+
           case '/retitle':
             await retitle(context)
             break
@@ -41,8 +46,13 @@ export const handleIssueComment = async (
             await area(context)
             break
 
+          case '':
+            throw new Error(
+              `please provide a list of space delimited commands / jobs to run. None found`
+            )
+
           default:
-            core.error(
+            throw new Error(
               `could not execute ${command}. May not be supported - please refer to docs`
             )
         }

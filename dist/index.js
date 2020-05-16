@@ -2563,14 +2563,16 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const prLabeler_1 = __webpack_require__(857);
 exports.handlePullReq = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
-    const runConfig = core.getInput('auto-run', { required: false }).split(' ');
+    const runConfig = core.getInput('jobs', { required: false }).split(' ');
     yield Promise.all(runConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
         switch (command) {
             case 'pr-labeler':
                 yield prLabeler_1.labelPr(context);
                 break;
+            case '':
+                throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);
             default:
-                break;
+                throw new Error(`could not execute ${command}. May not be supported - please refer to docs`);
         }
     })));
     return;
@@ -10364,6 +10366,55 @@ function addHook (state, kind, name, hook) {
 
 /***/ }),
 
+/***/ 513:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+exports.cancel = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const commenterId = context.payload['comment']['user']['login'];
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    if (issueNumber === undefined) {
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    const reviews = yield octokit.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber }));
+    let latestReview = undefined;
+    for (const e of reviews.data) {
+        if (e.user.login === commenterId) {
+            latestReview = e;
+        }
+    }
+    if (latestReview === undefined) {
+        throw new Error('no latest review found to cancel');
+    }
+    octokit.pulls.dismissReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, review_id: latestReview.id, message: 'Canceled by prow-github-actions bot' }));
+});
+
+
+/***/ }),
+
 /***/ 523:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -11254,9 +11305,7 @@ exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 
     const commenterId = context.payload['comment']['user']['login'];
     const commentBody = context.payload['comment']['body'];
     if (issueNumber === undefined) {
-        // TODO - Bail, issue number not defined :(
-        //    want some error messaging here?
-        return;
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
     const commentArgs = command_1.getCommandArgs('/unassign', commentBody);
     // no arguments after command provided
@@ -11461,9 +11510,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     if (issueNumber === undefined) {
-        // TODO - Bail, issue number (pr) not defined :(
-        //    want some error messaging here?
-        return;
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
     octokit.pulls.createReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, event: 'APPROVE', comments: [] }));
 });
@@ -12521,9 +12568,7 @@ exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commentBody = context.payload['comment']['body'];
     if (issueNumber === undefined) {
-        // TODO - Bail, issue number not defined :(
-        //    want some error messaging here?
-        return;
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
     let commentArgs = command_1.getCommandArgs('/area', commentBody);
     const areaLabels = yield getAreaLabels(octokit, context);
@@ -12545,16 +12590,13 @@ const addAreaPrefix = (args) => {
     }
     return toReturn;
 };
-// -----------
-// TODO - update / create labels if they don't exist yo!!
 // This method has some eslint ignores related to
 // no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
 const getAreaLabels = (octokit, context) => __awaiter(void 0, void 0, void 0, function* () {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
     if (!response.data.content || !response.data.encoding) {
-        // TODO error state we have no content
-        throw new Error(`area: error parsing data from content response`);
+        throw new Error(`area: error parsing data from content response: ${response.data}`);
     }
     const decoded = Buffer.from(response.data.content, response.data.encoding).toString();
     const content = yaml.safeLoad(decoded);
@@ -12970,7 +13012,6 @@ exports.checkCollaborator = (octokit, context, user) => __awaiter(void 0, void 0
         return false;
     }
 });
-// will this just always be true ...? Should it not check the last one where they've ... commented?
 exports.checkIssueComments = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const comments = yield octokit.issues.listComments(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum }));
@@ -14090,9 +14131,7 @@ exports.retitle = (context = github.context) => __awaiter(void 0, void 0, void 0
     const commenterId = context.payload['comment']['user']['login'];
     const commentBody = context.payload['comment']['body'];
     if (issueNumber === undefined) {
-        // TODO - Bail, issue number not defined :(
-        //    want some error messaging here?
-        return;
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
     const commentArgs = command_1.getCommandArgs('/retitle', commentBody);
     // no arguments after command provided. Can't retitle!
@@ -14307,6 +14346,7 @@ const github = __importStar(__webpack_require__(469));
 const assign_1 = __webpack_require__(797);
 const unassign_1 = __webpack_require__(567);
 const approve_1 = __webpack_require__(575);
+const cancel_1 = __webpack_require__(513);
 const retitle_1 = __webpack_require__(745);
 const area_1 = __webpack_require__(616);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
@@ -14326,14 +14366,19 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                 case '/approve':
                     yield approve_1.approve(context);
                     break;
+                case '/cancel':
+                    yield cancel_1.cancel(context);
+                    break;
                 case '/retitle':
                     yield retitle_1.retitle(context);
                     break;
                 case '/area':
                     yield area_1.area(context);
                     break;
+                case '':
+                    throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);
                 default:
-                    core.error(`could not execute ${command}. May not be supported - please refer to docs`);
+                    throw new Error(`could not execute ${command}. May not be supported - please refer to docs`);
             }
         }
     })));
@@ -14474,9 +14519,7 @@ exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0,
     const commenterId = context.payload['comment']['user']['login'];
     const commentBody = context.payload['comment']['body'];
     if (issueNumber === undefined) {
-        // TODO - Bail, issue number not defined :(
-        //    want some error messaging here?
-        return;
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
     const commentArgs = command_1.getCommandArgs('/assign', commentBody);
     // no arguments after command provided
@@ -14491,8 +14534,7 @@ exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0,
     const authUsers = yield getAuthUsers(octokit, context, issueNumber, commentArgs);
     switch (authUsers.length) {
         case 0:
-            // TODO - bail, no auth users. Error message?
-            return;
+            throw new Error(`no authorized users found. Only users who are members of the org, are collaborators, or have previously commented on this issue may be assigned`);
         default:
             yield octokit.issues.addAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: authUsers }));
             break;
@@ -29099,9 +29141,7 @@ exports.labelPr = (context = github.context) => __awaiter(void 0, void 0, void 0
     const octokit = new github.GitHub(token);
     const prNumber = (_a = context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
     if (prNumber === undefined) {
-        // TODO - Bail, issue number not defined :(
-        //    want some error messaging here?
-        return;
+        throw new Error(`github context payload missing PR number: ${context.payload}`);
     }
     const changedFiles = yield getChangedFiles(octokit, context, prNumber);
     const labels = yield getLabelsFromFileGlobs(octokit, context, changedFiles);
@@ -29121,8 +29161,7 @@ const getLabelsFromFileGlobs = (octokit, context, files) => __awaiter(void 0, vo
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
     if (!response.data.content || !response.data.encoding) {
-        // TODO error state we have no content
-        throw new Error(`area: error parsing data from content response`);
+        throw new Error(`area: error parsing data from content response: ${response.data}`);
     }
     const decoded = Buffer.from(response.data.content, response.data.encoding).toString();
     const content = yaml.safeLoad(decoded);

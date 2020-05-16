@@ -41,7 +41,6 @@ export const checkCollaborator = async (
   }
 }
 
-// will this just always be true ...? Should it not check the last one where they've ... commented?
 export const checkIssueComments = async (
   octokit: github.GitHub,
   context: Context,

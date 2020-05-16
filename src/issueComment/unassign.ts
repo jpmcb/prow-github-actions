@@ -21,9 +21,9 @@ export const unassign = async (
   const commentBody: string = context.payload['comment']['body']
 
   if (issueNumber === undefined) {
-    // TODO - Bail, issue number not defined :(
-    //    want some error messaging here?
-    return
+    throw new Error(
+      `github context payload missing issue number: ${context.payload}`
+    )
   }
 
   const commentArgs: string[] = getCommandArgs('/unassign', commentBody)

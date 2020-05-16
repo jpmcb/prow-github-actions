@@ -21,9 +21,9 @@ export const labelPr = async (
   const prNumber: number | undefined = context.payload.pull_request?.number
 
   if (prNumber === undefined) {
-    // TODO - Bail, issue number not defined :(
-    //    want some error messaging here?
-    return
+    throw new Error(
+      `github context payload missing PR number: ${context.payload}`
+    )
   }
 
   const changedFiles = await getChangedFiles(octokit, context, prNumber)
@@ -66,8 +66,9 @@ const getLabelsFromFileGlobs = async (
   })
 
   if (!response.data.content || !response.data.encoding) {
-    // TODO error state we have no content
-    throw new Error(`area: error parsing data from content response`)
+    throw new Error(
+      `area: error parsing data from content response: ${response.data}`
+    )
   }
 
   const decoded = Buffer.from(

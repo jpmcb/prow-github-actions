@@ -18,7 +18,7 @@ describe('labelPr', () => {
   })
 
   it('labels the PR with the correct file labels', async () => {
-    utils.setupAutoRunEnv('pr-labeler')
+    utils.setupJobsEnv('pr-labeler')
     const prContext = new utils.mockContext(prOpenedEvent)
 
     let parsedBody = undefined

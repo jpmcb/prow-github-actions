@@ -21,9 +21,9 @@ export const assign = async (
   const commentBody: string = context.payload['comment']['body']
 
   if (issueNumber === undefined) {
-    // TODO - Bail, issue number not defined :(
-    //    want some error messaging here?
-    return
+    throw new Error(
+      `github context payload missing issue number: ${context.payload}`
+    )
   }
 
   const commentArgs: string[] = getCommandArgs('/assign', commentBody)
@@ -47,8 +47,9 @@ export const assign = async (
 
   switch (authUsers.length) {
     case 0:
-      // TODO - bail, no auth users. Error message?
-      return
+      throw new Error(
+        `no authorized users found. Only users who are members of the org, are collaborators, or have previously commented on this issue may be assigned`
+      )
 
     default:
       await octokit.issues.addAssignees({
