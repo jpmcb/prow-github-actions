@@ -14,6 +14,7 @@ export const cronLabelPr = async (
   currentPage: number,
   context: Context
 ): Promise<number> => {
+  core.info(`starting PR labeler!`)
   const token = core.getInput('github-token', {required: true})
   const octokit = new github.GitHub(token)
 
@@ -27,6 +28,7 @@ export const cronLabelPr = async (
 
   await Promise.all(
     prs.map(async pr => {
+      core.info(`processing pr: ${pr.id}`)
       if (pr.state === 'closed') {
         return
       }
@@ -50,10 +52,13 @@ const getPrs = async (
   context: Context = github.context,
   page: number
 ): Promise<Octokit.PullsListResponse> => {
+  core.info(`getting prs page ${page}...`)
   const prResults = await octokit.pulls.list({
     ...context.repo,
     page
   })
+
+  core.info(`got: ${prResults.data}`)
 
   return prResults.data
 }
@@ -84,6 +89,7 @@ const getChangedFiles = async (
   context: Context,
   prNum: number
 ): Promise<string[]> => {
+  core.info(`getting changed files for pr ${prNum}`)
   const listFilesResponse = await octokit.pulls.listFiles({
     ...context.repo,
     pull_number: prNum
@@ -101,6 +107,7 @@ const getLabelsFromFileGlobs = async (
 ): Promise<string[]> => {
   const toReturn: string[] = []
 
+  core.info(`getting labels.yaml file`)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const response: any = await octokit.repos.getContents({
     ...context.repo,
@@ -162,6 +169,7 @@ export const sendLabels = async (
   labels: string[]
 ): Promise<void> => {
   try {
+    core.info(`sending labels ${labels}`)
     await octokit.issues.addLabels({
       ...context.repo,
       issue_number: prNum,

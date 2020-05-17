@@ -3980,6 +3980,7 @@ const minimatch = __importStar(__webpack_require__(595));
 let jobsDone = 0;
 // Inspired by the actions/stale repository
 exports.cronLabelPr = (currentPage, context) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`starting PR labeler!`);
     const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     // Get next batch
@@ -3989,6 +3990,7 @@ exports.cronLabelPr = (currentPage, context) => __awaiter(void 0, void 0, void 0
         return jobsDone;
     }
     yield Promise.all(prs.map((pr) => __awaiter(void 0, void 0, void 0, function* () {
+        core.info(`processing pr: ${pr.id}`);
         if (pr.state === 'closed') {
             return;
         }
@@ -4003,7 +4005,9 @@ exports.cronLabelPr = (currentPage, context) => __awaiter(void 0, void 0, void 0
 });
 // grab issues from github in baches of 100
 const getPrs = (octokit, context = github.context, page) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`getting prs page ${page}...`);
     const prResults = yield octokit.pulls.list(Object.assign(Object.assign({}, context.repo), { page }));
+    core.info(`got: ${prResults.data}`);
     return prResults.data;
 });
 /**
@@ -4021,12 +4025,14 @@ exports.labelPr = (prNum, context = github.context, octokit) => __awaiter(void 0
     yield exports.sendLabels(octokit, context, prNum, labels);
 });
 const getChangedFiles = (octokit, context, prNum) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`getting changed files for pr ${prNum}`);
     const listFilesResponse = yield octokit.pulls.listFiles(Object.assign(Object.assign({}, context.repo), { pull_number: prNum }));
     const changedFiles = listFilesResponse.data.map(f => f.filename);
     return changedFiles;
 });
 const getLabelsFromFileGlobs = (octokit, context, files) => __awaiter(void 0, void 0, void 0, function* () {
     const toReturn = [];
+    core.info(`getting labels.yaml file`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
     if (!response.data.content || !response.data.encoding) {
@@ -4066,6 +4072,7 @@ const checkGlobs = (files, globs) => {
 };
 exports.sendLabels = (octokit, context, prNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        core.info(`sending labels ${labels}`);
         yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: prNum, labels }));
     }
     catch (e) {
