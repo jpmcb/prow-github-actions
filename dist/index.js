@@ -3984,7 +3984,13 @@ exports.cronLabelPr = (currentPage, context) => __awaiter(void 0, void 0, void 0
     const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     // Get next batch
-    const prs = yield getPrs(octokit, context, currentPage);
+    let prs;
+    try {
+        prs = yield getPrs(octokit, context, currentPage);
+    }
+    catch (e) {
+        throw new Error(`could not get PRs: ${e}`);
+    }
     if (prs.length <= 0) {
         // All done!
         return jobsDone;
@@ -10533,7 +10539,13 @@ exports.cancel = (context = github.context) => __awaiter(void 0, void 0, void 0,
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
-    const reviews = yield octokit.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber }));
+    let reviews;
+    try {
+        reviews = yield octokit.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber }));
+    }
+    catch (e) {
+        throw new Error(`could not list reviews for PR ${issueNumber}: ${e}`);
+    }
     let latestReview = undefined;
     for (const e of reviews.data) {
         if (e.user.login === commenterId) {
@@ -10543,7 +10555,12 @@ exports.cancel = (context = github.context) => __awaiter(void 0, void 0, void 0,
     if (latestReview === undefined) {
         throw new Error('no latest review found to cancel');
     }
-    octokit.pulls.dismissReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, review_id: latestReview.id, message: 'Canceled by prow-github-actions bot' }));
+    try {
+        yield octokit.pulls.dismissReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, review_id: latestReview.id, message: 'Canceled by prow-github-actions bot' }));
+    }
+    catch (e) {
+        throw new Error(`could not dismiss review: ${e}`);
+    }
 });
 
 
@@ -11444,18 +11461,52 @@ exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 
     const commentArgs = command_1.getCommandArgs('/unassign', commentBody);
     // no arguments after command provided
     if (commentArgs.length === 0) {
-        yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: [commenterId] }));
+        try {
+            yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: [commenterId] }));
+        }
+        catch (e) {
+            throw new Error(`could not remove assignee: ${e}`);
+        }
         return;
     }
-    const isAuthUser = yield checkCommenterAuth(octokit, context, issueNumber, commenterId);
+    let isAuthUser = false;
+    try {
+        isAuthUser = yield checkCommenterAuth(octokit, context, issueNumber, commenterId);
+    }
+    catch (e) {
+        throw new Error(`couldn ot check commentor Auth: ${e}`);
+    }
     if (isAuthUser) {
-        yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: commentArgs }));
+        try {
+            yield octokit.issues.removeAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: commentArgs }));
+        }
+        catch (e) {
+            throw new Error(`could not remove assignee: ${e}`);
+        }
     }
 });
 const checkCommenterAuth = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
-    const isOrgMember = yield auth_1.checkOrgMember(octokit, context, user);
-    const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
-    const hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, user);
+    let isOrgMember = false;
+    let isCollaborator = false;
+    let hasCommented = false;
+    try {
+        isOrgMember = yield auth_1.checkOrgMember(octokit, context, user);
+    }
+    catch (e) {
+        throw new Error(`error in checking org member: ${e}`);
+    }
+    try {
+        isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
+    }
+    catch (e) {
+        throw new Error(`could not check collaborator: ${e}`);
+    }
+    try {
+        hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, user);
+    }
+    catch (e) {
+        throw new Error(`could not check issue comments: ${e}`);
+    }
     if (isOrgMember || isCollaborator || hasCommented) {
         return true;
     }
@@ -11646,7 +11697,12 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
-    octokit.pulls.createReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, event: 'APPROVE', comments: [] }));
+    try {
+        yield octokit.pulls.createReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, event: 'APPROVE', comments: [] }));
+    }
+    catch (e) {
+        throw new Error(`could not create review: ${e}`);
+    }
 });
 
 
@@ -12705,8 +12761,14 @@ exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, f
         throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
     let commentArgs = command_1.getCommandArgs('/area', commentBody);
-    const areaLabels = yield getAreaLabels(octokit, context);
-    core.info(`area: found labels ${areaLabels}`);
+    let areaLabels = [];
+    try {
+        areaLabels = yield getAreaLabels(octokit, context);
+        core.debug(`area: found labels ${areaLabels}`);
+    }
+    catch (e) {
+        throw new Error(`could not get labels from yaml: ${e}`);
+    }
     commentArgs = commentArgs.filter(e => {
         return areaLabels.includes(e);
     });
@@ -12728,7 +12790,13 @@ const addAreaPrefix = (args) => {
 // no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
 const getAreaLabels = (octokit, context) => __awaiter(void 0, void 0, void 0, function* () {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
+    let response = undefined;
+    try {
+        response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
+    }
+    catch (e) {
+        throw new Error(`could not get .github/labels.yaml content: ${e}`);
+    }
     if (!response.data.content || !response.data.encoding) {
         throw new Error(`area: error parsing data from content response: ${response.data}`);
     }
@@ -12744,7 +12812,7 @@ exports.labelIssue = (octokit, context, issueNum, labels) => __awaiter(void 0, v
         yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, labels }));
     }
     catch (e) {
-        throw new Error(`area: ${e}`);
+        throw new Error(`could not add labels: ${e}`);
     }
 });
 
@@ -13107,7 +13175,7 @@ module.exports = function btoa(str) {
 /***/ }),
 
 /***/ 683:
-/***/ (function(__unusedmodule, exports) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13120,11 +13188,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
 exports.checkOrgMember = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (context.payload.repository === undefined) {
-            // TODO - repository is broken, error message?
+            core.debug(`checkOrgMember error: context payload repository undefined`);
             return false;
         }
         yield octokit.orgs.checkMembership({
@@ -14274,13 +14350,30 @@ exports.retitle = (context = github.context) => __awaiter(void 0, void 0, void 0
     }
     // Only users who:
     // - are collaborators
-    const isAuthUser = yield checkCommenterAuth(octokit, context, commenterId);
+    let isAuthUser = false;
+    try {
+        isAuthUser = yield checkCommenterAuth(octokit, context, commenterId);
+    }
+    catch (e) {
+        throw new Error(`could not check Commentor auth: ${e}`);
+    }
     if (isAuthUser) {
-        yield octokit.issues.update(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, title: commentArgs.join(' ') }));
+        try {
+            yield octokit.issues.update(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, title: commentArgs.join(' ') }));
+        }
+        catch (e) {
+            throw new Error(`could not update issue: ${e}`);
+        }
     }
 });
 const checkCommenterAuth = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
-    const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
+    let isCollaborator = false;
+    try {
+        isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
+    }
+    catch (e) {
+        throw new Error(`error checking collaborator: ${e}`);
+    }
     if (isCollaborator) {
         return true;
     }
@@ -14702,32 +14795,53 @@ exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0,
     const commentArgs = command_1.getCommandArgs('/assign', commentBody);
     // no arguments after command provided
     if (commentArgs.length === 0) {
-        yield selfAssign(octokit, context, issueNumber, commenterId);
+        try {
+            yield selfAssign(octokit, context, issueNumber, commenterId);
+        }
+        catch (e) {
+            throw new Error(`could not self assign: ${e}`);
+        }
         return;
     }
     // Only target users who:
     // - are members of the org
     // - are collaborators
     // - have previously commented on this issue
-    const authUsers = yield getAuthUsers(octokit, context, issueNumber, commentArgs);
+    let authUsers = [];
+    try {
+        authUsers = yield getAuthUsers(octokit, context, issueNumber, commentArgs);
+    }
+    catch (e) {
+        throw new Error(`could not get authorized users: ${e}`);
+    }
     switch (authUsers.length) {
         case 0:
             throw new Error(`no authorized users found. Only users who are members of the org, are collaborators, or have previously commented on this issue may be assigned`);
         default:
-            yield octokit.issues.addAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: authUsers }));
+            try {
+                yield octokit.issues.addAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, assignees: authUsers }));
+            }
+            catch (e) {
+                throw new Error(`could not add assignees: ${e}`);
+            }
             break;
     }
 });
 const getAuthUsers = (octokit, context, issueNum, args) => __awaiter(void 0, void 0, void 0, function* () {
     const toReturn = [];
-    yield Promise.all(args.map((arg) => __awaiter(void 0, void 0, void 0, function* () {
-        const isOrgMember = yield auth_1.checkOrgMember(octokit, context, arg);
-        const isCollaborator = yield auth_1.checkCollaborator(octokit, context, arg);
-        const hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, arg);
-        if (isOrgMember || isCollaborator || hasCommented) {
-            toReturn.push(arg);
-        }
-    })));
+    try {
+        yield Promise.all(args.map((arg) => __awaiter(void 0, void 0, void 0, function* () {
+            const isOrgMember = yield auth_1.checkOrgMember(octokit, context, arg);
+            const isCollaborator = yield auth_1.checkCollaborator(octokit, context, arg);
+            const hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, arg);
+            if (isOrgMember || isCollaborator || hasCommented) {
+                toReturn.push(arg);
+            }
+        })));
+    }
+    catch (e) {
+        throw new Error(`could not get authorized user: ${e}`);
+    }
     return toReturn;
 });
 const selfAssign = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {

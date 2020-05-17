@@ -19,7 +19,12 @@ export const cronLabelPr = async (
   const octokit = new github.GitHub(token)
 
   // Get next batch
-  const prs = await getPrs(octokit, context, currentPage)
+  let prs: Octokit.PullsListResponseItem[]
+  try {
+    prs = await getPrs(octokit, context, currentPage)
+  } catch (e) {
+    throw new Error(`could not get PRs: ${e}`)
+  }
 
   if (prs.length <= 0) {
     // All done!

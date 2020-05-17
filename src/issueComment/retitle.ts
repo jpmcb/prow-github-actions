@@ -31,14 +31,23 @@ export const retitle = async (
 
   // Only users who:
   // - are collaborators
-  const isAuthUser = await checkCommenterAuth(octokit, context, commenterId)
+  let isAuthUser: Boolean = false
+  try {
+    isAuthUser = await checkCommenterAuth(octokit, context, commenterId)
+  } catch (e) {
+    throw new Error(`could not check Commentor auth: ${e}`)
+  }
 
   if (isAuthUser) {
-    await octokit.issues.update({
-      ...context.repo,
-      issue_number: issueNumber,
-      title: commentArgs.join(' ')
-    })
+    try {
+      await octokit.issues.update({
+        ...context.repo,
+        issue_number: issueNumber,
+        title: commentArgs.join(' ')
+      })
+    } catch (e) {
+      throw new Error(`could not update issue: ${e}`)
+    }
   }
 }
 
@@ -47,7 +56,12 @@ const checkCommenterAuth = async (
   context: Context,
   user: string
 ): Promise<Boolean> => {
-  const isCollaborator = await checkCollaborator(octokit, context, user)
+  let isCollaborator: Boolean = false
+  try {
+    isCollaborator = await checkCollaborator(octokit, context, user)
+  } catch (e) {
+    throw new Error(`error checking collaborator: ${e}`)
+  }
 
   if (isCollaborator) {
     return true

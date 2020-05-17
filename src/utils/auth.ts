@@ -1,4 +1,5 @@
 import * as github from '@actions/github'
+import * as core from '@actions/core'
 
 import {Context} from '@actions/github/lib/context'
 
@@ -9,7 +10,7 @@ export const checkOrgMember = async (
 ): Promise<boolean> => {
   try {
     if (context.payload.repository === undefined) {
-      // TODO - repository is broken, error message?
+      core.debug(`checkOrgMember error: context payload repository undefined`)
       return false
     }
 

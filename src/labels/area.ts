@@ -23,8 +23,13 @@ export const area = async (
 
   let commentArgs: string[] = getCommandArgs('/area', commentBody)
 
-  const areaLabels = await getAreaLabels(octokit, context)
-  core.info(`area: found labels ${areaLabels}`)
+  let areaLabels: string[] = []
+  try {
+    areaLabels = await getAreaLabels(octokit, context)
+    core.debug(`area: found labels ${areaLabels}`)
+  } catch (e) {
+    throw new Error(`could not get labels from yaml: ${e}`)
+  }
 
   commentArgs = commentArgs.filter(e => {
     return areaLabels.includes(e)
@@ -57,10 +62,15 @@ const getAreaLabels = async (
   context: Context
 ): Promise<string[]> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const response: any = await octokit.repos.getContents({
-    ...context.repo,
-    path: '.github/labels.yaml'
-  })
+  let response: any = undefined
+  try {
+    response = await octokit.repos.getContents({
+      ...context.repo,
+      path: '.github/labels.yaml'
+    })
+  } catch (e) {
+    throw new Error(`could not get .github/labels.yaml content: ${e}`)
+  }
 
   if (!response.data.content || !response.data.encoding) {
     throw new Error(
@@ -95,6 +105,6 @@ export const labelIssue = async (
       labels
     })
   } catch (e) {
-    throw new Error(`area: ${e}`)
+    throw new Error(`could not add labels: ${e}`)
   }
 }

@@ -1,6 +1,7 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 
+import {Octokit} from '@octokit/rest'
 import {Context} from '@actions/github/lib/context'
 
 export const cancel = async (
@@ -18,10 +19,15 @@ export const cancel = async (
     )
   }
 
-  const reviews = await octokit.pulls.listReviews({
-    ...context.repo,
-    pull_number: issueNumber
-  })
+  let reviews: Octokit.Response<Octokit.PullsListReviewsResponse>
+  try {
+    reviews = await octokit.pulls.listReviews({
+      ...context.repo,
+      pull_number: issueNumber
+    })
+  } catch (e) {
+    throw new Error(`could not list reviews for PR ${issueNumber}: ${e}`)
+  }
 
   let latestReview = undefined
   for (const e of reviews.data) {
@@ -34,10 +40,14 @@ export const cancel = async (
     throw new Error('no latest review found to cancel')
   }
 
-  octokit.pulls.dismissReview({
-    ...context.repo,
-    pull_number: issueNumber,
-    review_id: latestReview.id,
-    message: 'Canceled by prow-github-actions bot'
-  })
+  try {
+    await octokit.pulls.dismissReview({
+      ...context.repo,
+      pull_number: issueNumber,
+      review_id: latestReview.id,
+      message: 'Canceled by prow-github-actions bot'
+    })
+  } catch (e) {
+    throw new Error(`could not dismiss review: ${e}`)
+  }
 }

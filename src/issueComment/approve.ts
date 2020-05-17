@@ -17,10 +17,14 @@ export const approve = async (
     )
   }
 
-  octokit.pulls.createReview({
-    ...context.repo,
-    pull_number: issueNumber,
-    event: 'APPROVE',
-    comments: []
-  })
+  try {
+    await octokit.pulls.createReview({
+      ...context.repo,
+      pull_number: issueNumber,
+      event: 'APPROVE',
+      comments: []
+    })
+  } catch (e) {
+    throw new Error(`could not create review: ${e}`)
+  }
 }
