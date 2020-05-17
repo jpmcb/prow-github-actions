@@ -14618,7 +14618,7 @@ exports.handleCronJobs = (context = github.context) => __awaiter(void 0, void 0,
     yield Promise.all(runConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
         switch (command) {
             case 'pr-labeler':
-                yield prLabeler_1.cronLabelPr(0, context);
+                yield prLabeler_1.cronLabelPr(1, context);
                 break;
             case '':
                 throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);

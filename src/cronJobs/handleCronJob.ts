@@ -15,7 +15,7 @@ export const handleCronJobs = async (
     runConfig.map(async command => {
       switch (command) {
         case 'pr-labeler':
-          await cronLabelPr(0, context)
+          await cronLabelPr(1, context)
           break
 
         case '':

@@ -26,11 +26,11 @@ describe('cronLabelPr', () => {
     const context = new utils.mockContext(pullReqOpenedEvent)
     
     nock(api)
-      .get('/repos/Codertocat/Hello-World/pulls?page=0')
+      .get('/repos/Codertocat/Hello-World/pulls?page=1')
       .reply(200, listPullReqs)
 
     nock(api)
-      .get('/repos/Codertocat/Hello-World/pulls?page=1')
+      .get('/repos/Codertocat/Hello-World/pulls?page=2')
       .reply(200, [])
 
     let parsedBody = undefined
