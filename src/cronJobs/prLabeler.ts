@@ -79,6 +79,7 @@ export const labelPr = async (
 
   if (labels.length === 0) {
     core.info('pr-labeler: no labels matched file globs')
+    return
   }
 
   await sendLabels(octokit, context, prNum, labels)

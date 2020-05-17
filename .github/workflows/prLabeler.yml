@@ -1,7 +1,7 @@
 name: "Label PRs from globs"
 on:
   schedule:
-  - cron: "*/5 * * * *"
+  - cron: "*/30 * * * *"
 
 jobs:
   execute:
