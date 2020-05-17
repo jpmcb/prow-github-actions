@@ -10453,6 +10453,74 @@ exports.RequestError = RequestError;
 
 /***/ }),
 
+/***/ 508:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const yaml = __importStar(__webpack_require__(414));
+// This method has some eslint ignores related to
+// no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
+exports.getArgumentLabels = (arg, octokit, context) => __awaiter(void 0, void 0, void 0, function* () {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let response = undefined;
+    try {
+        response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
+    }
+    catch (e) {
+        try {
+            response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yml' }));
+        }
+        catch (e2) {
+            throw new Error(`could not get .github/labels.yaml or .github/labels.yml: ${e} ${e2}`);
+        }
+    }
+    if (!response.data.content || !response.data.encoding) {
+        throw new Error(`area: error parsing data from content response: ${response.data}`);
+    }
+    const decoded = Buffer.from(response.data.content, response.data.encoding).toString();
+    const content = yaml.safeLoad(decoded);
+    if (!content[arg] && !(content[arg] instanceof Array)) {
+        throw new Error(`${arg}: yaml malformed, expected '${arg}' top level key`);
+    }
+    return content[arg];
+});
+exports.labelIssue = (octokit, context, issueNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, labels }));
+    }
+    catch (e) {
+        throw new Error(`could not add labels: ${e}`);
+    }
+});
+exports.addPrefix = (prefix, args) => {
+    const toReturn = [];
+    for (const arg of args) {
+        toReturn.push(`${prefix}/${arg}`);
+    }
+    return toReturn;
+};
+
+
+/***/ }),
+
 /***/ 510:
 /***/ (function(module) {
 
@@ -12749,8 +12817,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
-const yaml = __importStar(__webpack_require__(414));
 const command_1 = __webpack_require__(535);
+const labeling_1 = __webpack_require__(508);
 exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -12763,7 +12831,7 @@ exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     let commentArgs = command_1.getCommandArgs('/area', commentBody);
     let areaLabels = [];
     try {
-        areaLabels = yield getAreaLabels(octokit, context);
+        areaLabels = yield labeling_1.getArgumentLabels('area', octokit, context);
         core.debug(`area: found labels ${areaLabels}`);
     }
     catch (e) {
@@ -12772,48 +12840,12 @@ exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     commentArgs = commentArgs.filter(e => {
         return areaLabels.includes(e);
     });
-    commentArgs = addAreaPrefix(commentArgs);
+    commentArgs = labeling_1.addPrefix('area', commentArgs);
     // no arguments after command provided
     if (commentArgs.length === 0) {
         throw new Error(`area: command args missing from body`);
     }
-    exports.labelIssue(octokit, context, issueNumber, commentArgs);
-});
-const addAreaPrefix = (args) => {
-    const toReturn = [];
-    for (const arg of args) {
-        toReturn.push(`area/${arg}`);
-    }
-    return toReturn;
-};
-// This method has some eslint ignores related to
-// no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
-const getAreaLabels = (octokit, context) => __awaiter(void 0, void 0, void 0, function* () {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let response = undefined;
-    try {
-        response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
-    }
-    catch (e) {
-        throw new Error(`could not get .github/labels.yaml content: ${e}`);
-    }
-    if (!response.data.content || !response.data.encoding) {
-        throw new Error(`area: error parsing data from content response: ${response.data}`);
-    }
-    const decoded = Buffer.from(response.data.content, response.data.encoding).toString();
-    const content = yaml.safeLoad(decoded);
-    if (!content['area'] && !(content['area'] instanceof Array)) {
-        throw new Error(`area: yaml malformed, expected 'area' top level key`);
-    }
-    return content['area'];
-});
-exports.labelIssue = (octokit, context, issueNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, labels }));
-    }
-    catch (e) {
-        throw new Error(`could not add labels: ${e}`);
-    }
+    labeling_1.labelIssue(octokit, context, issueNumber, commentArgs);
 });
 
 
@@ -13094,6 +13126,64 @@ if (process.platform === 'linux') {
     'SIGUNUSED'
   )
 }
+
+
+/***/ }),
+
+/***/ 667:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+const labeling_1 = __webpack_require__(508);
+exports.kind = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commentBody = context.payload['comment']['body'];
+    if (issueNumber === undefined) {
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    let commentArgs = command_1.getCommandArgs('/kind', commentBody);
+    let kindLabels = [];
+    try {
+        kindLabels = yield labeling_1.getArgumentLabels('kind', octokit, context);
+        core.debug(`kind: found labels ${kindLabels}`);
+    }
+    catch (e) {
+        throw new Error(`could not get labels from yaml: ${e}`);
+    }
+    commentArgs = commentArgs.filter(e => {
+        return kindLabels.includes(e);
+    });
+    commentArgs = labeling_1.addPrefix('kind', commentArgs);
+    // no arguments after command provided
+    if (commentArgs.length === 0) {
+        throw new Error(`area: command args missing from body`);
+    }
+    labeling_1.labelIssue(octokit, context, issueNumber, commentArgs);
+});
 
 
 /***/ }),
@@ -14576,6 +14666,7 @@ const approve_1 = __webpack_require__(575);
 const cancel_1 = __webpack_require__(513);
 const retitle_1 = __webpack_require__(745);
 const area_1 = __webpack_require__(616);
+const kind_1 = __webpack_require__(667);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: false })
@@ -14601,6 +14692,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/area':
                     yield area_1.area(context);
+                    break;
+                case '/kind':
+                    yield kind_1.kind(context);
                     break;
                 case '':
                     throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);

@@ -10,14 +10,14 @@ nock.disableNetConnect()
 
 const api = 'https://api.github.com'
 
-describe('area', () => {
+describe('kind', () => {
   beforeEach(() => {
     nock.cleanAll()
-    utils.setupActionsEnv('/area')
+    utils.setupActionsEnv('/kind')
   })
 
-  it('labels the issue with the label', async () => {
-    issueCommentEvent.comment.body = '/area important'
+  it('labels the issue with the kind', async () => {
+    issueCommentEvent.comment.body = '/kind cleanup'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
@@ -34,13 +34,13 @@ describe('area', () => {
 
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
-      labels: ['area/important']
+      labels: ['kind/cleanup']
     })
     expect(scope.isDone()).toBe(true)
   })
 
   it('handles multiple labels', async () => {
-    issueCommentEvent.comment.body = '/area bug important'
+    issueCommentEvent.comment.body = '/kind cleanup failing-test'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
@@ -57,13 +57,13 @@ describe('area', () => {
 
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
-      labels: ['area/bug', 'area/important']
+      labels: ['kind/cleanup', 'kind/failing-test']
     })
     expect(scope.isDone()).toBe(true)
   })
 
   it('only adds labels for files in .github/labels.yaml', async () => {
-    issueCommentEvent.comment.body = '/area bug bad important'
+    issueCommentEvent.comment.body = '/kind cleanup bad failing-test'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
@@ -80,7 +80,7 @@ describe('area', () => {
 
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
-      labels: ['area/bug', 'area/important']
+      labels: ['kind/cleanup', 'kind/failing-test']
     })
     expect(scope.isDone()).toBe(true)
   })

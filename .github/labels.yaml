@@ -2,6 +2,10 @@ area:
   - 'bug'
   - 'important'
 
+kind:
+  - 'failing-test'
+  - 'cleanup'
+
 tests:
   - '__tests__/*'
 

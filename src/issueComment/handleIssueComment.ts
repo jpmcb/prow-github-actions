@@ -9,6 +9,7 @@ import {approve} from './approve'
 import {cancel} from './cancel'
 import {retitle} from './retitle'
 import {area} from '../labels/area'
+import {kind} from '../labels/kind'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -44,6 +45,10 @@ export const handleIssueComment = async (
 
           case '/area':
             await area(context)
+            break
+
+          case '/kind':
+            await kind(context)
             break
 
           case '':

@@ -6,7 +6,7 @@ import * as core from '@actions/core'
 import {getCommandArgs} from '../utils/command'
 import {getArgumentLabels, labelIssue, addPrefix} from '../utils/labeling'
 
-export const area = async (
+export const kind = async (
   context: Context = github.context
 ): Promise<void> => {
   const token = core.getInput('github-token', {required: true})
@@ -21,21 +21,21 @@ export const area = async (
     )
   }
 
-  let commentArgs: string[] = getCommandArgs('/area', commentBody)
+  let commentArgs: string[] = getCommandArgs('/kind', commentBody)
 
-  let areaLabels: string[] = []
+  let kindLabels: string[] = []
   try {
-    areaLabels = await getArgumentLabels('area', octokit, context)
-    core.debug(`area: found labels ${areaLabels}`)
+    kindLabels = await getArgumentLabels('kind', octokit, context)
+    core.debug(`kind: found labels ${kindLabels}`)
   } catch (e) {
     throw new Error(`could not get labels from yaml: ${e}`)
   }
 
   commentArgs = commentArgs.filter(e => {
-    return areaLabels.includes(e)
+    return kindLabels.includes(e)
   })
 
-  commentArgs = addPrefix('area', commentArgs)
+  commentArgs = addPrefix('kind', commentArgs)
 
   // no arguments after command provided
   if (commentArgs.length === 0) {
