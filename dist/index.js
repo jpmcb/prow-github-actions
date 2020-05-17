@@ -4021,6 +4021,7 @@ exports.labelPr = (prNum, context = github.context, octokit) => __awaiter(void 0
     const labels = yield getLabelsFromFileGlobs(octokit, context, changedFiles);
     if (labels.length === 0) {
         core.info('pr-labeler: no labels matched file globs');
+        return;
     }
     yield exports.sendLabels(octokit, context, prNum, labels);
 });
