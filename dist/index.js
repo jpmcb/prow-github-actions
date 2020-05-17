@@ -3990,14 +3990,14 @@ exports.cronLabelPr = (currentPage, context) => __awaiter(void 0, void 0, void 0
         return jobsDone;
     }
     yield Promise.all(prs.map((pr) => __awaiter(void 0, void 0, void 0, function* () {
-        core.info(`processing pr: ${pr.id}`);
+        core.info(`processing pr: ${pr.number}`);
         if (pr.state === 'closed') {
             return;
         }
         if (pr.state === 'locked') {
             return;
         }
-        yield exports.labelPr(pr.id, context, octokit);
+        yield exports.labelPr(pr.number, context, octokit);
         jobsDone++;
     })));
     // Recurse, continue to next page

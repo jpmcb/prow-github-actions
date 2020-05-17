@@ -28,7 +28,7 @@ export const cronLabelPr = async (
 
   await Promise.all(
     prs.map(async pr => {
-      core.info(`processing pr: ${pr.id}`)
+      core.info(`processing pr: ${pr.number}`)
       if (pr.state === 'closed') {
         return
       }
@@ -37,7 +37,7 @@ export const cronLabelPr = async (
         return
       }
 
-      await labelPr(pr.id, context, octokit)
+      await labelPr(pr.number, context, octokit)
       jobsDone++
     })
   )
