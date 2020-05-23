@@ -6,7 +6,6 @@ import {Context} from '@actions/github/lib/context'
 import {assign} from './assign'
 import {unassign} from './unassign'
 import {approve} from './approve'
-import {cancel} from './cancel'
 import {retitle} from './retitle'
 import {remove} from '../labels/remove'
 import {area} from '../labels/area'
@@ -35,10 +34,6 @@ export const handleIssueComment = async (
 
           case '/approve':
             await approve(context)
-            break
-
-          case '/cancel':
-            await cancel(context)
             break
 
           case '/retitle':
