@@ -11364,7 +11364,7 @@ exports.lgtm = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
-    let commentArgs = command_1.getCommandArgs('/lgtm', commentBody);
+    const commentArgs = command_1.getCommandArgs('/lgtm', commentBody);
     // check if canceling last review
     if (commentArgs.length !== 0 && commentArgs[0]) {
         try {
@@ -14940,12 +14940,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const prLabeler_1 = __webpack_require__(175);
+const lgtm_1 = __webpack_require__(956);
 exports.handleCronJobs = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const runConfig = core.getInput('jobs', { required: false }).split(' ');
     yield Promise.all(runConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
         switch (command) {
             case 'pr-labeler':
                 yield prLabeler_1.cronLabelPr(1, context);
+                break;
+            case 'lgtm':
+                yield lgtm_1.cronLgtm(1, context);
                 break;
             case '':
                 throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);
@@ -31806,6 +31810,84 @@ module.exports.sync = (cmd, args, opts) => {
 };
 
 module.exports.shellSync = (cmd, opts) => handleShell(module.exports.sync, cmd, opts);
+
+
+/***/ }),
+
+/***/ 956:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+let jobsDone = 0;
+// Inspired by the actions/stale repository
+exports.cronLgtm = (currentPage, context) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`starting lgtm merger!`);
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    // Get next batch
+    let prs;
+    try {
+        prs = yield getPrs(octokit, context, currentPage);
+    }
+    catch (e) {
+        throw new Error(`could not get PRs: ${e}`);
+    }
+    if (prs.length <= 0) {
+        // All done!
+        return jobsDone;
+    }
+    yield Promise.all(prs.map((pr) => __awaiter(void 0, void 0, void 0, function* () {
+        core.info(`processing pr: ${pr.number}`);
+        if (pr.state === 'closed') {
+            return;
+        }
+        if (pr.state === 'locked') {
+            return;
+        }
+        yield tryMergePr(pr, octokit, context);
+        jobsDone++;
+    })));
+    // Recurse, continue to next page
+    return exports.cronLgtm(currentPage + 1, context);
+});
+// grab issues from github in baches of 100
+const getPrs = (octokit, context = github.context, page) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`getting prs page ${page}...`);
+    const prResults = yield octokit.pulls.list(Object.assign(Object.assign({}, context.repo), { state: 'open', page }));
+    core.info(`got: ${prResults.data}`);
+    return prResults.data;
+});
+const tryMergePr = (pr, octokit, context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    // if pr has label 'lgtm', attempt to merge
+    if (pr.labels.map(e => e.name).includes('lgtm')) {
+        try {
+            yield octokit.pulls.merge(Object.assign(Object.assign({}, context.repo), { pull_number: pr.number }));
+        }
+        catch (e) {
+            core.debug(`could not merge pr ${pr.number}: ${e}`);
+        }
+    }
+});
 
 
 /***/ }),

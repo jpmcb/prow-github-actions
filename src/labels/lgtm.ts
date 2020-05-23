@@ -1,11 +1,10 @@
 import * as github from '@actions/github'
 
-import {Octokit} from '@octokit/rest'
 import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
 import {getCommandArgs} from '../utils/command'
-import {getArgumentLabels, labelIssue, addPrefix, removeLabels, getCurrentLabels} from '../utils/labeling'
+import {labelIssue, removeLabels, getCurrentLabels} from '../utils/labeling'
 
 export const lgtm = async (
   context: Context = github.context
@@ -22,7 +21,7 @@ export const lgtm = async (
     )
   }
 
-  let commentArgs: string[] = getCommandArgs('/lgtm', commentBody)
+  const commentArgs: string[] = getCommandArgs('/lgtm', commentBody)
 
   // check if canceling last review
   if (commentArgs.length !== 0 && commentArgs[0]) {
@@ -40,7 +39,7 @@ export const lgtm = async (
 const cancel = async (
   octokit: github.GitHub,
   context: Context,
-  issueNumber: number,
+  issueNumber: number
 ): Promise<void> => {
   let currentLabels: string[] = []
   try {

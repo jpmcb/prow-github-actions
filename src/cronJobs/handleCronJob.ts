@@ -5,6 +5,7 @@ import * as core from '@actions/core'
 import {Context} from '@actions/github/lib/context'
 
 import {cronLabelPr} from './prLabeler'
+import {cronLgtm} from './lgtm'
 
 export const handleCronJobs = async (
   context: Context = github.context
@@ -16,6 +17,10 @@ export const handleCronJobs = async (
       switch (command) {
         case 'pr-labeler':
           await cronLabelPr(1, context)
+          break
+
+        case 'lgtm':
+          await cronLgtm(1, context)
           break
 
         case '':

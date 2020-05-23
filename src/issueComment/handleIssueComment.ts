@@ -56,7 +56,7 @@ export const handleIssueComment = async (
           case '/priority':
             await priority(context)
             break
-          
+
           case '/lgtm':
             await lgtm(context)
             break
