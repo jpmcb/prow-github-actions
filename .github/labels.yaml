@@ -1,0 +1,17 @@
+area:
+  - 'bug'
+  - 'important'
+
+kind:
+  - 'failing-test'
+  - 'cleanup'
+
+priority:
+  - 'low'
+  - 'high'
+
+tests:
+  - '__tests__/*'
+
+source:
+  - 'src/*'

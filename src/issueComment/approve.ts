@@ -1,7 +1,9 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 
+import {Octokit} from '@octokit/rest'
 import {Context} from '@actions/github/lib/context'
+import {getCommandArgs} from '../utils/command'
 
 export const approve = async (
   context: Context = github.context
@@ -10,17 +12,74 @@ export const approve = async (
   const octokit = new github.GitHub(token)
 
   const issueNumber: number | undefined = context.payload.issue?.number
+  const commentBody: string = context.payload['comment']['body']
+  const commenterId: string = context.payload['comment']['user']['login']
 
   if (issueNumber === undefined) {
-    // TODO - Bail, issue number (pr) not defined :(
-    //    want some error messaging here?
+    throw new Error(
+      `github context payload missing issue number: ${context.payload}`
+    )
+  }
+
+  const commentArgs: string[] = getCommandArgs('/approve', commentBody)
+
+  // check if canceling last review
+  if (commentArgs.length !== 0 && commentArgs[0]) {
+    try {
+      await cancel(octokit, context, issueNumber, commenterId)
+    } catch (e) {
+      throw new Error(`could not remove latest review: ${e}`)
+    }
     return
   }
 
-  octokit.pulls.createReview({
-    ...context.repo,
-    pull_number: issueNumber,
-    event: 'APPROVE',
-    comments: []
-  })
+  try {
+    await octokit.pulls.createReview({
+      ...context.repo,
+      pull_number: issueNumber,
+      event: 'APPROVE',
+      comments: []
+    })
+  } catch (e) {
+    throw new Error(`could not create review: ${e}`)
+  }
+}
+
+const cancel = async (
+  octokit: github.GitHub,
+  context: Context,
+  issueNumber: number,
+  commenterId: string
+): Promise<void> => {
+  let reviews: Octokit.Response<Octokit.PullsListReviewsResponse>
+  try {
+    reviews = await octokit.pulls.listReviews({
+      ...context.repo,
+      pull_number: issueNumber
+    })
+  } catch (e) {
+    throw new Error(`could not list reviews for PR ${issueNumber}: ${e}`)
+  }
+
+  let latestReview = undefined
+  for (const e of reviews.data) {
+    if (e.user.login === commenterId) {
+      latestReview = e
+    }
+  }
+
+  if (latestReview === undefined) {
+    throw new Error('no latest review found to cancel')
+  }
+
+  try {
+    await octokit.pulls.dismissReview({
+      ...context.repo,
+      pull_number: issueNumber,
+      review_id: latestReview.id,
+      message: 'Canceled by prow-github-actions bot'
+    })
+  } catch (e) {
+    throw new Error(`could not dismiss review: ${e}`)
+  }
 }

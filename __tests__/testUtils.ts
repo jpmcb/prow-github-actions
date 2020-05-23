@@ -19,3 +19,12 @@ export const setupActionsEnv = (command: string = '') => {
   process.env['INPUT_PROW-COMMANDS'] = command
   process.env['INPUT_GITHUB-TOKEN'] = 'some-token'
 }
+
+export const setupJobsEnv = (arg: string = '') => {
+  process.env = {}
+
+  // set the neccessary env variables expected by the action:
+  // https://help.github.com/en/github/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepswith
+  process.env['INPUT_JOBS'] = arg
+  process.env['INPUT_GITHUB-TOKEN'] = 'some-token'
+}

@@ -4,15 +4,25 @@ import * as core from '@actions/core'
 
 import {Context} from '@actions/github/lib/context'
 
-export const handlePullReq = async (
+import {cronLabelPr} from './prLabeler'
+import {cronLgtm} from './lgtm'
+
+export const handleCronJobs = async (
   context: Context = github.context
 ): Promise<void> => {
   const runConfig = core.getInput('jobs', {required: false}).split(' ')
 
   await Promise.all(
     runConfig.map(async command => {
-      core.debug(`${context}`)
       switch (command) {
+        case 'pr-labeler':
+          await cronLabelPr(1, context)
+          break
+
+        case 'lgtm':
+          await cronLgtm(1, context)
+          break
+
         case '':
           throw new Error(
             `please provide a list of space delimited commands / jobs to run. None found`

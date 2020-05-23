@@ -6,12 +6,18 @@ import {Context} from '@actions/github/lib/context'
 import {assign} from './assign'
 import {unassign} from './unassign'
 import {approve} from './approve'
+import {retitle} from './retitle'
+import {remove} from '../labels/remove'
+import {area} from '../labels/area'
+import {kind} from '../labels/kind'
+import {priority} from '../labels/priority'
+import {lgtm} from '../labels/lgtm'
 
 export const handleIssueComment = async (
   context: Context = github.context
 ): Promise<void> => {
   const commandConfig = core
-    .getInput('prow-commands', {required: true})
+    .getInput('prow-commands', {required: false})
     .split(' ')
   const commentBody: string = context.payload['comment']['body']
 
@@ -31,8 +37,37 @@ export const handleIssueComment = async (
             await approve(context)
             break
 
+          case '/retitle':
+            await retitle(context)
+            break
+
+          case '/remove':
+            await remove(context)
+            break
+
+          case '/area':
+            await area(context)
+            break
+
+          case '/kind':
+            await kind(context)
+            break
+
+          case '/priority':
+            await priority(context)
+            break
+
+          case '/lgtm':
+            await lgtm(context)
+            break
+
+          case '':
+            throw new Error(
+              `please provide a list of space delimited commands / jobs to run. None found`
+            )
+
           default:
-            core.error(
+            throw new Error(
               `could not execute ${command}. May not be supported - please refer to docs`
             )
         }

@@ -3,11 +3,14 @@ description: 'Prow inspired github CI/CD actions'
 author: 'John McBride'
 inputs:
   github-token:
-    description: "Github token"
+    description: "Token used by prow actions to accomplish jobs and tasks. May be a bot user access token or the limited scope Github token"
     required: true
   prow-commands:
     description: "Comment keywords/commands to look for. Space delimited. Expect commands on own line."
-    required: true
+    required: false
+  jobs:
+    description: "The jobs to automatically run on event. Space delimited. Expect commands on own line."
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'

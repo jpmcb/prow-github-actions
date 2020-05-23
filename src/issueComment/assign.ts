@@ -1,9 +1,14 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 
-import {getCommandArgs} from '../utils/command'
-
 import {Context} from '@actions/github/lib/context'
+
+import {getCommandArgs} from '../utils/command'
+import {
+  checkCollaborator,
+  checkIssueComments,
+  checkOrgMember
+} from '../utils/auth'
 
 export const assign = async (
   context: Context = github.context
@@ -16,105 +21,51 @@ export const assign = async (
   const commentBody: string = context.payload['comment']['body']
 
   if (issueNumber === undefined) {
-    // TODO - Bail, issue number not defined :(
-    //    want some error messaging here?
-    return
+    throw new Error(
+      `github context payload missing issue number: ${context.payload}`
+    )
   }
 
   const commentArgs: string[] = getCommandArgs('/assign', commentBody)
 
   // no arguments after command provided
   if (commentArgs.length === 0) {
-    await selfAssign(octokit, context, issueNumber, commenterId)
+    try {
+      await selfAssign(octokit, context, issueNumber, commenterId)
+    } catch (e) {
+      throw new Error(`could not self assign: ${e}`)
+    }
     return
   }
 
-  // Only users who:
+  // Only target users who:
   // - are members of the org
   // - are collaborators
   // - have previously commented on this issue
-  const authUsers = await getAuthUsers(
-    octokit,
-    context,
-    issueNumber,
-    commentArgs
-  )
+  let authUsers: string[] = []
+  try {
+    authUsers = await getAuthUsers(octokit, context, issueNumber, commentArgs)
+  } catch (e) {
+    throw new Error(`could not get authorized users: ${e}`)
+  }
 
   switch (authUsers.length) {
     case 0:
-      // TODO - bail, no auth users. Error message?
-      return
+      throw new Error(
+        `no authorized users found. Only users who are members of the org, are collaborators, or have previously commented on this issue may be assigned`
+      )
 
     default:
-      await octokit.issues.addAssignees({
-        ...context.repo,
-        issue_number: issueNumber,
-        assignees: authUsers
-      })
-      break
-  }
-}
-
-const checkOrgMember = async (
-  octokit: github.GitHub,
-  context: Context,
-  user: string
-): Promise<boolean> => {
-  try {
-    if (context.payload.repository === undefined) {
-      // TODO - repository is broken, error message?
-      return false
-    }
-
-    await octokit.orgs.checkMembership({
-      org: context.payload.repository.owner.login,
-      username: user
-    })
-
-    return true
-  } catch (e) {
-    return false
-  }
-}
-
-const checkCollaborator = async (
-  octokit: github.GitHub,
-  context: Context,
-  user: string
-): Promise<boolean> => {
-  try {
-    await octokit.repos.checkCollaborator({
-      ...context.repo,
-      username: user
-    })
-
-    return true
-  } catch (e) {
-    return false
-  }
-}
-
-const checkIssueComments = async (
-  octokit: github.GitHub,
-  context: Context,
-  issueNum: number,
-  user: string
-): Promise<boolean> => {
-  try {
-    const comments = await octokit.issues.listComments({
-      ...context.repo,
-      issue_number: issueNum
-    })
-
-    for (const e of comments.data) {
-      if (e.user.login === user) {
-        return true
+      try {
+        await octokit.issues.addAssignees({
+          ...context.repo,
+          issue_number: issueNumber,
+          assignees: authUsers
+        })
+      } catch (e) {
+        throw new Error(`could not add assignees: ${e}`)
       }
-    }
-
-    return false
-  } catch (e) {
-    return false
+      break
   }
 }
 
@@ -126,22 +77,26 @@ const getAuthUsers = async (
 ): Promise<string[]> => {
   const toReturn: string[] = []
 
-  await Promise.all(
-    args.map(async arg => {
-      const isOrgMember = await checkOrgMember(octokit, context, arg)
-      const isCollaborator = await checkCollaborator(octokit, context, arg)
-      const hasCommented = await checkIssueComments(
-        octokit,
-        context,
-        issueNum,
-        arg
-      )
+  try {
+    await Promise.all(
+      args.map(async arg => {
+        const isOrgMember = await checkOrgMember(octokit, context, arg)
+        const isCollaborator = await checkCollaborator(octokit, context, arg)
+        const hasCommented = await checkIssueComments(
+          octokit,
+          context,
+          issueNum,
+          arg
+        )
 
-      if (isOrgMember || isCollaborator || hasCommented) {
-        toReturn.push(arg)
-      }
-    })
-  )
+        if (isOrgMember || isCollaborator || hasCommented) {
+          toReturn.push(arg)
+        }
+      })
+    )
+  } catch (e) {
+    throw new Error(`could not get authorized user: ${e}`)
+  }
 
   return toReturn
 }

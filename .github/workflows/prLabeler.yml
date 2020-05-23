@@ -1,7 +1,7 @@
-name: "Test issue comments"
+name: "Label PRs from globs"
 on:
-  issue_comment:
-    types: [created]
+  schedule:
+  - cron: "0 0 * * *"
 
 jobs:
   execute:
@@ -12,5 +12,5 @@ jobs:
       - run: npm run build
       - uses: ./
         with:
-          prow-commands: '/assign /unassign /approve /retitle /area /kind /priority /remove /lgtm'
+          jobs: 'pr-labeler'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
