@@ -11329,6 +11329,79 @@ exports.HttpClient = HttpClient;
 
 /***/ }),
 
+/***/ 541:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+const labeling_1 = __webpack_require__(508);
+exports.lgtm = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commentBody = context.payload['comment']['body'];
+    if (issueNumber === undefined) {
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    let commentArgs = command_1.getCommandArgs('/lgtm', commentBody);
+    // check if canceling last review
+    if (commentArgs.length !== 0 && commentArgs[0]) {
+        try {
+            yield cancel(octokit, context, issueNumber);
+        }
+        catch (e) {
+            throw new Error(`could not remove latest review: ${e}`);
+        }
+        return;
+    }
+    labeling_1.labelIssue(octokit, context, issueNumber, ['lgtm']);
+});
+const cancel = (octokit, context, issueNumber) => __awaiter(void 0, void 0, void 0, function* () {
+    let currentLabels = [];
+    try {
+        currentLabels = yield labeling_1.getCurrentLabels(octokit, context, issueNumber);
+        core.debug(`remove: found labels for issue ${currentLabels}`);
+    }
+    catch (e) {
+        throw new Error(`could not get labels from issue: ${e}`);
+    }
+    if (currentLabels.includes('lgtm')) {
+        try {
+            yield labeling_1.removeLabels(octokit, context, issueNumber, ['lgtm']);
+        }
+        catch (e) {
+            throw new Error(`could not remove lgtm label: ${e}`);
+        }
+    }
+    else {
+        core.debug('could not find lgtm to remove');
+    }
+});
+
+
+/***/ }),
+
 /***/ 548:
 /***/ (function(module) {
 
@@ -14726,6 +14799,7 @@ const remove_1 = __webpack_require__(874);
 const area_1 = __webpack_require__(616);
 const kind_1 = __webpack_require__(667);
 const priority_1 = __webpack_require__(505);
+const lgtm_1 = __webpack_require__(541);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: false })
@@ -14757,6 +14831,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/priority':
                     yield priority_1.priority(context);
+                    break;
+                case '/lgtm':
+                    yield lgtm_1.lgtm(context);
                     break;
                 case '':
                     throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);

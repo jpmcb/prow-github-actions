@@ -11,6 +11,7 @@ import {remove} from '../labels/remove'
 import {area} from '../labels/area'
 import {kind} from '../labels/kind'
 import {priority} from '../labels/priority'
+import {lgtm} from '../labels/lgtm'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -54,6 +55,10 @@ export const handleIssueComment = async (
 
           case '/priority':
             await priority(context)
+            break
+          
+          case '/lgtm':
+            await lgtm(context)
             break
 
           case '':
