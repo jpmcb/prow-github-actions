@@ -115,3 +115,28 @@ export const addPrefix = (prefix: string, args: string[]): string[] => {
 
   return toReturn
 }
+
+export const cancelLabel = async (
+  octokit: github.GitHub,
+  context: Context,
+  issueNumber: number,
+  label: string
+): Promise<void> => {
+  let currentLabels: string[] = []
+  try {
+    currentLabels = await getCurrentLabels(octokit, context, issueNumber)
+    core.debug(`remove: found labels for issue ${currentLabels}`)
+  } catch (e) {
+    throw new Error(`could not get labels from issue: ${e}`)
+  }
+
+  if (currentLabels.includes(label)) {
+    try {
+      await removeLabels(octokit, context, issueNumber, [label])
+    } catch (e) {
+      throw new Error(`could not remove ${label} label: ${e}`)
+    }
+  } else {
+    core.debug(`could not find ${label} to remove`)
+  }
+}

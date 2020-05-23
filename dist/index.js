@@ -7867,6 +7867,58 @@ function Octokit(plugins, options) {
 
 /***/ }),
 
+/***/ 403:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+const labeling_1 = __webpack_require__(508);
+exports.hold = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commentBody = context.payload['comment']['body'];
+    if (issueNumber === undefined) {
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    const commentArgs = command_1.getCommandArgs('/hold', commentBody);
+    // check if canceling last review
+    if (commentArgs.length !== 0 && commentArgs[0]) {
+        try {
+            yield labeling_1.cancelLabel(octokit, context, issueNumber, 'hold');
+        }
+        catch (e) {
+            throw new Error(`could not remove the hold label: ${e}`);
+        }
+        return;
+    }
+    labeling_1.labelIssue(octokit, context, issueNumber, ['hold']);
+});
+
+
+/***/ }),
+
 /***/ 413:
 /***/ (function(module) {
 
@@ -10597,6 +10649,27 @@ exports.addPrefix = (prefix, args) => {
     }
     return toReturn;
 };
+exports.cancelLabel = (octokit, context, issueNumber, label) => __awaiter(void 0, void 0, void 0, function* () {
+    let currentLabels = [];
+    try {
+        currentLabels = yield exports.getCurrentLabels(octokit, context, issueNumber);
+        core.debug(`remove: found labels for issue ${currentLabels}`);
+    }
+    catch (e) {
+        throw new Error(`could not get labels from issue: ${e}`);
+    }
+    if (currentLabels.includes(label)) {
+        try {
+            yield exports.removeLabels(octokit, context, issueNumber, [label]);
+        }
+        catch (e) {
+            throw new Error(`could not remove ${label} label: ${e}`);
+        }
+    }
+    else {
+        core.debug(`could not find ${label} to remove`);
+    }
+});
 
 
 /***/ }),
@@ -11368,7 +11441,7 @@ exports.lgtm = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     // check if canceling last review
     if (commentArgs.length !== 0 && commentArgs[0]) {
         try {
-            yield cancel(octokit, context, issueNumber);
+            yield labeling_1.cancelLabel(octokit, context, issueNumber, 'lgtm');
         }
         catch (e) {
             throw new Error(`could not remove latest review: ${e}`);
@@ -11376,27 +11449,6 @@ exports.lgtm = (context = github.context) => __awaiter(void 0, void 0, void 0, f
         return;
     }
     labeling_1.labelIssue(octokit, context, issueNumber, ['lgtm']);
-});
-const cancel = (octokit, context, issueNumber) => __awaiter(void 0, void 0, void 0, function* () {
-    let currentLabels = [];
-    try {
-        currentLabels = yield labeling_1.getCurrentLabels(octokit, context, issueNumber);
-        core.debug(`remove: found labels for issue ${currentLabels}`);
-    }
-    catch (e) {
-        throw new Error(`could not get labels from issue: ${e}`);
-    }
-    if (currentLabels.includes('lgtm')) {
-        try {
-            yield labeling_1.removeLabels(octokit, context, issueNumber, ['lgtm']);
-        }
-        catch (e) {
-            throw new Error(`could not remove lgtm label: ${e}`);
-        }
-    }
-    else {
-        core.debug('could not find lgtm to remove');
-    }
 });
 
 
@@ -14800,6 +14852,7 @@ const area_1 = __webpack_require__(616);
 const kind_1 = __webpack_require__(667);
 const priority_1 = __webpack_require__(505);
 const lgtm_1 = __webpack_require__(541);
+const hold_1 = __webpack_require__(403);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: false })
@@ -14828,6 +14881,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/kind':
                     yield kind_1.kind(context);
+                    break;
+                case '/hold':
+                    yield hold_1.hold(context);
                     break;
                 case '/priority':
                     yield priority_1.priority(context);
@@ -31879,7 +31935,8 @@ const getPrs = (octokit, context = github.context, page) => __awaiter(void 0, vo
 });
 const tryMergePr = (pr, octokit, context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     // if pr has label 'lgtm', attempt to merge
-    if (pr.labels.map(e => e.name).includes('lgtm')) {
+    if (pr.labels.map(e => e.name).includes('lgtm') &&
+        !pr.labels.map(e => e.name).includes('hold')) {
         try {
             yield octokit.pulls.merge(Object.assign(Object.assign({}, context.repo), { pull_number: pr.number }));
         }

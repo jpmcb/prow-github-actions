@@ -6,7 +6,7 @@ import * as core from '@actions/core'
 import {getCommandArgs} from '../utils/command'
 import {labelIssue, removeLabels, getCurrentLabels, cancelLabel} from '../utils/labeling'
 
-export const lgtm = async (
+export const hold = async (
   context: Context = github.context
 ): Promise<void> => {
   const token = core.getInput('github-token', {required: true})
@@ -21,17 +21,17 @@ export const lgtm = async (
     )
   }
 
-  const commentArgs: string[] = getCommandArgs('/lgtm', commentBody)
+  const commentArgs: string[] = getCommandArgs('/hold', commentBody)
 
   // check if canceling last review
   if (commentArgs.length !== 0 && commentArgs[0]) {
     try {
-      await cancelLabel(octokit, context, issueNumber, 'lgtm')
+      await cancelLabel(octokit, context, issueNumber, 'hold')
     } catch (e) {
-      throw new Error(`could not remove latest review: ${e}`)
+      throw new Error(`could not remove the hold label: ${e}`)
     }
     return
   }
 
-  labelIssue(octokit, context, issueNumber, ['lgtm'])
+  labelIssue(octokit, context, issueNumber, ['hold'])
 }

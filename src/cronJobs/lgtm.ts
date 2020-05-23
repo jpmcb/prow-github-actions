@@ -72,7 +72,10 @@ const tryMergePr = async (
   context: Context = github.context
 ): Promise<void> => {
   // if pr has label 'lgtm', attempt to merge
-  if (pr.labels.map(e => e.name).includes('lgtm')) {
+  if (
+    pr.labels.map(e => e.name).includes('lgtm') &&
+    !pr.labels.map(e => e.name).includes('hold')
+  ) {
     try {
       await octokit.pulls.merge({
         ...context.repo,

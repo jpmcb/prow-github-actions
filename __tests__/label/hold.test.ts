@@ -11,14 +11,14 @@ nock.disableNetConnect()
 
 const api = 'https://api.github.com'
 
-describe('lgtm', () => {
+describe('hold', () => {
   beforeEach(() => {
     nock.cleanAll()
-    utils.setupActionsEnv('/lgtm')
+    utils.setupActionsEnv('/hold')
   })
 
-  it('labels the issue with the lgtm label', async () => {
-    issueCommentEvent.comment.body = '/lgtm'
+  it('labels the issue with the hold label', async () => {
+    issueCommentEvent.comment.body = '/hold'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
@@ -31,27 +31,27 @@ describe('lgtm', () => {
 
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
-      labels: ['lgtm']
+      labels: ['hold']
     })
     expect(nock.isDone()).toBe(true)
   })
 
-  it('removes the lgtm label with /lgtm cancel', async () => {
-    issueCommentEvent.comment.body = '/lgtm cancel'
+  it('removes the hold label with /hold cancel', async () => {
+    issueCommentEvent.comment.body = '/hold cancel'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     issuePayload.labels.push({
       "id": 1,
       "node_id": "123",
       "url": "https://api.github.com/repos/octocat/Hello-World/labels/lgtm",
-      "name": "lgtm",
+      "name": "hold",
       "description": "looks good to me",
       "color": "f29513",
       "default": true
     })
 
     nock(api)
-      .delete('/repos/Codertocat/Hello-World/issues/1/labels/lgtm')
+      .delete('/repos/Codertocat/Hello-World/issues/1/labels/hold')
       .reply(200)
     
     nock(api)
