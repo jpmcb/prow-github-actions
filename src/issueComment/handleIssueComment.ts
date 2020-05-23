@@ -8,6 +8,7 @@ import {unassign} from './unassign'
 import {approve} from './approve'
 import {cancel} from './cancel'
 import {retitle} from './retitle'
+import {remove} from '../labels/remove'
 import {area} from '../labels/area'
 import {kind} from '../labels/kind'
 import {priority} from '../labels/priority'
@@ -42,6 +43,10 @@ export const handleIssueComment = async (
 
           case '/retitle':
             await retitle(context)
+            break
+
+          case '/remove':
+            await remove(context)
             break
 
           case '/area':

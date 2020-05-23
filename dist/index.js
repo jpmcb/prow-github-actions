@@ -10533,6 +10533,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
 const yaml = __importStar(__webpack_require__(414));
 // This method has some eslint ignores related to
 // no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
@@ -10566,6 +10567,27 @@ exports.labelIssue = (octokit, context, issueNum, labels) => __awaiter(void 0, v
     }
     catch (e) {
         throw new Error(`could not add labels: ${e}`);
+    }
+});
+exports.getCurrentLabels = (octokit, context, issueNum) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const issue = yield octokit.issues.get(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum }));
+        return issue.data.labels.map(e => {
+            return e.name;
+        });
+    }
+    catch (e) {
+        throw new Error(`could not get issue: ${e}`);
+    }
+});
+exports.removeLabels = (octokit, context, issueNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
+    for (const label of labels) {
+        try {
+            yield octokit.issues.removeLabel(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, name: label }));
+        }
+        catch (e) {
+            core.debug(`could not remove labels: ${e}`);
+        }
     }
 });
 exports.addPrefix = (prefix, args) => {
@@ -14723,6 +14745,7 @@ const unassign_1 = __webpack_require__(567);
 const approve_1 = __webpack_require__(575);
 const cancel_1 = __webpack_require__(513);
 const retitle_1 = __webpack_require__(745);
+const remove_1 = __webpack_require__(874);
 const area_1 = __webpack_require__(616);
 const kind_1 = __webpack_require__(667);
 const priority_1 = __webpack_require__(505);
@@ -14748,6 +14771,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/retitle':
                     yield retitle_1.retitle(context);
+                    break;
+                case '/remove':
+                    yield remove_1.remove(context);
                     break;
                 case '/area':
                     yield area_1.area(context);
@@ -29634,6 +29660,63 @@ module.exports = function (str) {
 		bin + (arg ? ' ' + arg : '')
 	);
 };
+
+
+/***/ }),
+
+/***/ 874:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+const labeling_1 = __webpack_require__(508);
+exports.remove = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commentBody = context.payload['comment']['body'];
+    if (issueNumber === undefined) {
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    let toRemove = command_1.getCommandArgs('/remove', commentBody);
+    let currentLabels = [];
+    try {
+        currentLabels = yield labeling_1.getCurrentLabels(octokit, context, issueNumber);
+        core.debug(`remove: found labels for issue ${currentLabels}`);
+    }
+    catch (e) {
+        throw new Error(`could not get labels from issue: ${e}`);
+    }
+    toRemove = toRemove.filter(e => {
+        return currentLabels.includes(e);
+    });
+    // no arguments after command provided
+    if (toRemove.length === 0) {
+        throw new Error(`area: command args missing from body`);
+    }
+    labeling_1.removeLabels(octokit, context, issueNumber, toRemove);
+});
 
 
 /***/ }),

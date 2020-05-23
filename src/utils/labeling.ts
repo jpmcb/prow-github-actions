@@ -1,5 +1,6 @@
 import * as github from '@actions/github'
 import {Context} from '@actions/github/lib/context'
+import * as core from '@actions/core'
 
 import * as yaml from 'js-yaml'
 
@@ -64,6 +65,44 @@ export const labelIssue = async (
     })
   } catch (e) {
     throw new Error(`could not add labels: ${e}`)
+  }
+}
+
+export const getCurrentLabels = async (
+  octokit: github.GitHub,
+  context: Context,
+  issueNum: number
+): Promise<string[]> => {
+  try {
+    const issue = await octokit.issues.get({
+      ...context.repo,
+      issue_number: issueNum
+    })
+
+    return issue.data.labels.map(e => {
+      return e.name
+    })
+  } catch (e) {
+    throw new Error(`could not get issue: ${e}`)
+  }
+}
+
+export const removeLabels = async (
+  octokit: github.GitHub,
+  context: Context,
+  issueNum: number,
+  labels: string[]
+): Promise<void> => {
+  for (const label of labels) {
+    try {
+      await octokit.issues.removeLabel({
+        ...context.repo,
+        issue_number: issueNum,
+        name: label
+      })
+    } catch (e) {
+      core.debug(`could not remove labels: ${e}`)
+    }
   }
 }
 
