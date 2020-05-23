@@ -29715,7 +29715,7 @@ exports.remove = (context = github.context) => __awaiter(void 0, void 0, void 0,
     if (toRemove.length === 0) {
         throw new Error(`area: command args missing from body`);
     }
-    labeling_1.removeLabels(octokit, context, issueNumber, toRemove);
+    yield labeling_1.removeLabels(octokit, context, issueNumber, toRemove);
 });
 
 

@@ -20,7 +20,7 @@ describe('remove', () => {
     issueCommentEvent.comment.body = '/remove some-label'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
-    const scope = nock(api)
+    nock(api)
       .delete('/repos/Codertocat/Hello-World/issues/1/labels/some-label')
       .reply(200)
     
@@ -29,6 +29,26 @@ describe('remove', () => {
       .reply(200, issuePayload)
 
     await handleIssueComment(commentContext)
-    expect(scope.isDone()).toBe(true)
+    expect(nock.isDone()).toBe(true)
+  })
+
+  it('removes multiple the labels', async () => {
+    issueCommentEvent.comment.body = '/remove some-label some-other-label'
+    const commentContext = new utils.mockContext(issueCommentEvent)
+
+    nock(api)
+      .delete('/repos/Codertocat/Hello-World/issues/1/labels/some-label')
+      .reply(200)
+
+    nock(api)
+      .delete('/repos/Codertocat/Hello-World/issues/1/labels/some-other-label')
+      .reply(200)
+    
+    nock(api)
+      .get('/repos/Codertocat/Hello-World/issues/1')
+      .reply(200, issuePayload)
+
+    await handleIssueComment(commentContext)
+    expect(nock.isDone()).toBe(true)
   })
 })

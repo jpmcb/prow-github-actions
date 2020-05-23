@@ -40,5 +40,5 @@ export const remove = async (
     throw new Error(`area: command args missing from body`)
   }
 
-  removeLabels(octokit, context, issueNumber, toRemove)
+  await removeLabels(octokit, context, issueNumber, toRemove)
 }
