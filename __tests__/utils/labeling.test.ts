@@ -11,7 +11,7 @@ nock.disableNetConnect()
 
 const api = 'https://api.github.com'
 
-describe('area', () => {
+describe('utils labeling', () => {
   beforeEach(() => {
     nock.cleanAll()
     utils.setupActionsEnv('/area')

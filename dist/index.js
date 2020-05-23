@@ -10453,6 +10453,64 @@ exports.RequestError = RequestError;
 
 /***/ }),
 
+/***/ 505:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+const labeling_1 = __webpack_require__(508);
+exports.priority = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commentBody = context.payload['comment']['body'];
+    if (issueNumber === undefined) {
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    let commentArgs = command_1.getCommandArgs('/priority', commentBody);
+    let priorityLabels = [];
+    try {
+        priorityLabels = yield labeling_1.getArgumentLabels('priority', octokit, context);
+        core.debug(`priority: found labels ${priorityLabels}`);
+    }
+    catch (e) {
+        throw new Error(`could not get labels from yaml: ${e}`);
+    }
+    commentArgs = commentArgs.filter(e => {
+        return priorityLabels.includes(e);
+    });
+    commentArgs = labeling_1.addPrefix('priority', commentArgs);
+    // no arguments after command provided
+    if (commentArgs.length === 0) {
+        throw new Error(`area: command args missing from body`);
+    }
+    labeling_1.labelIssue(octokit, context, issueNumber, commentArgs);
+});
+
+
+/***/ }),
+
 /***/ 508:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -14667,6 +14725,7 @@ const cancel_1 = __webpack_require__(513);
 const retitle_1 = __webpack_require__(745);
 const area_1 = __webpack_require__(616);
 const kind_1 = __webpack_require__(667);
+const priority_1 = __webpack_require__(505);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: false })
@@ -14695,6 +14754,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/kind':
                     yield kind_1.kind(context);
+                    break;
+                case '/priority':
+                    yield priority_1.priority(context);
                     break;
                 case '':
                     throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);

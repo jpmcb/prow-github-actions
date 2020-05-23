@@ -10,6 +10,7 @@ import {cancel} from './cancel'
 import {retitle} from './retitle'
 import {area} from '../labels/area'
 import {kind} from '../labels/kind'
+import {priority} from '../labels/priority'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -49,6 +50,10 @@ export const handleIssueComment = async (
 
           case '/kind':
             await kind(context)
+            break
+
+          case '/priority':
+            await priority(context)
             break
 
           case '':

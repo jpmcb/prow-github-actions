@@ -6,6 +6,10 @@ kind:
   - 'failing-test'
   - 'cleanup'
 
+priority:
+  - 'low'
+  - 'high'
+
 tests:
   - '__tests__/*'
 
