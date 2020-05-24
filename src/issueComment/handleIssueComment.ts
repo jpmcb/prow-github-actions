@@ -17,6 +17,7 @@ import {close} from './close'
 import {reopen} from './reopen'
 import {lock} from './lock'
 import {cc} from './cc'
+import {uncc} from './uncc'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -36,6 +37,10 @@ export const handleIssueComment = async (
 
           case '/cc':
             await cc(context)
+            break
+
+          case '/uncc':
+            await uncc(context)
             break
 
           case '/unassign':

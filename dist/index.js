@@ -13100,6 +13100,92 @@ function regExpEscape (s) {
 
 /***/ }),
 
+/***/ 597:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+const auth_1 = __webpack_require__(683);
+exports.uncc = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const pullNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commenterId = context.payload['comment']['user']['login'];
+    const commentBody = context.payload['comment']['body'];
+    if (pullNumber === undefined) {
+        throw new Error(`github context payload missing pull number: ${context.payload}`);
+    }
+    const commentArgs = command_1.getCommandArgs('/uncc', commentBody);
+    // no arguments after command provided
+    if (commentArgs.length === 0) {
+        try {
+            yield removeSelfReviewReq(octokit, context, pullNumber, commenterId);
+        }
+        catch (e) {
+            throw new Error(`could not self uncc: ${e}`);
+        }
+        return;
+    }
+    // Only target users who:
+    // - are members of the org
+    // - are collaborators
+    // - have previously commented on this issue
+    let authUser = false;
+    try {
+        authUser = yield getAuthUser(octokit, context, pullNumber, commenterId);
+    }
+    catch (e) {
+        throw new Error(`could not get authorized users: ${e}`);
+    }
+    if (authUser) {
+        yield octokit.pulls.deleteReviewRequest(Object.assign(Object.assign({}, context.repo), { pull_number: pullNumber, reviewers: commentArgs }));
+    }
+});
+const getAuthUser = (octokit, context, pullnum, user) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const isOrgMember = yield auth_1.checkOrgMember(octokit, context, user);
+        const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
+        const hasCommented = yield auth_1.checkIssueComments(octokit, context, pullnum, user);
+        if (isOrgMember || isCollaborator || hasCommented) {
+            return true;
+        }
+        return false;
+    }
+    catch (e) {
+        throw new Error(`could not get authorized user: ${e}`);
+    }
+});
+const removeSelfReviewReq = (octokit, context, pullNum, user) => __awaiter(void 0, void 0, void 0, function* () {
+    const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
+    if (isCollaborator) {
+        yield octokit.pulls.deleteReviewRequest(Object.assign(Object.assign({}, context.repo), { pull_number: pullNum, reviewers: [user] }));
+    }
+});
+
+
+/***/ }),
+
 /***/ 605:
 /***/ (function(module) {
 
@@ -15064,6 +15150,7 @@ const close_1 = __webpack_require__(620);
 const reopen_1 = __webpack_require__(176);
 const lock_1 = __webpack_require__(501);
 const cc_1 = __webpack_require__(788);
+const uncc_1 = __webpack_require__(597);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: false })
@@ -15077,6 +15164,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/cc':
                     yield cc_1.cc(context);
+                    break;
+                case '/uncc':
+                    yield uncc_1.uncc(context);
                     break;
                 case '/unassign':
                     yield unassign_1.unassign(context);
