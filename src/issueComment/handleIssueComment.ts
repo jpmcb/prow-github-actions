@@ -15,6 +15,7 @@ import {lgtm} from '../labels/lgtm'
 import {hold} from '../labels/hold'
 import {close} from './close'
 import {reopen} from './reopen'
+import {lock} from './lock'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -70,6 +71,10 @@ export const handleIssueComment = async (
 
           case '/close':
             await close(context)
+            break
+
+          case '/lock':
+            await lock(context)
             break
 
           case '/reopen':
