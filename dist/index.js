@@ -4090,6 +4090,62 @@ exports.sendLabels = (octokit, context, prNum, labels) => __awaiter(void 0, void
 
 /***/ }),
 
+/***/ 176:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const auth_1 = __webpack_require__(683);
+exports.reopen = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commenterId = context.payload['comment']['user']['login'];
+    if (issueNumber === undefined) {
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    // Only users who:
+    // - are collaborators
+    let isAuthUser = false;
+    try {
+        isAuthUser = yield auth_1.checkCollaborator(octokit, context, commenterId);
+    }
+    catch (e) {
+        throw new Error(`could not check commentor auth: ${e}`);
+    }
+    if (isAuthUser) {
+        try {
+            yield octokit.issues.update(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, state: 'open' }));
+        }
+        catch (e) {
+            throw new Error(`could not open issue: ${e}`);
+        }
+    }
+});
+
+
+/***/ }),
+
 /***/ 181:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -13034,6 +13090,62 @@ exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, f
 
 /***/ }),
 
+/***/ 620:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const auth_1 = __webpack_require__(683);
+exports.close = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commenterId = context.payload['comment']['user']['login'];
+    if (issueNumber === undefined) {
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    // Only users who:
+    // - are collaborators
+    let isAuthUser = false;
+    try {
+        isAuthUser = yield auth_1.checkCollaborator(octokit, context, commenterId);
+    }
+    catch (e) {
+        throw new Error(`could not check commentor auth: ${e}`);
+    }
+    if (isAuthUser) {
+        try {
+            yield octokit.issues.update(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, state: 'closed' }));
+        }
+        catch (e) {
+            throw new Error(`could not close issue: ${e}`);
+        }
+    }
+});
+
+
+/***/ }),
+
 /***/ 621:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -14625,7 +14737,7 @@ exports.retitle = (context = github.context) => __awaiter(void 0, void 0, void 0
     // - are collaborators
     let isAuthUser = false;
     try {
-        isAuthUser = yield checkCommenterAuth(octokit, context, commenterId);
+        isAuthUser = yield auth_1.checkCollaborator(octokit, context, commenterId);
     }
     catch (e) {
         throw new Error(`could not check Commentor auth: ${e}`);
@@ -14638,19 +14750,6 @@ exports.retitle = (context = github.context) => __awaiter(void 0, void 0, void 0
             throw new Error(`could not update issue: ${e}`);
         }
     }
-});
-const checkCommenterAuth = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
-    let isCollaborator = false;
-    try {
-        isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
-    }
-    catch (e) {
-        throw new Error(`error checking collaborator: ${e}`);
-    }
-    if (isCollaborator) {
-        return true;
-    }
-    return false;
 });
 
 
@@ -14853,6 +14952,8 @@ const kind_1 = __webpack_require__(667);
 const priority_1 = __webpack_require__(505);
 const lgtm_1 = __webpack_require__(541);
 const hold_1 = __webpack_require__(403);
+const close_1 = __webpack_require__(620);
+const reopen_1 = __webpack_require__(176);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: false })
@@ -14890,6 +14991,12 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/lgtm':
                     yield lgtm_1.lgtm(context);
+                    break;
+                case '/close':
+                    yield close_1.close(context);
+                    break;
+                case '/reopen':
+                    yield reopen_1.reopen(context);
                     break;
                 case '':
                     throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);

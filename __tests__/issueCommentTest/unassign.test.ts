@@ -150,7 +150,7 @@ describe('/unassign', () => {
   })
 
   describe('error', () => {
-    it('reply with error message if user not assigned', () => {
+    xit('reply with error message if user not assigned', () => {
       // TODO
     })
   })

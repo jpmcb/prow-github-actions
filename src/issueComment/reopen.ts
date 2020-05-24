@@ -3,10 +3,9 @@ import * as core from '@actions/core'
 
 import {Context} from '@actions/github/lib/context'
 
-import {getCommandArgs} from '../utils/command'
 import {checkCollaborator} from '../utils/auth'
 
-export const retitle = async (
+export const reopen = async (
   context: Context = github.context
 ): Promise<void> => {
   const token = core.getInput('github-token', {required: true})
@@ -14,19 +13,11 @@ export const retitle = async (
 
   const issueNumber: number | undefined = context.payload.issue?.number
   const commenterId: string = context.payload['comment']['user']['login']
-  const commentBody: string = context.payload['comment']['body']
 
   if (issueNumber === undefined) {
     throw new Error(
       `github context payload missing issue number: ${context.payload}`
     )
-  }
-
-  const commentArgs: string[] = getCommandArgs('/retitle', commentBody)
-
-  // no arguments after command provided. Can't retitle!
-  if (commentArgs.length === 0) {
-    return
   }
 
   // Only users who:
@@ -35,7 +26,7 @@ export const retitle = async (
   try {
     isAuthUser = await checkCollaborator(octokit, context, commenterId)
   } catch (e) {
-    throw new Error(`could not check Commentor auth: ${e}`)
+    throw new Error(`could not check commentor auth: ${e}`)
   }
 
   if (isAuthUser) {
@@ -43,10 +34,10 @@ export const retitle = async (
       await octokit.issues.update({
         ...context.repo,
         issue_number: issueNumber,
-        title: commentArgs.join(' ')
+        state: 'open'
       })
     } catch (e) {
-      throw new Error(`could not update issue: ${e}`)
+      throw new Error(`could not open issue: ${e}`)
     }
   }
 }

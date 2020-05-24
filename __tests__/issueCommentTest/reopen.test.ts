@@ -6,13 +6,13 @@ import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 
-describe('/retitle', () => {
+describe('/reopen', () => {
   beforeEach(() => {
-    utils.setupActionsEnv('/retitle')
+    utils.setupActionsEnv('/reopen')
   })
 
   it('handles renaming title when user is collaborator', async () => {
-    issueCommentEvent.comment.body = '/retitle much better title'
+    issueCommentEvent.comment.body = '/reopen much better title'
 
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
@@ -21,7 +21,7 @@ describe('/retitle', () => {
     nock(utils.api)
       .patch('/repos/Codertocat/Hello-World/issues/1', body => {
         expect(body).toMatchObject({
-          title: "much better title"
+          state: "open"
         })
         return true
       })
@@ -35,7 +35,7 @@ describe('/retitle', () => {
   })
 
   describe('error', () => {
-    xit('reply with error message cannot retitle', () => {
+    xit('reply with error message cannot open', () => {
       // TODO
     })
   })
