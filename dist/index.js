@@ -15063,6 +15063,7 @@ const hold_1 = __webpack_require__(403);
 const close_1 = __webpack_require__(620);
 const reopen_1 = __webpack_require__(176);
 const lock_1 = __webpack_require__(501);
+const cc_1 = __webpack_require__(788);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: false })
@@ -15073,6 +15074,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
             switch (command) {
                 case '/assign':
                     yield assign_1.assign(context);
+                    break;
+                case '/cc':
+                    yield cc_1.cc(context);
                     break;
                 case '/unassign':
                     yield unassign_1.unassign(context);
@@ -15233,6 +15237,104 @@ exports.handleCronJobs = (context = github.context) => __awaiter(void 0, void 0,
         }
     })));
     return;
+});
+
+
+/***/ }),
+
+/***/ 788:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+const auth_1 = __webpack_require__(683);
+exports.cc = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const pullNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commenterId = context.payload['comment']['user']['login'];
+    const commentBody = context.payload['comment']['body'];
+    if (pullNumber === undefined) {
+        throw new Error(`github context payload missing pull number: ${context.payload}`);
+    }
+    const commentArgs = command_1.getCommandArgs('/cc', commentBody);
+    // no arguments after command provided
+    if (commentArgs.length === 0) {
+        try {
+            yield selfReview(octokit, context, pullNumber, commenterId);
+        }
+        catch (e) {
+            throw new Error(`could not self cc: ${e}`);
+        }
+        return;
+    }
+    // Only target users who:
+    // - are members of the org
+    // - are collaborators
+    // - have previously commented on this issue
+    let authUsers = [];
+    try {
+        authUsers = yield getAuthUsers(octokit, context, pullNumber, commentArgs);
+    }
+    catch (e) {
+        throw new Error(`could not get authorized users: ${e}`);
+    }
+    switch (authUsers.length) {
+        case 0:
+            throw new Error(`no authorized users found. Only users who are members of the org, are collaborators, or have previously commented on this issue may be cc'd`);
+        default:
+            try {
+                yield octokit.pulls.createReviewRequest(Object.assign(Object.assign({}, context.repo), { pull_number: pullNumber, reviewers: authUsers }));
+            }
+            catch (e) {
+                throw new Error(`could not request reviewers: ${e}`);
+            }
+            break;
+    }
+});
+const getAuthUsers = (octokit, context, pullnum, args) => __awaiter(void 0, void 0, void 0, function* () {
+    const toReturn = [];
+    try {
+        yield Promise.all(args.map((arg) => __awaiter(void 0, void 0, void 0, function* () {
+            const isOrgMember = yield auth_1.checkOrgMember(octokit, context, arg);
+            const isCollaborator = yield auth_1.checkCollaborator(octokit, context, arg);
+            const hasCommented = yield auth_1.checkIssueComments(octokit, context, pullnum, arg);
+            if (isOrgMember || isCollaborator || hasCommented) {
+                toReturn.push(arg);
+            }
+        })));
+    }
+    catch (e) {
+        throw new Error(`could not get authorized user: ${e}`);
+    }
+    return toReturn;
+});
+const selfReview = (octokit, context, pullNum, user) => __awaiter(void 0, void 0, void 0, function* () {
+    const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
+    if (isCollaborator) {
+        yield octokit.pulls.createReviewRequest(Object.assign(Object.assign({}, context.repo), { pull_number: pullNum, reviewers: [user] }));
+    }
 });
 
 

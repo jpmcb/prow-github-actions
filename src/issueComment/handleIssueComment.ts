@@ -16,6 +16,7 @@ import {hold} from '../labels/hold'
 import {close} from './close'
 import {reopen} from './reopen'
 import {lock} from './lock'
+import {cc} from './cc'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -31,6 +32,10 @@ export const handleIssueComment = async (
         switch (command) {
           case '/assign':
             await assign(context)
+            break
+
+          case '/cc':
+            await cc(context)
             break
 
           case '/unassign':
