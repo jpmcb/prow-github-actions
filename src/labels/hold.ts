@@ -4,7 +4,7 @@ import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
 import {getCommandArgs} from '../utils/command'
-import {labelIssue, removeLabels, getCurrentLabels, cancelLabel} from '../utils/labeling'
+import {labelIssue, cancelLabel} from '../utils/labeling'
 
 export const hold = async (
   context: Context = github.context

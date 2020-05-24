@@ -53,7 +53,7 @@ export const handleIssueComment = async (
           case '/kind':
             await kind(context)
             break
-          
+
           case '/hold':
             await hold(context)
             break
