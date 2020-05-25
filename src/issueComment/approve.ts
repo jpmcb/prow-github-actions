@@ -13,7 +13,6 @@ export const approve = async (
 
   const issueNumber: number | undefined = context.payload.issue?.number
   const commentBody: string = context.payload['comment']['body']
-  const commenterId: string = context.payload['comment']['user']['login']
 
   if (issueNumber === undefined) {
     throw new Error(
@@ -26,7 +25,7 @@ export const approve = async (
   // check if canceling last review
   if (commentArgs.length !== 0 && commentArgs[0]) {
     try {
-      await cancel(octokit, context, issueNumber, commenterId)
+      await cancel(octokit, context, issueNumber)
     } catch (e) {
       throw new Error(`could not remove latest review: ${e}`)
     }
@@ -48,8 +47,7 @@ export const approve = async (
 const cancel = async (
   octokit: github.GitHub,
   context: Context,
-  issueNumber: number,
-  commenterId: string
+  issueNumber: number
 ): Promise<void> => {
   let reviews: Octokit.Response<Octokit.PullsListReviewsResponse>
   try {
@@ -63,7 +61,7 @@ const cancel = async (
 
   let latestReview = undefined
   for (const e of reviews.data) {
-    if (e.user.login === commenterId) {
+    if (e.user.login === 'github-actions') {
       latestReview = e
     }
   }

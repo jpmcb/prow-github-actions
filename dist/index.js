@@ -12181,7 +12181,6 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commentBody = context.payload['comment']['body'];
-    const commenterId = context.payload['comment']['user']['login'];
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
@@ -12189,7 +12188,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     // check if canceling last review
     if (commentArgs.length !== 0 && commentArgs[0]) {
         try {
-            yield cancel(octokit, context, issueNumber, commenterId);
+            yield cancel(octokit, context, issueNumber);
         }
         catch (e) {
             throw new Error(`could not remove latest review: ${e}`);
@@ -12203,7 +12202,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
         throw new Error(`could not create review: ${e}`);
     }
 });
-const cancel = (octokit, context, issueNumber, commenterId) => __awaiter(void 0, void 0, void 0, function* () {
+const cancel = (octokit, context, issueNumber) => __awaiter(void 0, void 0, void 0, function* () {
     let reviews;
     try {
         reviews = yield octokit.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber }));
@@ -12213,7 +12212,7 @@ const cancel = (octokit, context, issueNumber, commenterId) => __awaiter(void 0,
     }
     let latestReview = undefined;
     for (const e of reviews.data) {
-        if (e.user.login === commenterId) {
+        if (e.user.login === 'github-actions') {
             latestReview = e;
         }
     }
