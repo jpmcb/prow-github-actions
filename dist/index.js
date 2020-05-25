@@ -10971,6 +10971,16 @@ module.exports = factory();
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getLineArgs = (command, body) => {
+    let toReturn = '';
+    const lineArray = body.split('\n');
+    for (const iterator of lineArray) {
+        if (iterator.includes(command)) {
+            toReturn = iterator.replace(`${command} `, '');
+        }
+    }
+    return toReturn;
+};
 exports.getCommandArgs = (command, body) => {
     const toReturn = [];
     const lineArray = body.split('\n');
@@ -11613,6 +11623,55 @@ exports.lgtm = (context = github.context) => __awaiter(void 0, void 0, void 0, f
         return;
     }
     labeling_1.labelIssue(octokit, context, issueNumber, ['lgtm']);
+});
+
+
+/***/ }),
+
+/***/ 547:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const command_1 = __webpack_require__(535);
+exports.rerun = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
+    const commentBody = context.payload['comment']['body'];
+    if (issueNumber === undefined) {
+        throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    const actionToRun = command_1.getLineArgs('/rerun', commentBody);
+    if (actionToRun === '') {
+        throw new Error(`please provide an action to rerun`);
+    }
+    const actions = yield octokit.actions.listRepoWorkflows(Object.assign({}, context.repo));
+    for (const workflow of actions.data.workflows) {
+        if (workflow.name === actionToRun) {
+            yield octokit.actions.reRunWorkflow(Object.assign(Object.assign({}, context.repo), { run_id: workflow.id }));
+        }
+    }
 });
 
 
@@ -15151,6 +15210,7 @@ const reopen_1 = __webpack_require__(176);
 const lock_1 = __webpack_require__(501);
 const cc_1 = __webpack_require__(788);
 const uncc_1 = __webpack_require__(597);
+const rerun_1 = __webpack_require__(547);
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: false })
@@ -15203,6 +15263,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     break;
                 case '/reopen':
                     yield reopen_1.reopen(context);
+                    break;
+                case '/rerun':
+                    yield rerun_1.rerun(context);
                     break;
                 case '':
                     throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);

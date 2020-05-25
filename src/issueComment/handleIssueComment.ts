@@ -18,6 +18,7 @@ import {reopen} from './reopen'
 import {lock} from './lock'
 import {cc} from './cc'
 import {uncc} from './uncc'
+import {rerun} from './rerun'
 
 export const handleIssueComment = async (
   context: Context = github.context
@@ -89,6 +90,10 @@ export const handleIssueComment = async (
 
           case '/reopen':
             await reopen(context)
+            break
+
+          case '/rerun':
+            await rerun(context)
             break
 
           case '':

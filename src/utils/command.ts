@@ -1,3 +1,16 @@
+export const getLineArgs = (command: string, body: string): string => {
+  let toReturn = ''
+  const lineArray = body.split('\n')
+
+  for (const iterator of lineArray) {
+    if (iterator.includes(command)) {
+      toReturn = iterator.replace(`${command} `, '')
+    }
+  }
+
+  return toReturn
+}
+
 export const getCommandArgs = (command: string, body: string): string[] => {
   const toReturn = []
   const lineArray = body.split('\n')
