@@ -1,4 +1,6 @@
 import nock from 'nock'
+import * as core from '@actions/core'
+
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 import * as utils from '../testUtils'
@@ -45,6 +47,8 @@ describe('utils labeling', () => {
   })
 
   it('can error correctly on malformed label.yaml', async () => {
+    const spy = jest.spyOn(core, 'setFailed');
+
     issueCommentEvent.comment.body = '/area important'
     const commentContext = new utils.mockContext(issueCommentEvent)
     
@@ -56,6 +60,8 @@ describe('utils labeling', () => {
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(404)
 
-    await expect(handleIssueComment(commentContext)).rejects.toThrow()
+    await handleIssueComment(commentContext)
+
+    expect(spy).toHaveBeenCalled();
   })
 })

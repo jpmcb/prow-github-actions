@@ -115,11 +115,15 @@ export const handleIssueComment = async (
         }
       }
     })
-  ).then(results => {
-    for (const result of results) {
-      if (result instanceof Error) {
-        throw new Error(`error handling issue comment: ${result}`)
+  )
+    .then(results => {
+      for (const result of results) {
+        if (result instanceof Error) {
+          throw new Error(`error handling issue comment: ${result}`)
+        }
       }
-    }
-  })
+    })
+    .catch(e => {
+      core.setFailed(`${e}`)
+    })
 }

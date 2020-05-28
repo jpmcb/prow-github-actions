@@ -12214,7 +12214,7 @@ const cancel = (octokit, context, issueNumber) => __awaiter(void 0, void 0, void
     }
     let latestReview = undefined;
     for (const e of reviews.data) {
-        core.debug(`checking review: ${e}`);
+        core.debug(`checking review: ${e.user.login}`);
         if (e.user.login === 'github-actions') {
             latestReview = e;
         }
@@ -15330,12 +15330,16 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     throw new Error(`could not execute ${command}. May not be supported - please refer to docs`);
             }
         }
-    }))).then(results => {
+    })))
+        .then(results => {
         for (const result of results) {
             if (result instanceof Error) {
                 throw new Error(`error handling issue comment: ${result}`);
             }
         }
+    })
+        .catch(e => {
+        core.setFailed(`${e}`);
     });
 });
 
