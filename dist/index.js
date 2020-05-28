@@ -12196,6 +12196,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
         return;
     }
     try {
+        core.debug(`creating a review`);
         yield octokit.pulls.createReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, event: 'APPROVE', comments: [] }));
     }
     catch (e) {
@@ -12203,6 +12204,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     }
 });
 const cancel = (octokit, context, issueNumber) => __awaiter(void 0, void 0, void 0, function* () {
+    core.debug(`canceling latest review`);
     let reviews;
     try {
         reviews = yield octokit.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber }));
@@ -12212,6 +12214,7 @@ const cancel = (octokit, context, issueNumber) => __awaiter(void 0, void 0, void
     }
     let latestReview = undefined;
     for (const e of reviews.data) {
+        core.debug(`checking review: ${e}`);
         if (e.user.login === 'github-actions') {
             latestReview = e;
         }
@@ -15281,8 +15284,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     yield unassign_1.unassign(context);
                     break;
                 case '/approve':
-                    yield approve_1.approve(context);
-                    break;
+                    return yield approve_1.approve(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/retitle':
                     yield retitle_1.retitle(context);
                     break;
@@ -15296,8 +15300,9 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     yield kind_1.kind(context);
                     break;
                 case '/hold':
-                    yield hold_1.hold(context);
-                    break;
+                    return yield hold_1.hold(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/priority':
                     yield priority_1.priority(context);
                     break;
@@ -15325,7 +15330,13 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     throw new Error(`could not execute ${command}. May not be supported - please refer to docs`);
             }
         }
-    })));
+    }))).then(results => {
+        for (const result of results) {
+            if (result instanceof Error) {
+                throw new Error(`error handling issue comment: ${result}`);
+            }
+        }
+    });
 });
 
 
