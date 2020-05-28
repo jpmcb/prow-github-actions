@@ -13,6 +13,7 @@ export const approve = async (
 
   const issueNumber: number | undefined = context.payload.issue?.number
   const commentBody: string = context.payload['comment']['body']
+  const commenterLogin: string = context.payload['comment']['user']['login']
 
   if (issueNumber === undefined) {
     throw new Error(
@@ -25,7 +26,7 @@ export const approve = async (
   // check if canceling last review
   if (commentArgs.length !== 0 && commentArgs[0]) {
     try {
-      await cancel(octokit, context, issueNumber)
+      await cancel(octokit, context, issueNumber, commenterLogin)
     } catch (e) {
       throw new Error(`could not remove latest review: ${e}`)
     }
@@ -48,7 +49,8 @@ export const approve = async (
 const cancel = async (
   octokit: github.GitHub,
   context: Context,
-  issueNumber: number
+  issueNumber: number,
+  commenterLogin: string
 ): Promise<void> => {
   core.debug(`canceling latest review`)
 
@@ -79,7 +81,7 @@ const cancel = async (
       ...context.repo,
       pull_number: issueNumber,
       review_id: latestReview.id,
-      message: 'Canceled by prow-github-actions bot'
+      message: `Canceled through prow-github-actions by @${commenterLogin}`
     })
   } catch (e) {
     throw new Error(`could not dismiss review: ${e}`)

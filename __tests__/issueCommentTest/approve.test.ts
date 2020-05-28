@@ -44,7 +44,7 @@ describe('/approve', () => {
         '/repos/Codertocat/Hello-World/pulls/1/reviews/80/dismissals',
         body => {
           expect(body).toMatchObject({
-            message: 'Canceled by prow-github-actions bot'
+            message: `Canceled through prow-github-actions by @some-user`
           })
           return true
         }

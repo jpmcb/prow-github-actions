@@ -12181,6 +12181,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commentBody = context.payload['comment']['body'];
+    const commenterLogin = context.payload['comment']['user']['login'];
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
@@ -12188,7 +12189,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     // check if canceling last review
     if (commentArgs.length !== 0 && commentArgs[0]) {
         try {
-            yield cancel(octokit, context, issueNumber);
+            yield cancel(octokit, context, issueNumber, commenterLogin);
         }
         catch (e) {
             throw new Error(`could not remove latest review: ${e}`);
@@ -12203,7 +12204,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
         throw new Error(`could not create review: ${e}`);
     }
 });
-const cancel = (octokit, context, issueNumber) => __awaiter(void 0, void 0, void 0, function* () {
+const cancel = (octokit, context, issueNumber, commenterLogin) => __awaiter(void 0, void 0, void 0, function* () {
     core.debug(`canceling latest review`);
     let reviews;
     try {
@@ -12223,7 +12224,7 @@ const cancel = (octokit, context, issueNumber) => __awaiter(void 0, void 0, void
         throw new Error('no latest review found to cancel');
     }
     try {
-        yield octokit.pulls.dismissReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, review_id: latestReview.id, message: 'Canceled by prow-github-actions bot' }));
+        yield octokit.pulls.dismissReview(Object.assign(Object.assign({}, context.repo), { pull_number: issueNumber, review_id: latestReview.id, message: `Canceled through prow-github-actions by @${commenterLogin}` }));
     }
     catch (e) {
         throw new Error(`could not dismiss review: ${e}`);
