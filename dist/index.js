@@ -12215,7 +12215,7 @@ const cancel = (octokit, context, issueNumber) => __awaiter(void 0, void 0, void
     let latestReview = undefined;
     for (const e of reviews.data) {
         core.debug(`checking review: ${e.user.login}`);
-        if (e.user.login === 'github-actions') {
+        if (e.user.login === 'github-actions[bot]') {
             latestReview = e;
         }
     }

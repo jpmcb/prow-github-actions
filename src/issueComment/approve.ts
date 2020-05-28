@@ -65,7 +65,7 @@ const cancel = async (
   let latestReview = undefined
   for (const e of reviews.data) {
     core.debug(`checking review: ${e.user.login}`)
-    if (e.user.login === 'github-actions') {
+    if (e.user.login === 'github-actions[bot]') {
       latestReview = e
     }
   }
