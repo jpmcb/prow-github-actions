@@ -33,6 +33,7 @@ export const approve = async (
   }
 
   try {
+    core.debug(`creating a review`)
     await octokit.pulls.createReview({
       ...context.repo,
       pull_number: issueNumber,
@@ -49,6 +50,8 @@ const cancel = async (
   context: Context,
   issueNumber: number
 ): Promise<void> => {
+  core.debug(`canceling latest review`)
+
   let reviews: Octokit.Response<Octokit.PullsListReviewsResponse>
   try {
     reviews = await octokit.pulls.listReviews({
@@ -61,6 +64,7 @@ const cancel = async (
 
   let latestReview = undefined
   for (const e of reviews.data) {
+    core.debug(`checking review: ${e}`)
     if (e.user.login === 'github-actions') {
       latestReview = e
     }

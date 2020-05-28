@@ -50,8 +50,7 @@ export const handleIssueComment = async (
             break
 
           case '/approve':
-            await approve(context)
-            break
+            return await approve(context).catch((e) => {return e})
 
           case '/retitle':
             await retitle(context)
@@ -70,8 +69,7 @@ export const handleIssueComment = async (
             break
 
           case '/hold':
-            await hold(context)
-            break
+            return await hold(context).catch((e) => {return e})
 
           case '/priority':
             await priority(context)
@@ -113,5 +111,11 @@ export const handleIssueComment = async (
         }
       }
     })
-  )
+  ).then((results) => {
+    for (const result of results) {
+      if (result instanceof Error) {
+        throw new Error(`error handling issue comment: ${result}`)
+      }
+    }
+  })
 }
