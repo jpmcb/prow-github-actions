@@ -4879,7 +4879,7 @@ exports.milestone = (context = github.context) => __awaiter(void 0, void 0, void
     const ms = yield octokit.issues.listMilestonesForRepo(Object.assign({}, context.repo));
     for (const m of ms.data) {
         if (m.title === milestoneToAdd) {
-            yield octokit.issues.update(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, milestone: m.id }));
+            yield octokit.issues.update(Object.assign(Object.assign({}, context.repo), { issue_number: issueNumber, milestone: m.number }));
         }
     }
 });

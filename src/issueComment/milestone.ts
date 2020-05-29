@@ -36,7 +36,7 @@ export const milestone = async (
       await octokit.issues.update({
         ...context.repo,
         issue_number: issueNumber,
-        milestone: m.id
+        milestone: m.number
       })
     }
   }
