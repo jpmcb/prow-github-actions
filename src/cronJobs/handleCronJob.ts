@@ -16,25 +16,37 @@ export const handleCronJobs = async (
     runConfig.map(async command => {
       switch (command) {
         case 'pr-labeler':
-          await cronLabelPr(1, context)
-          break
+          return await cronLabelPr(1, context).catch(async e => {
+            return e
+          })
 
         case 'lgtm':
-          await cronLgtm(1, context)
-          break
+          return await cronLgtm(1, context).catch(async e => {
+            return e
+          })
 
         case '':
-          throw new Error(
+          return new Error(
             `please provide a list of space delimited commands / jobs to run. None found`
           )
 
         default:
-          throw new Error(
+          return new Error(
             `could not execute ${command}. May not be supported - please refer to docs`
           )
       }
     })
   )
+    .then(results => {
+      for (const result of results) {
+        if (result instanceof Error) {
+          throw new Error(`error handling issue comment: ${result}`)
+        }
+      }
+    })
+    .catch(e => {
+      core.setFailed(`${e}`)
+    })
 
   return
 }

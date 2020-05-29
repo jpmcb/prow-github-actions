@@ -34,20 +34,24 @@ export const handleIssueComment = async (
       if (commentBody.includes(command)) {
         switch (command) {
           case '/assign':
-            await assign(context)
-            break
+            return await assign(context).catch(async e => {
+              return e
+            })
 
           case '/cc':
-            await cc(context)
-            break
+            return await cc(context).catch(async e => {
+              return e
+            })
 
           case '/uncc':
-            await uncc(context)
-            break
+            return await uncc(context).catch(async e => {
+              return e
+            })
 
           case '/unassign':
-            await unassign(context)
-            break
+            return await unassign(context).catch(async e => {
+              return e
+            })
 
           case '/approve':
             return await approve(context).catch(async e => {
@@ -55,20 +59,24 @@ export const handleIssueComment = async (
             })
 
           case '/retitle':
-            await retitle(context)
-            break
+            return await retitle(context).catch(async e => {
+              return e
+            })
 
           case '/remove':
-            await remove(context)
-            break
+            return await remove(context).catch(async e => {
+              return e
+            })
 
           case '/area':
-            await area(context)
-            break
+            return await area(context).catch(async e => {
+              return e
+            })
 
           case '/kind':
-            await kind(context)
-            break
+            return await kind(context).catch(async e => {
+              return e
+            })
 
           case '/hold':
             return await hold(context).catch(async e => {
@@ -76,44 +84,53 @@ export const handleIssueComment = async (
             })
 
           case '/priority':
-            await priority(context)
-            break
+            return await priority(context).catch(async e => {
+              return e
+            })
 
           case '/lgtm':
-            await lgtm(context)
-            break
+            return await lgtm(context).catch(async e => {
+              return e
+            })
 
           case '/close':
-            await close(context)
-            break
+            return await close(context).catch(async e => {
+              return e
+            })
 
           case '/lock':
-            await lock(context)
-            break
+            return await lock(context).catch(async e => {
+              return e
+            })
 
           case '/reopen':
-            await reopen(context)
-            break
+            return await reopen(context).catch(async e => {
+              return e
+            })
 
           case '/rerun':
-            await rerun(context)
-            break
+            return await rerun(context).catch(async e => {
+              return e
+            })
 
           case '/milestone':
-            await milestone(context)
-            break
+            return await milestone(context).catch(async e => {
+              return e
+            })
 
           case '':
-            throw new Error(
+            return new Error(
               `please provide a list of space delimited commands / jobs to run. None found`
             )
 
           default:
-            throw new Error(
+            return new Error(
               `could not execute ${command}. May not be supported - please refer to docs`
             )
         }
       }
+
+      core.info('found no command to run in comment. If this is unexpected check your workflow config')
     })
   )
     .then(results => {

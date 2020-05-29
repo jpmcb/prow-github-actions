@@ -39,13 +39,24 @@ export const cronLgtm = async (
         return
       }
 
-      await tryMergePr(pr, octokit, context)
-      jobsDone++
+      return await tryMergePr(pr, octokit, context)
+        .then(() => {
+          jobsDone++
+        })
+        .catch(e => {
+          return e
+        })
     })
-  )
+  ).then(results => {
+    for (const result of results) {
+      if (result instanceof Error) {
+        throw new Error(`error processing pr: ${result}`)
+      }
+    }
+  })
 
   // Recurse, continue to next page
-  return cronLgtm(currentPage + 1, context)
+  return await cronLgtm(currentPage + 1, context)
 }
 
 // grab issues from github in baches of 100
@@ -55,6 +66,7 @@ const getPrs = async (
   page: number
 ): Promise<Octokit.PullsListResponse> => {
   core.info(`getting prs page ${page}...`)
+  
   const prResults = await octokit.pulls.list({
     ...context.repo,
     state: 'open',

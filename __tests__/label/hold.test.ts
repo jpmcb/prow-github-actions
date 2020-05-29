@@ -4,7 +4,6 @@ import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 import * as utils from '../testUtils'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
-import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
 import issuePayload from '../fixtures/issues/issue.json'
 
 nock.disableNetConnect()
@@ -22,7 +21,7 @@ describe('hold', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
-    const scope = nock(api)
+    nock(api)
       .post('/repos/Codertocat/Hello-World/issues/1/labels', body => {
         parsedBody = body
         return body

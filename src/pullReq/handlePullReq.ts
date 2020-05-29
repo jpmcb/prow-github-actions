@@ -14,17 +14,27 @@ export const handlePullReq = async (
       core.debug(`${context}`)
       switch (command) {
         case '':
-          throw new Error(
+          return new Error(
             `please provide a list of space delimited commands / jobs to run. None found`
           )
 
         default:
-          throw new Error(
+          return new Error(
             `could not execute ${command}. May not be supported - please refer to docs`
           )
       }
     })
   )
+    .then(results => {
+      for (const result of results) {
+        if (result instanceof Error) {
+          throw new Error(`error handling issue comment: ${result}`)
+        }
+      }
+    })
+    .catch(e => {
+      core.setFailed(`${e}`)
+    })
 
   return
 }

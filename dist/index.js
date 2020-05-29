@@ -2567,11 +2567,21 @@ exports.handlePullReq = (context = github.context) => __awaiter(void 0, void 0, 
         core.debug(`${context}`);
         switch (command) {
             case '':
-                throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);
+                return new Error(`please provide a list of space delimited commands / jobs to run. None found`);
             default:
-                throw new Error(`could not execute ${command}. May not be supported - please refer to docs`);
+                return new Error(`could not execute ${command}. May not be supported - please refer to docs`);
         }
-    })));
+    })))
+        .then(results => {
+        for (const result of results) {
+            if (result instanceof Error) {
+                throw new Error(`error handling issue comment: ${result}`);
+            }
+        }
+    })
+        .catch(e => {
+        core.setFailed(`${e}`);
+    });
     return;
 });
 
@@ -15273,62 +15283,77 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
         if (commentBody.includes(command)) {
             switch (command) {
                 case '/assign':
-                    yield assign_1.assign(context);
-                    break;
+                    return yield assign_1.assign(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/cc':
-                    yield cc_1.cc(context);
-                    break;
+                    return yield cc_1.cc(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/uncc':
-                    yield uncc_1.uncc(context);
-                    break;
+                    return yield uncc_1.uncc(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/unassign':
-                    yield unassign_1.unassign(context);
-                    break;
+                    return yield unassign_1.unassign(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/approve':
                     return yield approve_1.approve(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
                         return e;
                     }));
                 case '/retitle':
-                    yield retitle_1.retitle(context);
-                    break;
+                    return yield retitle_1.retitle(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/remove':
-                    yield remove_1.remove(context);
-                    break;
+                    return yield remove_1.remove(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/area':
-                    yield area_1.area(context);
-                    break;
+                    return yield area_1.area(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/kind':
-                    yield kind_1.kind(context);
-                    break;
+                    return yield kind_1.kind(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/hold':
                     return yield hold_1.hold(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
                         return e;
                     }));
                 case '/priority':
-                    yield priority_1.priority(context);
-                    break;
+                    return yield priority_1.priority(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/lgtm':
-                    yield lgtm_1.lgtm(context);
-                    break;
+                    return yield lgtm_1.lgtm(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/close':
-                    yield close_1.close(context);
-                    break;
+                    return yield close_1.close(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/lock':
-                    yield lock_1.lock(context);
-                    break;
+                    return yield lock_1.lock(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/reopen':
-                    yield reopen_1.reopen(context);
-                    break;
+                    return yield reopen_1.reopen(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/rerun':
-                    yield rerun_1.rerun(context);
-                    break;
+                    return yield rerun_1.rerun(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '/milestone':
-                    yield milestone_1.milestone(context);
-                    break;
+                    return yield milestone_1.milestone(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                        return e;
+                    }));
                 case '':
-                    throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);
+                    return new Error(`please provide a list of space delimited commands / jobs to run. None found`);
                 default:
-                    throw new Error(`could not execute ${command}. May not be supported - please refer to docs`);
+                    return new Error(`could not execute ${command}. May not be supported - please refer to docs`);
             }
         }
     })))
@@ -15446,17 +15471,29 @@ exports.handleCronJobs = (context = github.context) => __awaiter(void 0, void 0,
     yield Promise.all(runConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
         switch (command) {
             case 'pr-labeler':
-                yield prLabeler_1.cronLabelPr(1, context);
-                break;
+                return yield prLabeler_1.cronLabelPr(1, context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                    return e;
+                }));
             case 'lgtm':
-                yield lgtm_1.cronLgtm(1, context);
-                break;
+                return yield lgtm_1.cronLgtm(1, context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                    return e;
+                }));
             case '':
-                throw new Error(`please provide a list of space delimited commands / jobs to run. None found`);
+                return new Error(`please provide a list of space delimited commands / jobs to run. None found`);
             default:
-                throw new Error(`could not execute ${command}. May not be supported - please refer to docs`);
+                return new Error(`could not execute ${command}. May not be supported - please refer to docs`);
         }
-    })));
+    })))
+        .then(results => {
+        for (const result of results) {
+            if (result instanceof Error) {
+                throw new Error(`error handling issue comment: ${result}`);
+            }
+        }
+    })
+        .catch(e => {
+        core.setFailed(`${e}`);
+    });
     return;
 });
 
@@ -32462,11 +32499,22 @@ exports.cronLgtm = (currentPage, context) => __awaiter(void 0, void 0, void 0, f
         if (pr.state === 'locked') {
             return;
         }
-        yield tryMergePr(pr, octokit, context);
-        jobsDone++;
-    })));
+        return yield tryMergePr(pr, octokit, context)
+            .then(() => {
+            jobsDone++;
+        })
+            .catch(e => {
+            return e;
+        });
+    }))).then(results => {
+        for (const result of results) {
+            if (result instanceof Error) {
+                throw new Error(`error processing pr: ${result}`);
+            }
+        }
+    });
     // Recurse, continue to next page
-    return exports.cronLgtm(currentPage + 1, context);
+    return yield exports.cronLgtm(currentPage + 1, context);
 });
 // grab issues from github in baches of 100
 const getPrs = (octokit, context = github.context, page) => __awaiter(void 0, void 0, void 0, function* () {
