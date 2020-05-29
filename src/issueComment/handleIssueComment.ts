@@ -130,7 +130,9 @@ export const handleIssueComment = async (
         }
       }
 
-      core.info('found no command to run in comment. If this is unexpected check your workflow config')
+      core.info(
+        'found no command to run in comment. If this is unexpected check your workflow config'
+      )
     })
   )
     .then(results => {

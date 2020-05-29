@@ -43,7 +43,7 @@ export const cronLgtm = async (
         .then(() => {
           jobsDone++
         })
-        .catch(e => {
+        .catch(async e => {
           return e
         })
     })
@@ -66,7 +66,7 @@ const getPrs = async (
   page: number
 ): Promise<Octokit.PullsListResponse> => {
   core.info(`getting prs page ${page}...`)
-  
+
   const prResults = await octokit.pulls.list({
     ...context.repo,
     state: 'open',

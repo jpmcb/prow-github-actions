@@ -8019,7 +8019,7 @@ exports.hold = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     }
     const commentArgs = command_1.getCommandArgs('/hold', commentBody);
     // check if canceling last review
-    if (commentArgs.length !== 0 && commentArgs[0]) {
+    if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
         try {
             yield labeling_1.cancelLabel(octokit, context, issueNumber, 'hold');
         }
@@ -15356,6 +15356,7 @@ exports.handleIssueComment = (context = github.context) => __awaiter(void 0, voi
                     return new Error(`could not execute ${command}. May not be supported - please refer to docs`);
             }
         }
+        core.info('found no command to run in comment. If this is unexpected check your workflow config');
     })))
         .then(results => {
         for (const result of results) {
@@ -32503,9 +32504,9 @@ exports.cronLgtm = (currentPage, context) => __awaiter(void 0, void 0, void 0, f
             .then(() => {
             jobsDone++;
         })
-            .catch(e => {
+            .catch((e) => __awaiter(void 0, void 0, void 0, function* () {
             return e;
-        });
+        }));
     }))).then(results => {
         for (const result of results) {
             if (result instanceof Error) {

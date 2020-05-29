@@ -24,7 +24,7 @@ export const hold = async (
   const commentArgs: string[] = getCommandArgs('/hold', commentBody)
 
   // check if canceling last review
-  if (commentArgs.length !== 0 && commentArgs[0]) {
+  if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
     try {
       await cancelLabel(octokit, context, issueNumber, 'hold')
     } catch (e) {
