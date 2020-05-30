@@ -18,7 +18,6 @@ import {reopen} from './reopen'
 import {lock} from './lock'
 import {cc} from './cc'
 import {uncc} from './uncc'
-import {rerun} from './rerun'
 import {milestone} from './milestone'
 
 export const handleIssueComment = async (
@@ -108,11 +107,6 @@ export const handleIssueComment = async (
               return e
             })
 
-          case '/rerun':
-            return await rerun(context).catch(async e => {
-              return e
-            })
-
           case '/milestone':
             return await milestone(context).catch(async e => {
               return e
@@ -129,10 +123,6 @@ export const handleIssueComment = async (
             )
         }
       }
-
-      core.info(
-        'found no command to run in comment. If this is unexpected check your workflow config'
-      )
     })
   )
     .then(results => {
