@@ -11728,7 +11728,9 @@ exports.rerun = (context = github.context) => __awaiter(void 0, void 0, void 0, 
     const actions = yield octokit.actions.listRepoWorkflows(Object.assign({}, context.repo));
     for (const workflow of actions.data.workflows) {
         if (workflow.name === actionToRun) {
+            core.debug(`context ref: ${context.ref}`);
             const runs = yield octokit.actions.listWorkflowRuns(Object.assign(Object.assign({}, context.repo), { workflow_id: workflow.id, branch: context.ref, event: 'pull_request' }));
+            core.debug(`runs: ${runs.data.workflow_runs}`);
             yield octokit.actions.reRunWorkflow(Object.assign(Object.assign({}, context.repo), { run_id: runs.data.workflow_runs[0].id }));
             break;
         }
