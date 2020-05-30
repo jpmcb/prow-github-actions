@@ -6,19 +6,26 @@ import * as core from '@actions/core'
 
 let jobsDone = 0
 
-// Inspired by the actions/stale repository
+/**
+ * Inspired by https://github.com/actions/stale
+ * this will recurse through the pages of PRs for a repo
+ * and attempt to merge them if they have the "lgtm" label
+ *
+ * @param currentPage - the page to return from the github api
+ * @param context - The github actions event context
+ */
 export const cronLgtm = async (
   currentPage: number,
   context: Context
 ): Promise<number> => {
-  core.info(`starting lgtm merger!`)
+  core.info(`starting lgtm merger page: ${currentPage}`)
   const token = core.getInput('github-token', {required: true})
   const octokit = new github.GitHub(token)
 
   // Get next batch
   let prs: Octokit.PullsListResponseItem[]
   try {
-    prs = await getPrs(octokit, context, currentPage)
+    prs = await getOpenPrs(octokit, context, currentPage)
   } catch (e) {
     throw new Error(`could not get PRs: ${e}`)
   }
@@ -59,13 +66,19 @@ export const cronLgtm = async (
   return await cronLgtm(currentPage + 1, context)
 }
 
-// grab issues from github in baches of 100
-const getPrs = async (
+/**
+ * grabs pulls from github in baches of 100
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions workflow context
+ * @param page - the page number to get from the api
+ */
+const getOpenPrs = async (
   octokit: github.GitHub,
   context: Context = github.context,
   page: number
 ): Promise<Octokit.PullsListResponse> => {
-  core.info(`getting prs page ${page}...`)
+  core.debug(`getting prs page ${page}...`)
 
   const prResults = await octokit.pulls.list({
     ...context.repo,
@@ -73,11 +86,17 @@ const getPrs = async (
     page
   })
 
-  core.info(`got: ${prResults.data}`)
+  core.debug(`got: ${prResults.data}`)
 
   return prResults.data
 }
 
+/**
+ *
+ * @param pr
+ * @param octokit
+ * @param context
+ */
 const tryMergePr = async (
   pr: Octokit.PullsListResponseItem,
   octokit: github.GitHub,

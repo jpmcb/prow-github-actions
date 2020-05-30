@@ -7,6 +7,12 @@ import {Context} from '@actions/github/lib/context'
 import {cronLabelPr} from './prLabeler'
 import {cronLgtm} from './lgtm'
 
+/**
+ * This Method handles any cron job events.
+ * A user should define which of the jobs they want to run in their workflow yaml
+ *
+ * @param context - the github context of the current action event
+ */
 export const handleCronJobs = async (
   context: Context = github.context
 ): Promise<void> => {
@@ -16,11 +22,13 @@ export const handleCronJobs = async (
     runConfig.map(async command => {
       switch (command) {
         case 'pr-labeler':
+          core.debug('running cronLabelPr job')
           return await cronLabelPr(1, context).catch(async e => {
             return e
           })
 
         case 'lgtm':
+          core.debug('running cronLgtm job')
           return await cronLgtm(1, context).catch(async e => {
             return e
           })
@@ -38,6 +46,7 @@ export const handleCronJobs = async (
     })
   )
     .then(results => {
+      // Check to see if any of the promises failed
       for (const result of results) {
         if (result instanceof Error) {
           throw new Error(`error handling issue comment: ${result}`)

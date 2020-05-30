@@ -7,14 +7,24 @@ import * as core from '@actions/core'
 import * as yaml from 'js-yaml'
 import * as minimatch from 'minimatch'
 
+// This variable is used to track number of jobs processed
+// while recursing through pages of the github api
 let jobsDone = 0
 
-// Inspired by the actions/stale repository
+/**
+ * Inspired by https://github.com/actions/stale
+ * this will recurse through the pages of PRs for a repo returned
+ * by the github API.
+ *
+ * @param currentPage - the page to return from the github api
+ * @param context - The github actions event context
+ */
 export const cronLabelPr = async (
   currentPage: number,
   context: Context
 ): Promise<number> => {
-  core.info(`starting PR labeler!`)
+  core.info(`starting PR labeler page ${currentPage}`)
+
   const token = core.getInput('github-token', {required: true})
   const octokit = new github.GitHub(token)
 
@@ -51,19 +61,25 @@ export const cronLabelPr = async (
   return cronLabelPr(currentPage + 1, context)
 }
 
-// grab issues from github in baches of 100
+/**
+ * grabs pulls from github in baches of 100
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions workflow context
+ * @param page - the page number to get from the api
+ */
 const getPrs = async (
   octokit: github.GitHub,
   context: Context = github.context,
   page: number
 ): Promise<Octokit.PullsListResponse> => {
-  core.info(`getting prs page ${page}...`)
+  core.debug(`getting prs page ${page}...`)
   const prResults = await octokit.pulls.list({
     ...context.repo,
     page
   })
 
-  core.info(`got: ${prResults.data}`)
+  core.debug(`got: ${prResults.data}`)
 
   return prResults.data
 }
@@ -73,8 +89,10 @@ const getPrs = async (
  *    - Uses js-yaml to load labeler.yaml
  *    - Uses Minimatch to match globs to changed files
  * @param context - the Github context for pull req event
+ * @param prNum - the PR to label
+ * @param octokit - a hydrated github client
  */
-export const labelPr = async (
+const labelPr = async (
   prNum: number,
   context: Context = github.context,
   octokit: github.GitHub
@@ -83,29 +101,45 @@ export const labelPr = async (
   const labels = await getLabelsFromFileGlobs(octokit, context, changedFiles)
 
   if (labels.length === 0) {
-    core.info('pr-labeler: no labels matched file globs')
+    core.debug('pr-labeler: no labels matched file globs')
     return
   }
 
   await sendLabels(octokit, context, prNum, labels)
 }
 
+/**
+ * returns the changed files for the PR
+ *
+ * @param octokit - a hydrated github api client
+ * @param context - the github workflows event context
+ * @param prNum - the PR to check
+ */
 const getChangedFiles = async (
   octokit: github.GitHub,
   context: Context,
   prNum: number
 ): Promise<string[]> => {
-  core.info(`getting changed files for pr ${prNum}`)
+  core.debug(`getting changed files for pr ${prNum}`)
   const listFilesResponse = await octokit.pulls.listFiles({
     ...context.repo,
     pull_number: prNum
   })
 
   const changedFiles = listFilesResponse.data.map(f => f.filename)
+  core.debug(`files changed: ${changedFiles}`)
 
   return changedFiles
 }
 
+/**
+ * Will match the globs found in /.github/workflows.yaml
+ * with the files that have changed in the PR
+ *
+ * @param octokit - a hydrated github api client
+ * @param context - the github workflows event context
+ * @param files - the list of files that have changed in the PR
+ */
 const getLabelsFromFileGlobs = async (
   octokit: github.GitHub,
   context: Context,
@@ -113,7 +147,7 @@ const getLabelsFromFileGlobs = async (
 ): Promise<string[]> => {
   const toReturn: string[] = []
 
-  core.info(`getting labels.yaml file`)
+  core.debug(`getting labels.yaml file and matching file globs`)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const response: any = await octokit.repos.getContents({
     ...context.repo,
@@ -156,6 +190,13 @@ const getLabelsFromFileGlobs = async (
   return toReturn
 }
 
+/**
+ * Returns true if a match between the globs and corresponding file changes
+ * in the PR
+ *
+ * @param files - list of files that have changed
+ * @param globs - list of globs to match against files
+ */
 const checkGlobs = (files: string[], globs: string[]): boolean => {
   for (const glob of globs) {
     const matcher = new minimatch.Minimatch(glob)
@@ -168,6 +209,14 @@ const checkGlobs = (files: string[], globs: string[]): boolean => {
   return false
 }
 
+/**
+ * Labels a given PR with given labels
+ *
+ * @param octokit - a hydrated github api client
+ * @param context - the github workflow event context
+ * @param prNum - the PR to label
+ * @param labels - the labels for the PR
+ */
 export const sendLabels = async (
   octokit: github.GitHub,
   context: Context,
@@ -175,13 +224,13 @@ export const sendLabels = async (
   labels: string[]
 ): Promise<void> => {
   try {
-    core.info(`sending labels ${labels}`)
+    core.debug(`sending labels ${labels} for PR ${prNum}`)
     await octokit.issues.addLabels({
       ...context.repo,
       issue_number: prNum,
       labels
     })
   } catch (e) {
-    throw new Error(`pr-labeler: ${e}`)
+    throw new Error(`sending labels: ${e}`)
   }
 }

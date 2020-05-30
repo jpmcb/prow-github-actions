@@ -3987,10 +3987,19 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const yaml = __importStar(__webpack_require__(414));
 const minimatch = __importStar(__webpack_require__(595));
+// This variable is used to track number of jobs processed
+// while recursing through pages of the github api
 let jobsDone = 0;
-// Inspired by the actions/stale repository
+/**
+ * Inspired by https://github.com/actions/stale
+ * this will recurse through the pages of PRs for a repo returned
+ * by the github API.
+ *
+ * @param currentPage - the page to return from the github api
+ * @param context - The github actions event context
+ */
 exports.cronLabelPr = (currentPage, context) => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`starting PR labeler!`);
+    core.info(`starting PR labeler page ${currentPage}`);
     const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     // Get next batch
@@ -4013,17 +4022,23 @@ exports.cronLabelPr = (currentPage, context) => __awaiter(void 0, void 0, void 0
         if (pr.state === 'locked') {
             return;
         }
-        yield exports.labelPr(pr.number, context, octokit);
+        yield labelPr(pr.number, context, octokit);
         jobsDone++;
     })));
     // Recurse, continue to next page
     return exports.cronLabelPr(currentPage + 1, context);
 });
-// grab issues from github in baches of 100
+/**
+ * grabs pulls from github in baches of 100
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions workflow context
+ * @param page - the page number to get from the api
+ */
 const getPrs = (octokit, context = github.context, page) => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`getting prs page ${page}...`);
+    core.debug(`getting prs page ${page}...`);
     const prResults = yield octokit.pulls.list(Object.assign(Object.assign({}, context.repo), { page }));
-    core.info(`got: ${prResults.data}`);
+    core.debug(`got: ${prResults.data}`);
     return prResults.data;
 });
 /**
@@ -4031,25 +4046,43 @@ const getPrs = (octokit, context = github.context, page) => __awaiter(void 0, vo
  *    - Uses js-yaml to load labeler.yaml
  *    - Uses Minimatch to match globs to changed files
  * @param context - the Github context for pull req event
+ * @param prNum - the PR to label
+ * @param octokit - a hydrated github client
  */
-exports.labelPr = (prNum, context = github.context, octokit) => __awaiter(void 0, void 0, void 0, function* () {
+const labelPr = (prNum, context = github.context, octokit) => __awaiter(void 0, void 0, void 0, function* () {
     const changedFiles = yield getChangedFiles(octokit, context, prNum);
     const labels = yield getLabelsFromFileGlobs(octokit, context, changedFiles);
     if (labels.length === 0) {
-        core.info('pr-labeler: no labels matched file globs');
+        core.debug('pr-labeler: no labels matched file globs');
         return;
     }
     yield exports.sendLabels(octokit, context, prNum, labels);
 });
+/**
+ * returns the changed files for the PR
+ *
+ * @param octokit - a hydrated github api client
+ * @param context - the github workflows event context
+ * @param prNum - the PR to check
+ */
 const getChangedFiles = (octokit, context, prNum) => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`getting changed files for pr ${prNum}`);
+    core.debug(`getting changed files for pr ${prNum}`);
     const listFilesResponse = yield octokit.pulls.listFiles(Object.assign(Object.assign({}, context.repo), { pull_number: prNum }));
     const changedFiles = listFilesResponse.data.map(f => f.filename);
+    core.debug(`files changed: ${changedFiles}`);
     return changedFiles;
 });
+/**
+ * Will match the globs found in /.github/workflows.yaml
+ * with the files that have changed in the PR
+ *
+ * @param octokit - a hydrated github api client
+ * @param context - the github workflows event context
+ * @param files - the list of files that have changed in the PR
+ */
 const getLabelsFromFileGlobs = (octokit, context, files) => __awaiter(void 0, void 0, void 0, function* () {
     const toReturn = [];
-    core.info(`getting labels.yaml file`);
+    core.debug(`getting labels.yaml file and matching file globs`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
     if (!response.data.content || !response.data.encoding) {
@@ -4076,6 +4109,13 @@ const getLabelsFromFileGlobs = (octokit, context, files) => __awaiter(void 0, vo
     }
     return toReturn;
 });
+/**
+ * Returns true if a match between the globs and corresponding file changes
+ * in the PR
+ *
+ * @param files - list of files that have changed
+ * @param globs - list of globs to match against files
+ */
 const checkGlobs = (files, globs) => {
     for (const glob of globs) {
         const matcher = new minimatch.Minimatch(glob);
@@ -4087,13 +4127,21 @@ const checkGlobs = (files, globs) => {
     }
     return false;
 };
+/**
+ * Labels a given PR with given labels
+ *
+ * @param octokit - a hydrated github api client
+ * @param context - the github workflow event context
+ * @param prNum - the PR to label
+ * @param labels - the labels for the PR
+ */
 exports.sendLabels = (octokit, context, prNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        core.info(`sending labels ${labels}`);
+        core.debug(`sending labels ${labels} for PR ${prNum}`);
         yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: prNum, labels }));
     }
     catch (e) {
-        throw new Error(`pr-labeler: ${e}`);
+        throw new Error(`sending labels: ${e}`);
     }
 });
 
@@ -15412,15 +15460,23 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const prLabeler_1 = __webpack_require__(175);
 const lgtm_1 = __webpack_require__(956);
+/**
+ * This Method handles any cron job events.
+ * A user should define which of the jobs they want to run in their workflow yaml
+ *
+ * @param context - the github context of the current action event
+ */
 exports.handleCronJobs = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const runConfig = core.getInput('jobs', { required: false }).split(' ');
     yield Promise.all(runConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
         switch (command) {
             case 'pr-labeler':
+                core.debug('running cronLabelPr job');
                 return yield prLabeler_1.cronLabelPr(1, context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
                     return e;
                 }));
             case 'lgtm':
+                core.debug('running cronLgtm job');
                 return yield lgtm_1.cronLgtm(1, context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
                     return e;
                 }));
@@ -15431,6 +15487,7 @@ exports.handleCronJobs = (context = github.context) => __awaiter(void 0, void 0,
         }
     })))
         .then(results => {
+        // Check to see if any of the promises failed
         for (const result of results) {
             if (result instanceof Error) {
                 throw new Error(`error handling issue comment: ${result}`);
@@ -32420,15 +32477,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 let jobsDone = 0;
-// Inspired by the actions/stale repository
+/**
+ * Inspired by https://github.com/actions/stale
+ * this will recurse through the pages of PRs for a repo
+ * and attempt to merge them if they have the "lgtm" label
+ *
+ * @param currentPage - the page to return from the github api
+ * @param context - The github actions event context
+ */
 exports.cronLgtm = (currentPage, context) => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`starting lgtm merger!`);
+    core.info(`starting lgtm merger page: ${currentPage}`);
     const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     // Get next batch
     let prs;
     try {
-        prs = yield getPrs(octokit, context, currentPage);
+        prs = yield getOpenPrs(octokit, context, currentPage);
     }
     catch (e) {
         throw new Error(`could not get PRs: ${e}`);
@@ -32462,13 +32526,25 @@ exports.cronLgtm = (currentPage, context) => __awaiter(void 0, void 0, void 0, f
     // Recurse, continue to next page
     return yield exports.cronLgtm(currentPage + 1, context);
 });
-// grab issues from github in baches of 100
-const getPrs = (octokit, context = github.context, page) => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`getting prs page ${page}...`);
+/**
+ * grabs pulls from github in baches of 100
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions workflow context
+ * @param page - the page number to get from the api
+ */
+const getOpenPrs = (octokit, context = github.context, page) => __awaiter(void 0, void 0, void 0, function* () {
+    core.debug(`getting prs page ${page}...`);
     const prResults = yield octokit.pulls.list(Object.assign(Object.assign({}, context.repo), { state: 'open', page }));
-    core.info(`got: ${prResults.data}`);
+    core.debug(`got: ${prResults.data}`);
     return prResults.data;
 });
+/**
+ *
+ * @param pr
+ * @param octokit
+ * @param context
+ */
 const tryMergePr = (pr, octokit, context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     // if pr has label 'lgtm', attempt to merge
     if (pr.labels.map(e => e.name).includes('lgtm') &&
