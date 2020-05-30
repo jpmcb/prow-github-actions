@@ -38,18 +38,20 @@ export const rerun = async (
       const runs = await octokit.actions.listWorkflowRuns({
         ...context.repo,
         workflow_id: workflow.id,
-        branch: context.ref,
         event: 'pull_request'
       })
 
       core.debug(`runs: ${runs.data.workflow_runs}`)
+      if (runs.data.workflow_runs.length === 0) {
+        return
+      }
 
       await octokit.actions.reRunWorkflow({
         ...context.repo,
         run_id: runs.data.workflow_runs[0].id
       })
 
-      break
+      return
     }
   }
 }

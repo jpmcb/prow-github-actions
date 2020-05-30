@@ -11729,10 +11729,13 @@ exports.rerun = (context = github.context) => __awaiter(void 0, void 0, void 0, 
     for (const workflow of actions.data.workflows) {
         if (workflow.name === actionToRun) {
             core.debug(`context ref: ${context.ref}`);
-            const runs = yield octokit.actions.listWorkflowRuns(Object.assign(Object.assign({}, context.repo), { workflow_id: workflow.id, branch: context.ref, event: 'pull_request' }));
+            const runs = yield octokit.actions.listWorkflowRuns(Object.assign(Object.assign({}, context.repo), { workflow_id: workflow.id, event: 'pull_request' }));
             core.debug(`runs: ${runs.data.workflow_runs}`);
+            if (runs.data.workflow_runs.length === 0) {
+                return;
+            }
             yield octokit.actions.reRunWorkflow(Object.assign(Object.assign({}, context.repo), { run_id: runs.data.workflow_runs[0].id }));
-            break;
+            return;
         }
     }
 });

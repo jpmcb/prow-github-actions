@@ -21,7 +21,7 @@ describe('/rerun', () => {
       .reply(200, workflowsList)
 
     nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/actions/workflows/1/runs?branch=undefined&event=pull_request')
+      .get('/repos/Codertocat/Hello-World/actions/workflows/1/runs?event=pull_request')
       .reply(200, workflowRuns)
 
     nock(utils.api)
