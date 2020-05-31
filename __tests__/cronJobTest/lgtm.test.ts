@@ -8,8 +8,6 @@ import listPullReqs from '../fixtures/pullReq/pullReqListPulls.json'
 
 nock.disableNetConnect()
 
-const api = 'https://api.github.com'
-
 describe('cronLgtm', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -24,15 +22,15 @@ describe('cronLgtm', () => {
 
     listPullReqs[0].labels[0].name = 'lgtm'
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/pulls?state=open&page=1')
       .reply(200, listPullReqs)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/pulls?state=open&page=2')
       .reply(200, [])
 
-    nock(api)
+    nock(utils.api)
       .put('/repos/Codertocat/Hello-World/pulls/2/merge')
       .reply(200)
 
@@ -58,11 +56,11 @@ describe('cronLgtm', () => {
       "default": true
     })
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/pulls?state=open&page=1')
       .reply(200, listPullReqs)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/pulls?state=open&page=2')
       .reply(200, [])
 

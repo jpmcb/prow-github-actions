@@ -10,9 +10,17 @@ import {
   checkOrgMember
 } from '../utils/auth'
 
+/**
+ * /assign will self assign with no argument
+ * or assign the users in the argument list
+ *
+ * @param context - the github actions event context
+ */
 export const assign = async (
   context: Context = github.context
 ): Promise<void> => {
+  core.debug(`starting assign job`)
+
   const token = core.getInput('github-token', {required: true})
   const octokit = new github.GitHub(token)
 

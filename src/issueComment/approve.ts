@@ -5,9 +5,20 @@ import {Octokit} from '@octokit/rest'
 import {Context} from '@actions/github/lib/context'
 import {getCommandArgs} from '../utils/command'
 
+/**
+ * the /approve command will create a "approve" review
+ * from the github-actions bot
+ *
+ * If the argument 'cancel' is provided to the /approve command
+ * the last review will be removed
+ *
+ * @param context - the github actions event context
+ */
 export const approve = async (
   context: Context = github.context
 ): Promise<void> => {
+  core.debug(`starting approve job`)
+
   const token = core.getInput('github-token', {required: true})
   const octokit = new github.GitHub(token)
 
@@ -46,6 +57,14 @@ export const approve = async (
   }
 }
 
+/**
+ * Removes the latest review from the github actions bot
+ *
+ * @param octokit - a hydrated github api client
+ * @param context - the github actions workflow event context
+ * @param issueNumber - the PR to remove the review
+ * @param commenterLogin - the login name of the user who made comment
+ */
 const cancel = async (
   octokit: github.GitHub,
   context: Context,
@@ -67,7 +86,7 @@ const cancel = async (
   let latestReview = undefined
   for (const e of reviews.data) {
     core.debug(`checking review: ${e.user.login}`)
-    if (e.user.login === 'github-actions[bot]') {
+    if (e.user.login === 'github-actions[bot]' && e.state === 'APPROVED') {
       latestReview = e
     }
   }

@@ -92,10 +92,11 @@ const getOpenPrs = async (
 }
 
 /**
+ * Attempts to merge a PR if it is mergable and has the lgtm label
  *
- * @param pr
- * @param octokit
- * @param context
+ * @param pr - the PR to try and merge
+ * @param octokit - a hydrated github api client
+ * @param context - the github actions event context
  */
 const tryMergePr = async (
   pr: Octokit.PullsListResponseItem,
@@ -103,6 +104,7 @@ const tryMergePr = async (
   context: Context = github.context
 ): Promise<void> => {
   // if pr has label 'lgtm', attempt to merge
+  // but not if it has the 'hold' label
   if (
     pr.labels.map(e => e.name).includes('lgtm') &&
     !pr.labels.map(e => e.name).includes('hold')
