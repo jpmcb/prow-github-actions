@@ -164,7 +164,7 @@ describe('/uncc', () => {
     expect.assertions(2)
   })
 
-  it('assigns user if they are a repo collaborator', async () => {
+  it('uncc user if they are a repo collaborator', async () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
     nock(api)
@@ -195,7 +195,7 @@ describe('/uncc', () => {
     expect.assertions(2)
   })
 
-  it('assigns user if they have previously commented', async () => {
+  it('uncc user if they have previously commented', async () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
     nock(api)

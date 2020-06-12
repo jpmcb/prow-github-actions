@@ -16,7 +16,7 @@ describe('kind', () => {
     utils.setupActionsEnv('/kind')
   })
 
-  it('labels the issue with the kind', async () => {
+  it('labels the issue with the kind label', async () => {
     issueCommentEvent.comment.body = '/kind cleanup'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -39,7 +39,7 @@ describe('kind', () => {
     expect(scope.isDone()).toBe(true)
   })
 
-  it('handles multiple labels', async () => {
+  it('handles multiple kind labels', async () => {
     issueCommentEvent.comment.body = '/kind cleanup failing-test'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -62,7 +62,7 @@ describe('kind', () => {
     expect(scope.isDone()).toBe(true)
   })
 
-  it('only adds labels for files in .github/labels.yaml', async () => {
+  it('only adds kind labels for files in .github/labels.yaml', async () => {
     issueCommentEvent.comment.body = '/kind cleanup bad failing-test'
     const commentContext = new utils.mockContext(issueCommentEvent)
 

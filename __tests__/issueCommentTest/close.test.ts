@@ -11,7 +11,7 @@ describe('/close', () => {
     utils.setupActionsEnv('/close')
   })
 
-  it('handles renaming title when user is collaborator', async () => {
+  it('closes the issue with /close', async () => {
     issueCommentEvent.comment.body = '/close much better title'
 
     nock(utils.api)

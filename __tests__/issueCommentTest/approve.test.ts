@@ -35,7 +35,7 @@ describe('/approve', () => {
   })
 
   it('removes approval with the /approve cancel command', async () => {
-    const scope = nock(api)
+    nock(api)
       .get('/repos/Codertocat/Hello-World/pulls/1/reviews')
       .reply(200, pullReqListReviews)
 

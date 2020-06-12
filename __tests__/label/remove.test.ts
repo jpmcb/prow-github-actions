@@ -32,7 +32,7 @@ describe('remove', () => {
     expect(nock.isDone()).toBe(true)
   })
 
-  it('removes multiple the labels', async () => {
+  it('removes multiple labels', async () => {
     issueCommentEvent.comment.body = '/remove some-label some-other-label'
     const commentContext = new utils.mockContext(issueCommentEvent)
 

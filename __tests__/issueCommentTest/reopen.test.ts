@@ -11,7 +11,7 @@ describe('/reopen', () => {
     utils.setupActionsEnv('/reopen')
   })
 
-  it('handles renaming title when user is collaborator', async () => {
+  it('reopens the issue with /reopen', async () => {
     issueCommentEvent.comment.body = '/reopen much better title'
 
     nock(utils.api)

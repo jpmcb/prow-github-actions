@@ -16,7 +16,7 @@ describe('area', () => {
     utils.setupActionsEnv('/area')
   })
 
-  it('labels the issue with the label', async () => {
+  it('labels the issue with the area label', async () => {
     issueCommentEvent.comment.body = '/area important'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -39,7 +39,7 @@ describe('area', () => {
     expect(scope.isDone()).toBe(true)
   })
 
-  it('handles multiple labels', async () => {
+  it('handles multiple area labels', async () => {
     issueCommentEvent.comment.body = '/area bug important'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -62,7 +62,7 @@ describe('area', () => {
     expect(scope.isDone()).toBe(true)
   })
 
-  it('only adds labels for files in .github/labels.yaml', async () => {
+  it('only adds area labels for files in .github/labels.yaml', async () => {
     issueCommentEvent.comment.body = '/area bug bad important'
     const commentContext = new utils.mockContext(issueCommentEvent)
 

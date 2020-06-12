@@ -39,7 +39,7 @@ describe('priority', () => {
     expect(scope.isDone()).toBe(true)
   })
 
-  it('handles multiple labels', async () => {
+  it('handles multiple priority labels', async () => {
     issueCommentEvent.comment.body = '/priority low high'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -62,7 +62,7 @@ describe('priority', () => {
     expect(scope.isDone()).toBe(true)
   })
 
-  it('only adds labels for files in .github/labels.yaml', async () => {
+  it('only adds priority labels for files in .github/labels.yaml', async () => {
     issueCommentEvent.comment.body = '/priority low mid high'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
