@@ -1,7 +1,7 @@
 name: "Merge on lgtm label"
 on:
   schedule:
-  - cron: "0 0 * * *"
+  - cron: "*/15 * * * *"
 
 jobs:
   execute:

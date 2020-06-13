@@ -25,6 +25,7 @@ export const handleIssueComment = async (
 ): Promise<void> => {
   const commandConfig = core
     .getInput('prow-commands', {required: false})
+    .replace(/\n/g, ' ')
     .split(' ')
   const commentBody: string = context.payload['comment']['body']
 
