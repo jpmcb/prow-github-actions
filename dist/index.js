@@ -4084,11 +4084,23 @@ const getLabelsFromFileGlobs = (octokit, context, files) => __awaiter(void 0, vo
     const toReturn = [];
     core.debug(`getting labels.yaml file and matching file globs`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
+    let response = undefined;
+    try {
+        response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yaml' }));
+    }
+    catch (e) {
+        try {
+            response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: '.github/labels.yml' }));
+        }
+        catch (e2) {
+            throw new Error(`could not get .github/labels.yaml or .github/labels.yml: ${e} ${e2}`);
+        }
+    }
     if (!response.data.content || !response.data.encoding) {
         throw new Error(`area: error parsing data from content response: ${response.data}`);
     }
     const decoded = Buffer.from(response.data.content, response.data.encoding).toString();
+    core.debug(`label file contents: ${decoded}`);
     const content = yaml.safeLoad(decoded);
     const labelMap = new Map();
     for (const label in content) {
@@ -4120,7 +4132,9 @@ const checkGlobs = (files, globs) => {
     for (const glob of globs) {
         const matcher = new minimatch.Minimatch(glob);
         for (const file of files) {
+            core.debug(`comparing file: ${file} to glob: ${glob}`);
             if (matcher.match(file)) {
+                core.debug(`success! Glob and file match`);
                 return true;
             }
         }
