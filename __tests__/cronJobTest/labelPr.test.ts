@@ -16,7 +16,7 @@ describe('cronLabelPr', () => {
     utils.setupActionsEnv('/area')
   })
 
-  it('labels the PR with the correct file labels based on globs', async () => {
+  it('labels the PR with the correct labels based on file globs', async () => {
     utils.setupJobsEnv('pr-labeler')
 
     // We can use any context here as "schedule" sends no webhook payload
