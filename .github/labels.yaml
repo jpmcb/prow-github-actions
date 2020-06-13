@@ -11,7 +11,7 @@ priority:
   - 'high'
 
 tests:
-  - '__tests__/*'
+  - '**/*.test.ts'
 
 source:
-  - 'src/*'
+  - 'src/**'
