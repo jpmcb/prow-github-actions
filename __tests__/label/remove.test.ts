@@ -14,7 +14,7 @@ describe('remove', () => {
     utils.setupActionsEnv('/remove')
   })
 
-  it('removes the label', async () => {
+  it('removes the specified label', async () => {
     issueCommentEvent.comment.body = '/remove some-label'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
