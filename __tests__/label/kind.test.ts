@@ -8,8 +8,6 @@ import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
 
 nock.disableNetConnect()
 
-const api = 'https://api.github.com'
-
 describe('kind', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -21,14 +19,14 @@ describe('kind', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
-    const scope = nock(api)
+    const scope = nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/labels', body => {
         parsedBody = body
         return body
       })
       .reply(200)
     
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(200, labelFileContents)
 
@@ -44,14 +42,14 @@ describe('kind', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
-    const scope = nock(api)
+    const scope = nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/labels', body => {
         parsedBody = body
         return body
       })
       .reply(200)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(200, labelFileContents)
 
@@ -67,14 +65,14 @@ describe('kind', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
-    const scope = nock(api)
+    const scope = nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/labels', body => {
         parsedBody = body
         return body
       })
       .reply(200)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(200, labelFileContents)
 

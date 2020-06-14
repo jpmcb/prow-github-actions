@@ -8,8 +8,6 @@ import issuePayload from '../fixtures/issues/issue.json'
 
 nock.disableNetConnect()
 
-const api = 'https://api.github.com'
-
 describe('hold', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -21,7 +19,7 @@ describe('hold', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/labels', body => {
         parsedBody = body
         return body
@@ -49,11 +47,11 @@ describe('hold', () => {
       "default": true
     })
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/issues/1/labels/hold')
       .reply(200)
     
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1')
       .reply(200, issuePayload)
 

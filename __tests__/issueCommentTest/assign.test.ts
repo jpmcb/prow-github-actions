@@ -9,7 +9,6 @@ import issueListComments from '../fixtures/issues/assign/issueListComments.json'
 
 nock.disableNetConnect()
 
-const api = 'https://api.github.com'
 
 describe('/assign', () => {
   beforeEach(() => {
@@ -18,19 +17,19 @@ describe('/assign', () => {
   })
 
   it('handles self assigning with comment /assign', async () => {
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/Codertocat')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
         expect(body).toMatchObject({
           assignees: ['Codertocat']
@@ -49,19 +48,19 @@ describe('/assign', () => {
   it('handles assigning another user with /assign @username', async () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
         expect(body).toMatchObject({
           assignees: ['some-user']
@@ -80,19 +79,19 @@ describe('/assign', () => {
   it('handles assigning another user with /assign username', async () => {
     issueCommentEventAssign.comment.body = '/assign some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
         expect(body).toMatchObject({
           assignees: ['some-user']
@@ -111,23 +110,23 @@ describe('/assign', () => {
   it('handles assigning multiple users', async () => {
     issueCommentEventAssign.comment.body = '/assign @some-user @other-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/other-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
         expect(body).toMatchObject({
           assignees: ['some-user', 'other-user']
@@ -146,19 +145,19 @@ describe('/assign', () => {
   it('assigns user if they are an org member', async () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
         expect(body).toMatchObject({
           assignees: ['some-user']
@@ -177,19 +176,19 @@ describe('/assign', () => {
   it('assigns user if they are a repo collaborator', async () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
         expect(body).toMatchObject({
           assignees: ['some-user']
@@ -208,19 +207,19 @@ describe('/assign', () => {
   it('assigns user if they have previously commented', async () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(200, issueListComments)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/assignees', body => {
         expect(body).toMatchObject({
           assignees: ['some-user']

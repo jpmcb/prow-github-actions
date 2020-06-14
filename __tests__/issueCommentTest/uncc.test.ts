@@ -9,8 +9,6 @@ import issueListComments from '../fixtures/issues/assign/issueListComments.json'
 
 nock.disableNetConnect()
 
-const api = 'https://api.github.com'
-
 describe('/uncc', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -20,11 +18,11 @@ describe('/uncc', () => {
   it('handles self uncc-ing with comment /uncc', async () => {
     issueCommentEvent.comment.body = '/uncc'
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['Codertocat']
@@ -43,19 +41,19 @@ describe('/uncc', () => {
   it('handles uncc-ing another user with /uncc @username', async () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/Codertocat')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']
@@ -74,19 +72,19 @@ describe('/uncc', () => {
   it('handles uncc-ing another user with /uncc username', async () => {
     issueCommentEvent.comment.body = '/uncc some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/Codertocat')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']
@@ -105,19 +103,19 @@ describe('/uncc', () => {
   it('handles uncc-ing multiple users', async () => {
     issueCommentEvent.comment.body = '/uncc @some-user @other-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/Codertocat')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user', 'other-user']
@@ -136,19 +134,19 @@ describe('/uncc', () => {
   it('unccs user if they are an org member', async () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/Codertocat')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']
@@ -167,19 +165,19 @@ describe('/uncc', () => {
   it('uncc user if they are a repo collaborator', async () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/Codertocat')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']
@@ -198,19 +196,19 @@ describe('/uncc', () => {
   it('uncc user if they have previously commented', async () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/Codertocat')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(200, issueListComments)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']

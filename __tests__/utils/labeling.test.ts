@@ -11,8 +11,6 @@ import malformedFileContents from '../fixtures/labels/labelFileMalformedResponse
 
 nock.disableNetConnect()
 
-const api = 'https://api.github.com'
-
 describe('utils labeling', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -24,18 +22,18 @@ describe('utils labeling', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     let parsedBody = undefined
-    const scope = nock(api)
+    const scope = nock(utils.api)
       .post('/repos/Codertocat/Hello-World/issues/1/labels', body => {
         parsedBody = body
         return body
       })
       .reply(200)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yml')
       .reply(200, labelFileContents)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(404)
 
@@ -52,11 +50,11 @@ describe('utils labeling', () => {
     issueCommentEvent.comment.body = '/area important'
     const commentContext = new utils.mockContext(issueCommentEvent)
     
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yml')
       .reply(200, malformedFileContents)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(404)
 

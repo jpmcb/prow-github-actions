@@ -9,8 +9,6 @@ import issueListComments from '../fixtures/issues/assign/issueListComments.json'
 
 nock.disableNetConnect()
 
-const api = 'https://api.github.com'
-
 describe('/cc', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -20,11 +18,11 @@ describe('/cc', () => {
   it('handles self cc-ing with comment /cc', async () => {
     issueCommentEvent.comment.body = '/cc'
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['Codertocat']
@@ -43,19 +41,19 @@ describe('/cc', () => {
   it('handles cc-ing another user with /cc @username', async () => {
     issueCommentEvent.comment.body = '/cc @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']
@@ -74,19 +72,19 @@ describe('/cc', () => {
   it('handles cc-ing another user with /cc username', async () => {
     issueCommentEvent.comment.body = '/cc some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']
@@ -105,23 +103,23 @@ describe('/cc', () => {
   it('handles cc-ing multiple users', async () => {
     issueCommentEvent.comment.body = '/cc @some-user @other-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/other-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user', 'other-user']
@@ -140,19 +138,19 @@ describe('/cc', () => {
   it('ccs user if they are an org member', async () => {
     issueCommentEvent.comment.body = '/cc @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']
@@ -171,19 +169,19 @@ describe('/cc', () => {
   it('assigns user if they are a repo collaborator', async () => {
     issueCommentEvent.comment.body = '/cc @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(204)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']
@@ -202,19 +200,19 @@ describe('/cc', () => {
   it('assigns user if they have previously commented', async () => {
     issueCommentEvent.comment.body = '/cc @some-user'
 
-    nock(api)
+    nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/some-user')
       .reply(404)
 
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1/comments')
       .reply(200, issueListComments)
 
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
         expect(body).toMatchObject({
           reviewers: ['some-user']

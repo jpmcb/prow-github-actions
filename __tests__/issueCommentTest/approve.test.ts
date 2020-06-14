@@ -8,8 +8,6 @@ import issueCommentEventAssign from '../fixtures/issues/assign/issueCommentEvent
 
 nock.disableNetConnect()
 
-const api = 'https://api.github.com'
-
 describe('/approve', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -17,7 +15,7 @@ describe('/approve', () => {
   })
 
   it('approves the pr with /approve command', async () => {
-    nock(api)
+    nock(utils.api)
       .post('/repos/Codertocat/Hello-World/pulls/1/reviews', body => {
         expect(body).toMatchObject({
           event: 'APPROVE'
@@ -35,11 +33,11 @@ describe('/approve', () => {
   })
 
   it('removes approval with the /approve cancel command', async () => {
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/pulls/1/reviews')
       .reply(200, pullReqListReviews)
 
-    nock(api)
+    nock(utils.api)
       .put(
         '/repos/Codertocat/Hello-World/pulls/1/reviews/80/dismissals',
         body => {

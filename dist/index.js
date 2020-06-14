@@ -11723,14 +11723,21 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const labeling_1 = __webpack_require__(508);
+const auth_1 = __webpack_require__(683);
 exports.lgtm = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commentBody = context.payload['comment']['body'];
+    const commenterId = context.payload['comment']['user']['login'];
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    const isOrgMember = yield auth_1.checkOrgMember(octokit, context, commenterId);
+    const isCollaborator = yield auth_1.checkCollaborator(octokit, context, commenterId);
+    if (!isOrgMember && !isCollaborator) {
+        throw new Error(`commenter is not a org member or collaborator. Cannot add lgtm label`);
     }
     const commentArgs = command_1.getCommandArgs('/lgtm', commentBody);
     // check if canceling last review

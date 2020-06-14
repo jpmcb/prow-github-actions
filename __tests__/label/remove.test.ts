@@ -8,8 +8,6 @@ import issuePayload from '../fixtures/issues/issue.json'
 
 nock.disableNetConnect()
 
-const api = 'https://api.github.com'
-
 describe('remove', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -20,11 +18,11 @@ describe('remove', () => {
     issueCommentEvent.comment.body = '/remove some-label'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/issues/1/labels/some-label')
       .reply(200)
     
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1')
       .reply(200, issuePayload)
 
@@ -36,15 +34,15 @@ describe('remove', () => {
     issueCommentEvent.comment.body = '/remove some-label some-other-label'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/issues/1/labels/some-label')
       .reply(200)
 
-    nock(api)
+    nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/issues/1/labels/some-other-label')
       .reply(200)
     
-    nock(api)
+    nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1')
       .reply(200, issuePayload)
 

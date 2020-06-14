@@ -5,6 +5,7 @@ import * as core from '@actions/core'
 
 import {getCommandArgs} from '../utils/command'
 import {labelIssue, cancelLabel} from '../utils/labeling'
+import {checkOrgMember, checkCollaborator} from '../utils/auth'
 
 export const lgtm = async (
   context: Context = github.context
@@ -14,10 +15,20 @@ export const lgtm = async (
 
   const issueNumber: number | undefined = context.payload.issue?.number
   const commentBody: string = context.payload['comment']['body']
+  const commenterId: string = context.payload['comment']['user']['login']
 
   if (issueNumber === undefined) {
     throw new Error(
       `github context payload missing issue number: ${context.payload}`
+    )
+  }
+
+  const isOrgMember = await checkOrgMember(octokit, context, commenterId)
+  const isCollaborator = await checkCollaborator(octokit, context, commenterId)
+
+  if (!isOrgMember && !isCollaborator) {
+    throw new Error(
+      `commenter is not a org member or collaborator. Cannot add lgtm label`
     )
   }
 
