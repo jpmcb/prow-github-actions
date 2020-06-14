@@ -5,6 +5,7 @@ import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
 import {getLineArgs} from '../utils/command'
+import {checkCollaborator} from '../utils/auth'
 
 export const milestone = async (
   context: Context = github.context
@@ -14,10 +15,26 @@ export const milestone = async (
 
   const issueNumber: number | undefined = context.payload.issue?.number
   const commentBody: string = context.payload['comment']['body']
+  const commenterId: string = context.payload['comment']['user']['login']
 
   if (issueNumber === undefined) {
     throw new Error(
       `github context payload missing issue number: ${context.payload}`
+    )
+  }
+
+  // Only users who:
+  // - are collaborators
+  let isAuthUser: Boolean = false
+  try {
+    isAuthUser = await checkCollaborator(octokit, context, commenterId)
+  } catch (e) {
+    throw new Error(`could not check commenter auth: ${e}`)
+  }
+
+  if (!isAuthUser) {
+    throw new Error(
+      `commenter is not authorized to set a milestone. Must be repo collaborator`
     )
   }
 

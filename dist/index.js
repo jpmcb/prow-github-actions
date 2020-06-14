@@ -4925,14 +4925,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
+const auth_1 = __webpack_require__(683);
 exports.milestone = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commentBody = context.payload['comment']['body'];
+    const commenterId = context.payload['comment']['user']['login'];
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    // Only users who:
+    // - are collaborators
+    let isAuthUser = false;
+    try {
+        isAuthUser = yield auth_1.checkCollaborator(octokit, context, commenterId);
+    }
+    catch (e) {
+        throw new Error(`could not check commenter auth: ${e}`);
+    }
+    if (!isAuthUser) {
+        throw new Error(`commenter is not authorized to set a milestone. Must be repo collaborator`);
     }
     const milestoneToAdd = command_1.getLineArgs('/milestone', commentBody);
     if (milestoneToAdd === '') {
@@ -12225,6 +12239,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
+    // TODO org members and collaborators ONLY
     const commentArgs = command_1.getCommandArgs('/approve', commentBody);
     // check if canceling last review
     if (commentArgs.length !== 0 && commentArgs[0]) {
@@ -30430,14 +30445,28 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const labeling_1 = __webpack_require__(508);
+const auth_1 = __webpack_require__(683);
 exports.remove = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
     const octokit = new github.GitHub(token);
     const issueNumber = (_a = context.payload.issue) === null || _a === void 0 ? void 0 : _a.number;
     const commentBody = context.payload['comment']['body'];
+    const commenterId = context.payload['comment']['user']['login'];
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
+    }
+    // Only users who:
+    // - are collaborators
+    let isAuthUser = false;
+    try {
+        isAuthUser = yield auth_1.checkCollaborator(octokit, context, commenterId);
+    }
+    catch (e) {
+        throw new Error(`could not check commenter auth: ${e}`);
+    }
+    if (!isAuthUser) {
+        throw new Error(`commenter is not authorized to remove a label. Must be repo collaborator`);
     }
     let toRemove = command_1.getCommandArgs('/remove', commentBody);
     let currentLabels = [];

@@ -32,6 +32,8 @@ export const approve = async (
     )
   }
 
+  // TODO org members and collaborators ONLY
+
   const commentArgs: string[] = getCommandArgs('/approve', commentBody)
 
   // check if canceling last review
