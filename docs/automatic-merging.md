@@ -21,4 +21,3 @@ jobs:
 This Github workflow will check every hour
 for PRs with the `lgtm` label and will attempt to automatically merge them.
 If the `hold` label is present, it will block automatic merging.
- 

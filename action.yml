@@ -11,6 +11,9 @@ inputs:
   jobs:
     description: "The jobs to automatically run on event. Space delimited. Expect commands on own line."
     required: false
+branding:
+  color: blue
+  icon: anchor
 runs:
   using: 'node12'
   main: 'dist/index.js'
