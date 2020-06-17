@@ -1,8 +1,7 @@
 {
-  "name": "typescript-action",
-  "version": "0.0.0",
-  "private": true,
-  "description": "TypeScript template action",
+  "name": "prow-github-actions",
+  "version": "1.0.0",
+  "description": "Slash commands, jobs, and chat-ops for Github actions inspired by Kubernetes Prow",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
@@ -16,14 +15,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/jpmcb/prow-github-actions.git"
   },
   "keywords": [
     "actions",
-    "node",
-    "setup"
+    "prow"
   ],
-  "author": "YourNameOrOrganization",
+  "author": "John McBride",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.2.0",

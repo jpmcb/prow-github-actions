@@ -6,6 +6,84 @@ This project is inspired by [Prow](https://github.com/kubernetes/test-infra/tree
 
 ## Quickstart
 
+Run specified actions or jobs for issue and PR comments through a `workflow.yaml` file:
+```yaml
+name: "Prow github actions"
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jpmcb/prow-github-actions
+        with:
+          prow-commands: '/assign 
+            /unassign 
+            /approve 
+            /retitle 
+            /area 
+            /kind 
+            /priority 
+            /remove 
+            /lgtm 
+            /close 
+            /reopen 
+            /lock 
+            /milestone 
+            /hold 
+            /cc 
+            /uncc'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+```
+
+Automatically label PRs every hour based on your `.github/labels.yaml`:
+```yaml
+name: "Label PRs from globs"
+on:
+  schedule:
+  - cron: "0 * * * *"
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jpmcb/prow-github-actions
+        with:
+          jobs: 'pr-labeler'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+```
+
+Your `.github/labels.yaml` may look like:
+```yaml
+# labels to be used with /area command
+area:
+  - 'bug'
+  - 'important'
+
+# File globs for PR labeler
+tests:
+  - '**/*.test.ts'
+```
+
+You can automatically merge PRs based on a cron schedule if it contains the `lgtm` label:
+```yaml
+name: "Merge on lgtm label"
+on:
+  schedule:
+  - cron: "0 * * * *"
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jpmcb/prow-github-actions
+        with:
+          jobs: 'lgtm'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+```
+
 ## Documentation
 - [Overview](./docs/overview.md)
 - [Commands](./docs/commands.md)
