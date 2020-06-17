@@ -16,6 +16,7 @@ Commands | Policy | Description
 
 
 Label Commands | Policy | Description
+--- | --- | ---
 `/area [label1 label2 ...]` | anyone | adds an area/<> label(s) if it's defined in [the `.github/labels.yaml` file](./labeling.md)
 `/kind [label1 label2 ...]` | anyone | adds a kind/<> label(s) if it's defined in [the `.github/labels.yaml` file](./labeling.md)
 `/lgtm` | Collaborators and Org Members | adds the `lgtm` label. This is used for [automatic PR merging]()
