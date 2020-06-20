@@ -4,12 +4,14 @@ import * as core from '@actions/core'
 import {Context} from '@actions/github/lib/context'
 
 import {getCommandArgs} from '../utils/command'
-import {
-  checkCollaborator,
-  checkIssueComments,
-  checkOrgMember
-} from '../utils/auth'
+import {checkCollaborator, getOrgCollabCommentUsers} from '../utils/auth'
 
+/**
+ * /cc will request a review from self with no arguments or the users specified
+ * or assign the users in the argument list
+ *
+ * @param context - the github actions event context
+ */
 export const cc = async (context: Context = github.context): Promise<void> => {
   const token = core.getInput('github-token', {required: true})
   const octokit = new github.GitHub(token)
@@ -42,7 +44,12 @@ export const cc = async (context: Context = github.context): Promise<void> => {
   // - have previously commented on this issue
   let authUsers: string[] = []
   try {
-    authUsers = await getAuthUsers(octokit, context, pullNumber, commentArgs)
+    authUsers = await getOrgCollabCommentUsers(
+      octokit,
+      context,
+      pullNumber,
+      commentArgs
+    )
   } catch (e) {
     throw new Error(`could not get authorized users: ${e}`)
   }
@@ -67,38 +74,14 @@ export const cc = async (context: Context = github.context): Promise<void> => {
   }
 }
 
-const getAuthUsers = async (
-  octokit: github.GitHub,
-  context: Context,
-  pullnum: number,
-  args: string[]
-): Promise<string[]> => {
-  const toReturn: string[] = []
-
-  try {
-    await Promise.all(
-      args.map(async arg => {
-        const isOrgMember = await checkOrgMember(octokit, context, arg)
-        const isCollaborator = await checkCollaborator(octokit, context, arg)
-        const hasCommented = await checkIssueComments(
-          octokit,
-          context,
-          pullnum,
-          arg
-        )
-
-        if (isOrgMember || isCollaborator || hasCommented) {
-          toReturn.push(arg)
-        }
-      })
-    )
-  } catch (e) {
-    throw new Error(`could not get authorized user: ${e}`)
-  }
-
-  return toReturn
-}
-
+/**
+ * selfReview will self request a review for the current PR
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the  pr number this runtime is associated with
+ * @param user - the user to request a self review
+ */
 const selfReview = async (
   octokit: github.GitHub,
   context: Context,

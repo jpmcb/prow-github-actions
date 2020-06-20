@@ -7,6 +7,13 @@ import {getCommandArgs} from '../utils/command'
 import {labelIssue, cancelLabel} from '../utils/labeling'
 import {checkOrgMember, checkCollaborator} from '../utils/auth'
 
+/**
+ * /lgtm will add the lgtm label.
+ * Note - this label is used to indicate automatic merging
+ * if the user has configured a cron job to perform automatic merging
+ *
+ * @param context - the github actions event context
+ */
 export const lgtm = async (
   context: Context = github.context
 ): Promise<void> => {

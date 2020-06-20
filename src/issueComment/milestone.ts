@@ -7,6 +7,12 @@ import * as core from '@actions/core'
 import {getLineArgs} from '../utils/command'
 import {checkCollaborator} from '../utils/auth'
 
+/**
+ * /milestone will add the issue to an existing milestone.
+ * Note that the command should have an argument with the milestone to add
+ *
+ * @param context - the github actions event context
+ */
 export const milestone = async (
   context: Context = github.context
 ): Promise<void> => {

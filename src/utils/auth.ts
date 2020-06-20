@@ -3,6 +3,13 @@ import * as core from '@actions/core'
 
 import {Context} from '@actions/github/lib/context'
 
+/**
+ * checkOrgMember will check to see if the given user is a repo org member
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param user - the users to check auth on
+ */
 export const checkOrgMember = async (
   octokit: github.GitHub,
   context: Context,
@@ -25,6 +32,13 @@ export const checkOrgMember = async (
   }
 }
 
+/**
+ * checkCollaborator checks to see if the given user is a repo collaborator
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param user - the users to check auth on
+ */
 export const checkCollaborator = async (
   octokit: github.GitHub,
   context: Context,
@@ -42,6 +56,15 @@ export const checkCollaborator = async (
   }
 }
 
+/**
+ * checkIssueComments will check to see if the given user
+ * has commented on the given issue
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue or pr number this runtime is associated with
+ * @param user - the users to check auth on
+ */
 export const checkIssueComments = async (
   octokit: github.GitHub,
   context: Context,
@@ -66,25 +89,87 @@ export const checkIssueComments = async (
   }
 }
 
-export const checkAssignee = async (
+/**
+ * getOrgCollabCommentUsers will return an array of users who are org members,
+ * repo collaborators, or have commented previously
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue or pr number this runtime is associated with
+ * @param args - the users to check auth on
+ */
+export const getOrgCollabCommentUsers = async (
+  octokit: github.GitHub,
+  context: Context,
+  issueNum: number,
+  args: string[]
+): Promise<string[]> => {
+  const toReturn: string[] = []
+
+  try {
+    await Promise.all(
+      args.map(async arg => {
+        const isOrgMember = await checkOrgMember(octokit, context, arg)
+        const isCollaborator = await checkCollaborator(octokit, context, arg)
+        const hasCommented = await checkIssueComments(
+          octokit,
+          context,
+          issueNum,
+          arg
+        )
+
+        if (isOrgMember || isCollaborator || hasCommented) {
+          toReturn.push(arg)
+        }
+      })
+    )
+  } catch (e) {
+    throw new Error(`could not get authorized user: ${e}`)
+  }
+
+  return toReturn
+}
+
+/**
+ * checkCommenterAuth will return true
+ * if the user is a org member, a collaborator, or has commented previously
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue or pr number this runtime is associated with
+ * @param args - the users to check auth on
+ */
+export const checkCommenterAuth = async (
   octokit: github.GitHub,
   context: Context,
   issueNum: number,
   user: string
-): Promise<boolean> => {
+): Promise<Boolean> => {
+  let isOrgMember: Boolean = false
+  let isCollaborator: Boolean = false
+  let hasCommented: Boolean = false
+
   try {
-    const assignees = await octokit.issues.listAssignees({
-      ...context.repo
-    })
-
-    for (const a of assignees.data) {
-      if (a.login === user) {
-        return true
-      }
-    }
-
-    return false
+    isOrgMember = await checkOrgMember(octokit, context, user)
   } catch (e) {
-    return false
+    throw new Error(`error in checking org member: ${e}`)
   }
+
+  try {
+    isCollaborator = await checkCollaborator(octokit, context, user)
+  } catch (e) {
+    throw new Error(`could not check collaborator: ${e}`)
+  }
+
+  try {
+    hasCommented = await checkIssueComments(octokit, context, issueNum, user)
+  } catch (e) {
+    throw new Error(`could not check issue comments: ${e}`)
+  }
+
+  if (isOrgMember || isCollaborator || hasCommented) {
+    return true
+  }
+
+  return false
 }

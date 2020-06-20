@@ -7,6 +7,11 @@ import {getCommandArgs} from '../utils/command'
 import {getCurrentLabels, removeLabels} from '../utils/labeling'
 import {checkCollaborator} from '../utils/auth'
 
+/**
+ * /remove will remove a label based on the command argument
+ *
+ * @param context - the github actions event context
+ */
 export const remove = async (
   context: Context = github.context
 ): Promise<void> => {

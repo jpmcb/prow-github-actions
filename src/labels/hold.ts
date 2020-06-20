@@ -6,6 +6,13 @@ import * as core from '@actions/core'
 import {getCommandArgs} from '../utils/command'
 import {labelIssue, cancelLabel} from '../utils/labeling'
 
+/**
+ * /hold will add the hold label
+ * Note - the hold label will block automatic merging if the lgtm
+ * is also present
+ *
+ * @param context - the github actions event context
+ */
 export const hold = async (
   context: Context = github.context
 ): Promise<void> => {

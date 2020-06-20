@@ -5,6 +5,11 @@ import {Context} from '@actions/github/lib/context'
 
 import {checkCollaborator} from '../utils/auth'
 
+/**
+ * /reopen will reopen the issue / PR. May be called after /close
+ *
+ * @param context - the github actions event context
+ */
 export const reopen = async (
   context: Context = github.context
 ): Promise<void> => {

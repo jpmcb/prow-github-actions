@@ -2561,6 +2561,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
+/**
+ * This method handles any pull-request configuration for configured workflows.
+ * At this time, there are no commands for prow-github-actions
+ *
+ * @param context - the github context of the current action event
+ */
 exports.handlePullReq = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const runConfig = core.getInput('jobs', { required: false }).split(' ');
     yield Promise.all(runConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
@@ -4187,6 +4193,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const auth_1 = __webpack_require__(683);
+/**
+ * /reopen will reopen the issue / PR. May be called after /close
+ *
+ * @param context - the github actions event context
+ */
 exports.reopen = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -4926,6 +4937,12 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
+/**
+ * /milestone will add the issue to an existing milestone.
+ * Note that the command should have an argument with the milestone to add
+ *
+ * @param context - the github actions event context
+ */
 exports.milestone = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -8084,6 +8101,13 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const labeling_1 = __webpack_require__(508);
+/**
+ * /hold will add the hold label
+ * Note - the hold label will block automatic merging if the lgtm
+ * is also present
+ *
+ * @param context - the github actions event context
+ */
 exports.hold = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -10722,6 +10746,12 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const auth_1 = __webpack_require__(683);
 const command_1 = __webpack_require__(535);
+/**
+ * /lock will lock the issue / PR.
+ * No more comments will be permitted
+ *
+ * @param context - the github actions event context
+ */
 exports.lock = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -10830,6 +10860,11 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const labeling_1 = __webpack_require__(508);
+/**
+ * /priority will add a priority/some-priority label
+ *
+ * @param context - the github actions event context
+ */
 exports.priority = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -10842,7 +10877,7 @@ exports.priority = (context = github.context) => __awaiter(void 0, void 0, void 
     let commentArgs = command_1.getCommandArgs('/priority', commentBody);
     let priorityLabels = [];
     try {
-        priorityLabels = yield labeling_1.getArgumentLabels('priority', octokit, context);
+        priorityLabels = yield labeling_1.getArgumentLabels(octokit, context, 'priority');
         core.debug(`priority: found labels ${priorityLabels}`);
     }
     catch (e) {
@@ -10886,9 +10921,18 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const yaml = __importStar(__webpack_require__(414));
-// This method has some eslint ignores related to
-// no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
-exports.getArgumentLabels = (arg, octokit, context) => __awaiter(void 0, void 0, void 0, function* () {
+/**
+ * getArgumentLabels will get the .github/labels.yaml or .github.labels.yml file.
+ * it will then return the section specified by arg.
+ *
+ * This method has some eslint ignores related to
+ * no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param arg - the label section to return. For example, may be 'area', etc
+ */
+exports.getArgumentLabels = (octokit, context, arg) => __awaiter(void 0, void 0, void 0, function* () {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let response = undefined;
     try {
@@ -10912,6 +10956,14 @@ exports.getArgumentLabels = (arg, octokit, context) => __awaiter(void 0, void 0,
     }
     return content[arg];
 });
+/**
+ * labelIssue will label the issue with the labels provided
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue associated with this runtime
+ * @param labels - the labels to add to the issue
+ */
 exports.labelIssue = (octokit, context, issueNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield octokit.issues.addLabels(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, labels }));
@@ -10920,6 +10972,13 @@ exports.labelIssue = (octokit, context, issueNum, labels) => __awaiter(void 0, v
         throw new Error(`could not add labels: ${e}`);
     }
 });
+/**
+ * getCurrentLabels will return the labels for the associated issue
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue associated with this runtime
+ */
 exports.getCurrentLabels = (octokit, context, issueNum) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const issue = yield octokit.issues.get(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum }));
@@ -10931,6 +10990,14 @@ exports.getCurrentLabels = (octokit, context, issueNum) => __awaiter(void 0, voi
         throw new Error(`could not get issue: ${e}`);
     }
 });
+/**
+ * removeLabels will remove labels for the issue with the labels provided
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue associated with this runtime
+ * @param labels - the labels to remove from the issue
+ */
 exports.removeLabels = (octokit, context, issueNum, labels) => __awaiter(void 0, void 0, void 0, function* () {
     for (const label of labels) {
         try {
@@ -10941,6 +11008,12 @@ exports.removeLabels = (octokit, context, issueNum, labels) => __awaiter(void 0,
         }
     }
 });
+/**
+ * addPrefix will add the associated prefix to the arguments array
+ *
+ * @param prefix - the prefix to add to the args
+ * @param args - the strings to add the prefix to
+ */
 exports.addPrefix = (prefix, args) => {
     const toReturn = [];
     for (const arg of args) {
@@ -10948,10 +11021,18 @@ exports.addPrefix = (prefix, args) => {
     }
     return toReturn;
 };
-exports.cancelLabel = (octokit, context, issueNumber, label) => __awaiter(void 0, void 0, void 0, function* () {
+/**
+ * cancelLabel will remove an associated label
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue associated with this runtime
+ * @param labels - the label to remove from the issue
+ */
+exports.cancelLabel = (octokit, context, issueNum, label) => __awaiter(void 0, void 0, void 0, function* () {
     let currentLabels = [];
     try {
-        currentLabels = yield exports.getCurrentLabels(octokit, context, issueNumber);
+        currentLabels = yield exports.getCurrentLabels(octokit, context, issueNum);
         core.debug(`remove: found labels for issue ${currentLabels}`);
     }
     catch (e) {
@@ -10959,7 +11040,7 @@ exports.cancelLabel = (octokit, context, issueNumber, label) => __awaiter(void 0
     }
     if (currentLabels.includes(label)) {
         try {
-            yield exports.removeLabels(octokit, context, issueNumber, [label]);
+            yield exports.removeLabels(octokit, context, issueNum, [label]);
         }
         catch (e) {
             throw new Error(`could not remove ${label} label: ${e}`);
@@ -11106,6 +11187,13 @@ module.exports = factory();
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * getLineArgs will return the line entire line associated with a given command
+ * Ex return: '/assign some-user some-other-user'
+ *
+ * @param command - the given command to get arguments for. Ex: '/assign'
+ * @param body - the full body of the comment
+ */
 exports.getLineArgs = (command, body) => {
     let toReturn = '';
     const lineArray = body.split('\n');
@@ -11116,6 +11204,13 @@ exports.getLineArgs = (command, body) => {
     }
     return toReturn;
 };
+/**
+ * getCommandArgs will return an array of the arguments associated with a command
+ * Ex return: [`some-user', 'some-other-user']
+ *
+ * @param command - the given command to get arguments for. Ex: '/assign'
+ * @param body - the full body of the comment
+ */
 exports.getCommandArgs = (command, body) => {
     const toReturn = [];
     const lineArray = body.split('\n');
@@ -11140,6 +11235,13 @@ exports.getCommandArgs = (command, body) => {
     }
     return stripAtSign(toReturn);
 };
+/**
+ * stripAtSign will remove a leading '@' sign from the arguments array
+ * This is necessary as some commands may have arguments with users tagged with
+ * a leading at sign. Ex: /assign @some-user
+ *
+ * @param args - the array to remove at signs from
+ */
 const stripAtSign = (args) => {
     const toReturn = [];
     for (const e of args) {
@@ -11738,6 +11840,13 @@ const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const labeling_1 = __webpack_require__(508);
 const auth_1 = __webpack_require__(683);
+/**
+ * /lgtm will add the lgtm label.
+ * Note - this label is used to indicate automatic merging
+ * if the user has configured a cron job to perform automatic merging
+ *
+ * @param context - the github actions event context
+ */
 exports.lgtm = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -11977,6 +12086,11 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
+/**
+ * /unassign will remove the assignment for argument users (or self)
+ *
+ * @param context - the github actions event context
+ */
 exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -12000,7 +12114,7 @@ exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 
     }
     let isAuthUser = false;
     try {
-        isAuthUser = yield checkCommenterAuth(octokit, context, issueNumber, commenterId);
+        isAuthUser = yield auth_1.checkCommenterAuth(octokit, context, issueNumber, commenterId);
     }
     catch (e) {
         throw new Error(`couldn ot check commentor Auth: ${e}`);
@@ -12013,33 +12127,6 @@ exports.unassign = (context = github.context) => __awaiter(void 0, void 0, void 
             throw new Error(`could not remove assignee: ${e}`);
         }
     }
-});
-const checkCommenterAuth = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
-    let isOrgMember = false;
-    let isCollaborator = false;
-    let hasCommented = false;
-    try {
-        isOrgMember = yield auth_1.checkOrgMember(octokit, context, user);
-    }
-    catch (e) {
-        throw new Error(`error in checking org member: ${e}`);
-    }
-    try {
-        isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
-    }
-    catch (e) {
-        throw new Error(`could not check collaborator: ${e}`);
-    }
-    try {
-        hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, user);
-    }
-    catch (e) {
-        throw new Error(`could not check issue comments: ${e}`);
-    }
-    if (isOrgMember || isCollaborator || hasCommented) {
-        return true;
-    }
-    return false;
 });
 
 
@@ -13300,6 +13387,11 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
+/**
+ * /uncc will remove the review request for argument users (or self)
+ *
+ * @param context - the github actions event context
+ */
 exports.uncc = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -13327,7 +13419,7 @@ exports.uncc = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     // - have previously commented on this issue
     let authUser = false;
     try {
-        authUser = yield getAuthUser(octokit, context, pullNumber, commenterId);
+        authUser = yield auth_1.checkCommenterAuth(octokit, context, pullNumber, commenterId);
     }
     catch (e) {
         throw new Error(`could not get authorized users: ${e}`);
@@ -13336,20 +13428,14 @@ exports.uncc = (context = github.context) => __awaiter(void 0, void 0, void 0, f
         yield octokit.pulls.deleteReviewRequest(Object.assign(Object.assign({}, context.repo), { pull_number: pullNumber, reviewers: commentArgs }));
     }
 });
-const getAuthUser = (octokit, context, pullnum, user) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const isOrgMember = yield auth_1.checkOrgMember(octokit, context, user);
-        const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
-        const hasCommented = yield auth_1.checkIssueComments(octokit, context, pullnum, user);
-        if (isOrgMember || isCollaborator || hasCommented) {
-            return true;
-        }
-        return false;
-    }
-    catch (e) {
-        throw new Error(`could not get authorized user: ${e}`);
-    }
-});
+/**
+ * removeSelfReviewReq will remove the self review req if no arguments were provided
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param pullNum - the pr number this runtime is associated with
+ * @param user - the user to self assign
+ */
 const removeSelfReviewReq = (octokit, context, pullNum, user) => __awaiter(void 0, void 0, void 0, function* () {
     const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
     if (isCollaborator) {
@@ -13426,6 +13512,11 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const labeling_1 = __webpack_require__(508);
+/**
+ * /area will add an area/some-area label
+ *
+ * @param context - the github actions event context
+ */
 exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -13438,7 +13529,7 @@ exports.area = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     let commentArgs = command_1.getCommandArgs('/area', commentBody);
     let areaLabels = [];
     try {
-        areaLabels = yield labeling_1.getArgumentLabels('area', octokit, context);
+        areaLabels = yield labeling_1.getArgumentLabels(octokit, context, 'area');
         core.debug(`area: found labels ${areaLabels}`);
     }
     catch (e) {
@@ -13483,6 +13574,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const auth_1 = __webpack_require__(683);
+/**
+ * /close will close the issue / PR
+ *
+ * @param context - the github actions event context
+ */
 exports.close = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -13819,6 +13915,11 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const labeling_1 = __webpack_require__(508);
+/**
+ * /kind will add a kind/some-kind label
+ *
+ * @param context - the github actions event context
+ */
 exports.kind = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -13831,7 +13932,7 @@ exports.kind = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     let commentArgs = command_1.getCommandArgs('/kind', commentBody);
     let kindLabels = [];
     try {
-        kindLabels = yield labeling_1.getArgumentLabels('kind', octokit, context);
+        kindLabels = yield labeling_1.getArgumentLabels(octokit, context, 'kind');
         core.debug(`kind: found labels ${kindLabels}`);
     }
     catch (e) {
@@ -13950,6 +14051,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
+/**
+ * checkOrgMember will check to see if the given user is a repo org member
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param user - the users to check auth on
+ */
 exports.checkOrgMember = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (context.payload.repository === undefined) {
@@ -13966,6 +14074,13 @@ exports.checkOrgMember = (octokit, context, user) => __awaiter(void 0, void 0, v
         return false;
     }
 });
+/**
+ * checkCollaborator checks to see if the given user is a repo collaborator
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param user - the users to check auth on
+ */
 exports.checkCollaborator = (octokit, context, user) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield octokit.repos.checkCollaborator(Object.assign(Object.assign({}, context.repo), { username: user }));
@@ -13975,6 +14090,15 @@ exports.checkCollaborator = (octokit, context, user) => __awaiter(void 0, void 0
         return false;
     }
 });
+/**
+ * checkIssueComments will check to see if the given user
+ * has commented on the given issue
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue or pr number this runtime is associated with
+ * @param user - the users to check auth on
+ */
 exports.checkIssueComments = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const comments = yield octokit.issues.listComments(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum }));
@@ -13989,19 +14113,67 @@ exports.checkIssueComments = (octokit, context, issueNum, user) => __awaiter(voi
         return false;
     }
 });
-exports.checkAssignee = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
+/**
+ * getOrgCollabCommentUsers will return an array of users who are org members,
+ * repo collaborators, or have commented previously
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue or pr number this runtime is associated with
+ * @param args - the users to check auth on
+ */
+exports.getOrgCollabCommentUsers = (octokit, context, issueNum, args) => __awaiter(void 0, void 0, void 0, function* () {
+    const toReturn = [];
     try {
-        const assignees = yield octokit.issues.listAssignees(Object.assign({}, context.repo));
-        for (const a of assignees.data) {
-            if (a.login === user) {
-                return true;
+        yield Promise.all(args.map((arg) => __awaiter(void 0, void 0, void 0, function* () {
+            const isOrgMember = yield exports.checkOrgMember(octokit, context, arg);
+            const isCollaborator = yield exports.checkCollaborator(octokit, context, arg);
+            const hasCommented = yield exports.checkIssueComments(octokit, context, issueNum, arg);
+            if (isOrgMember || isCollaborator || hasCommented) {
+                toReturn.push(arg);
             }
-        }
-        return false;
+        })));
     }
     catch (e) {
-        return false;
+        throw new Error(`could not get authorized user: ${e}`);
     }
+    return toReturn;
+});
+/**
+ * checkCommenterAuth will return true
+ * if the user is a org member, a collaborator, or has commented previously
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue or pr number this runtime is associated with
+ * @param args - the users to check auth on
+ */
+exports.checkCommenterAuth = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
+    let isOrgMember = false;
+    let isCollaborator = false;
+    let hasCommented = false;
+    try {
+        isOrgMember = yield exports.checkOrgMember(octokit, context, user);
+    }
+    catch (e) {
+        throw new Error(`error in checking org member: ${e}`);
+    }
+    try {
+        isCollaborator = yield exports.checkCollaborator(octokit, context, user);
+    }
+    catch (e) {
+        throw new Error(`could not check collaborator: ${e}`);
+    }
+    try {
+        hasCommented = yield exports.checkIssueComments(octokit, context, issueNum, user);
+    }
+    catch (e) {
+        throw new Error(`could not check issue comments: ${e}`);
+    }
+    if (isOrgMember || isCollaborator || hasCommented) {
+        return true;
+    }
+    return false;
 });
 
 
@@ -15086,6 +15258,12 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
+/**
+ * /retitle will "rename" the issue / PR.
+ * Note - it is expected that the command has an argument with the new title
+ *
+ * @param context - the github actions event context
+ */
 exports.retitle = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -15326,6 +15504,13 @@ const lock_1 = __webpack_require__(501);
 const cc_1 = __webpack_require__(788);
 const uncc_1 = __webpack_require__(597);
 const milestone_1 = __webpack_require__(285);
+/**
+ * This Method handles any issue comments
+ * Note that the github api considers PRs issues
+ * A user should define which of the commands they want to run in their workflow yaml
+ *
+ * @param context - the github context of the current action event
+ */
 exports.handleIssueComment = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     const commandConfig = core
         .getInput('prow-commands', { required: false })
@@ -15584,6 +15769,12 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
+/**
+ * /cc will request a review from self with no arguments or the users specified
+ * or assign the users in the argument list
+ *
+ * @param context - the github actions event context
+ */
 exports.cc = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });
@@ -15611,7 +15802,7 @@ exports.cc = (context = github.context) => __awaiter(void 0, void 0, void 0, fun
     // - have previously commented on this issue
     let authUsers = [];
     try {
-        authUsers = yield getAuthUsers(octokit, context, pullNumber, commentArgs);
+        authUsers = yield auth_1.getOrgCollabCommentUsers(octokit, context, pullNumber, commentArgs);
     }
     catch (e) {
         throw new Error(`could not get authorized users: ${e}`);
@@ -15629,23 +15820,14 @@ exports.cc = (context = github.context) => __awaiter(void 0, void 0, void 0, fun
             break;
     }
 });
-const getAuthUsers = (octokit, context, pullnum, args) => __awaiter(void 0, void 0, void 0, function* () {
-    const toReturn = [];
-    try {
-        yield Promise.all(args.map((arg) => __awaiter(void 0, void 0, void 0, function* () {
-            const isOrgMember = yield auth_1.checkOrgMember(octokit, context, arg);
-            const isCollaborator = yield auth_1.checkCollaborator(octokit, context, arg);
-            const hasCommented = yield auth_1.checkIssueComments(octokit, context, pullnum, arg);
-            if (isOrgMember || isCollaborator || hasCommented) {
-                toReturn.push(arg);
-            }
-        })));
-    }
-    catch (e) {
-        throw new Error(`could not get authorized user: ${e}`);
-    }
-    return toReturn;
-});
+/**
+ * selfReview will self request a review for the current PR
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the  pr number this runtime is associated with
+ * @param user - the user to request a self review
+ */
 const selfReview = (octokit, context, pullNum, user) => __awaiter(void 0, void 0, void 0, function* () {
     const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
     if (isCollaborator) {
@@ -15746,7 +15928,7 @@ exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0,
     // - have previously commented on this issue
     let authUsers = [];
     try {
-        authUsers = yield getAuthUsers(octokit, context, issueNumber, commentArgs);
+        authUsers = yield auth_1.getOrgCollabCommentUsers(octokit, context, issueNumber, commentArgs);
     }
     catch (e) {
         throw new Error(`could not get authorized users: ${e}`);
@@ -15764,28 +15946,17 @@ exports.assign = (context = github.context) => __awaiter(void 0, void 0, void 0,
             break;
     }
 });
-const getAuthUsers = (octokit, context, issueNum, args) => __awaiter(void 0, void 0, void 0, function* () {
-    const toReturn = [];
-    try {
-        yield Promise.all(args.map((arg) => __awaiter(void 0, void 0, void 0, function* () {
-            const isOrgMember = yield auth_1.checkOrgMember(octokit, context, arg);
-            const isCollaborator = yield auth_1.checkCollaborator(octokit, context, arg);
-            const hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, arg);
-            if (isOrgMember || isCollaborator || hasCommented) {
-                toReturn.push(arg);
-            }
-        })));
-    }
-    catch (e) {
-        throw new Error(`could not get authorized user: ${e}`);
-    }
-    return toReturn;
-});
+/**
+ * selfAssign will assign the issue / pr to the user who commented
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue or pr number this runtime is associated with
+ * @param user - the user to self assign
+ */
 const selfAssign = (octokit, context, issueNum, user) => __awaiter(void 0, void 0, void 0, function* () {
-    const isOrgMember = yield auth_1.checkOrgMember(octokit, context, user);
-    const isCollaborator = yield auth_1.checkCollaborator(octokit, context, user);
-    const hasCommented = yield auth_1.checkIssueComments(octokit, context, issueNum, user);
-    if (isOrgMember || isCollaborator || hasCommented) {
+    const isAuthorized = yield auth_1.checkCommenterAuth(octokit, context, issueNum, user);
+    if (isAuthorized) {
         yield octokit.issues.addAssignees(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, assignees: [user] }));
     }
 });
@@ -30446,6 +30617,11 @@ const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const labeling_1 = __webpack_require__(508);
 const auth_1 = __webpack_require__(683);
+/**
+ * /remove will remove a label based on the command argument
+ *
+ * @param context - the github actions event context
+ */
 exports.remove = (context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const token = core.getInput('github-token', { required: true });

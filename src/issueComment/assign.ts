@@ -4,11 +4,7 @@ import * as core from '@actions/core'
 import {Context} from '@actions/github/lib/context'
 
 import {getCommandArgs} from '../utils/command'
-import {
-  checkCollaborator,
-  checkIssueComments,
-  checkOrgMember
-} from '../utils/auth'
+import {getOrgCollabCommentUsers, checkCommenterAuth} from '../utils/auth'
 
 /**
  * /assign will self assign with no argument
@@ -52,7 +48,12 @@ export const assign = async (
   // - have previously commented on this issue
   let authUsers: string[] = []
   try {
-    authUsers = await getAuthUsers(octokit, context, issueNumber, commentArgs)
+    authUsers = await getOrgCollabCommentUsers(
+      octokit,
+      context,
+      issueNumber,
+      commentArgs
+    )
   } catch (e) {
     throw new Error(`could not get authorized users: ${e}`)
   }
@@ -77,54 +78,28 @@ export const assign = async (
   }
 }
 
-const getAuthUsers = async (
-  octokit: github.GitHub,
-  context: Context,
-  issueNum: number,
-  args: string[]
-): Promise<string[]> => {
-  const toReturn: string[] = []
-
-  try {
-    await Promise.all(
-      args.map(async arg => {
-        const isOrgMember = await checkOrgMember(octokit, context, arg)
-        const isCollaborator = await checkCollaborator(octokit, context, arg)
-        const hasCommented = await checkIssueComments(
-          octokit,
-          context,
-          issueNum,
-          arg
-        )
-
-        if (isOrgMember || isCollaborator || hasCommented) {
-          toReturn.push(arg)
-        }
-      })
-    )
-  } catch (e) {
-    throw new Error(`could not get authorized user: ${e}`)
-  }
-
-  return toReturn
-}
-
+/**
+ * selfAssign will assign the issue / pr to the user who commented
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue or pr number this runtime is associated with
+ * @param user - the user to self assign
+ */
 const selfAssign = async (
   octokit: github.GitHub,
   context: Context,
   issueNum: number,
   user: string
 ): Promise<void> => {
-  const isOrgMember = await checkOrgMember(octokit, context, user)
-  const isCollaborator = await checkCollaborator(octokit, context, user)
-  const hasCommented = await checkIssueComments(
+  const isAuthorized = await checkCommenterAuth(
     octokit,
     context,
     issueNum,
     user
   )
 
-  if (isOrgMember || isCollaborator || hasCommented) {
+  if (isAuthorized) {
     await octokit.issues.addAssignees({
       ...context.repo,
       issue_number: issueNum,

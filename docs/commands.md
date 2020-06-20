@@ -10,7 +10,7 @@ Commands | Policy | Description
 `/uncc [@userA @userB @etc]` | anyone | Dismiss review request for specified people (or yourself if no one is specified). Target must already have had a review requested.
 `/close` | Collaborators | closes the issue / PR
 `/reopen` | Collaborators | reopens a closed issue / PR
-`/lock [resolved | off-topic | too-heated | spam]` | Collaborators | locks the issue / PR with the specified reason
+`/lock [resolved / off-topic / too-heated / spam]` | Collaborators | locks the issue / PR with the specified reason
 `/milestone milestone-name` | Collaborators | Adds issue / PR to an existing milestone
 `/retitle some new title` | Collaborators | Renames the issue / PR
 

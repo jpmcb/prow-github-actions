@@ -6,6 +6,11 @@ import * as core from '@actions/core'
 import {getCommandArgs} from '../utils/command'
 import {getArgumentLabels, labelIssue, addPrefix} from '../utils/labeling'
 
+/**
+ * /priority will add a priority/some-priority label
+ *
+ * @param context - the github actions event context
+ */
 export const priority = async (
   context: Context = github.context
 ): Promise<void> => {
@@ -25,7 +30,7 @@ export const priority = async (
 
   let priorityLabels: string[] = []
   try {
-    priorityLabels = await getArgumentLabels('priority', octokit, context)
+    priorityLabels = await getArgumentLabels(octokit, context, 'priority')
     core.debug(`priority: found labels ${priorityLabels}`)
   } catch (e) {
     throw new Error(`could not get labels from yaml: ${e}`)

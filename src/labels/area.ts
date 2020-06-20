@@ -6,6 +6,11 @@ import * as core from '@actions/core'
 import {getCommandArgs} from '../utils/command'
 import {getArgumentLabels, labelIssue, addPrefix} from '../utils/labeling'
 
+/**
+ * /area will add an area/some-area label
+ *
+ * @param context - the github actions event context
+ */
 export const area = async (
   context: Context = github.context
 ): Promise<void> => {
@@ -25,7 +30,7 @@ export const area = async (
 
   let areaLabels: string[] = []
   try {
-    areaLabels = await getArgumentLabels('area', octokit, context)
+    areaLabels = await getArgumentLabels(octokit, context, 'area')
     core.debug(`area: found labels ${areaLabels}`)
   } catch (e) {
     throw new Error(`could not get labels from yaml: ${e}`)

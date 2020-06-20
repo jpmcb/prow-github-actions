@@ -6,6 +6,12 @@ import {Context} from '@actions/github/lib/context'
 import {getCommandArgs} from '../utils/command'
 import {checkCollaborator} from '../utils/auth'
 
+/**
+ * /retitle will "rename" the issue / PR.
+ * Note - it is expected that the command has an argument with the new title
+ *
+ * @param context - the github actions event context
+ */
 export const retitle = async (
   context: Context = github.context
 ): Promise<void> => {

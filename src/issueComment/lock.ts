@@ -6,6 +6,12 @@ import {Context} from '@actions/github/lib/context'
 import {checkCollaborator} from '../utils/auth'
 import {getCommandArgs} from '../utils/command'
 
+/**
+ * /lock will lock the issue / PR.
+ * No more comments will be permitted
+ *
+ * @param context - the github actions event context
+ */
 export const lock = async (
   context: Context = github.context
 ): Promise<void> => {

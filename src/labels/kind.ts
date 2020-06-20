@@ -6,6 +6,11 @@ import * as core from '@actions/core'
 import {getCommandArgs} from '../utils/command'
 import {getArgumentLabels, labelIssue, addPrefix} from '../utils/labeling'
 
+/**
+ * /kind will add a kind/some-kind label
+ *
+ * @param context - the github actions event context
+ */
 export const kind = async (
   context: Context = github.context
 ): Promise<void> => {
@@ -25,7 +30,7 @@ export const kind = async (
 
   let kindLabels: string[] = []
   try {
-    kindLabels = await getArgumentLabels('kind', octokit, context)
+    kindLabels = await getArgumentLabels(octokit, context, 'kind')
     core.debug(`kind: found labels ${kindLabels}`)
   } catch (e) {
     throw new Error(`could not get labels from yaml: ${e}`)

@@ -4,12 +4,21 @@ import * as core from '@actions/core'
 
 import * as yaml from 'js-yaml'
 
-// This method has some eslint ignores related to
-// no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
+/**
+ * getArgumentLabels will get the .github/labels.yaml or .github.labels.yml file.
+ * it will then return the section specified by arg.
+ *
+ * This method has some eslint ignores related to
+ * no explicit typing in octokit for content response - https://github.com/octokit/rest.js/issues/1516
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param arg - the label section to return. For example, may be 'area', etc
+ */
 export const getArgumentLabels = async (
-  arg: string,
   octokit: github.GitHub,
-  context: Context
+  context: Context,
+  arg: string
 ): Promise<string[]> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let response: any = undefined
@@ -51,6 +60,14 @@ export const getArgumentLabels = async (
   return content[arg]
 }
 
+/**
+ * labelIssue will label the issue with the labels provided
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue associated with this runtime
+ * @param labels - the labels to add to the issue
+ */
 export const labelIssue = async (
   octokit: github.GitHub,
   context: Context,
@@ -68,6 +85,13 @@ export const labelIssue = async (
   }
 }
 
+/**
+ * getCurrentLabels will return the labels for the associated issue
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue associated with this runtime
+ */
 export const getCurrentLabels = async (
   octokit: github.GitHub,
   context: Context,
@@ -87,6 +111,14 @@ export const getCurrentLabels = async (
   }
 }
 
+/**
+ * removeLabels will remove labels for the issue with the labels provided
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue associated with this runtime
+ * @param labels - the labels to remove from the issue
+ */
 export const removeLabels = async (
   octokit: github.GitHub,
   context: Context,
@@ -106,6 +138,12 @@ export const removeLabels = async (
   }
 }
 
+/**
+ * addPrefix will add the associated prefix to the arguments array
+ *
+ * @param prefix - the prefix to add to the args
+ * @param args - the strings to add the prefix to
+ */
 export const addPrefix = (prefix: string, args: string[]): string[] => {
   const toReturn: string[] = []
 
@@ -116,15 +154,23 @@ export const addPrefix = (prefix: string, args: string[]): string[] => {
   return toReturn
 }
 
+/**
+ * cancelLabel will remove an associated label
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue associated with this runtime
+ * @param labels - the label to remove from the issue
+ */
 export const cancelLabel = async (
   octokit: github.GitHub,
   context: Context,
-  issueNumber: number,
+  issueNum: number,
   label: string
 ): Promise<void> => {
   let currentLabels: string[] = []
   try {
-    currentLabels = await getCurrentLabels(octokit, context, issueNumber)
+    currentLabels = await getCurrentLabels(octokit, context, issueNum)
     core.debug(`remove: found labels for issue ${currentLabels}`)
   } catch (e) {
     throw new Error(`could not get labels from issue: ${e}`)
@@ -132,7 +178,7 @@ export const cancelLabel = async (
 
   if (currentLabels.includes(label)) {
     try {
-      await removeLabels(octokit, context, issueNumber, [label])
+      await removeLabels(octokit, context, issueNum, [label])
     } catch (e) {
       throw new Error(`could not remove ${label} label: ${e}`)
     }

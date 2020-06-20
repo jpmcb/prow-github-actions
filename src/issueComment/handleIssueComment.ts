@@ -20,6 +20,13 @@ import {cc} from './cc'
 import {uncc} from './uncc'
 import {milestone} from './milestone'
 
+/**
+ * This Method handles any issue comments
+ * Note that the github api considers PRs issues
+ * A user should define which of the commands they want to run in their workflow yaml
+ *
+ * @param context - the github context of the current action event
+ */
 export const handleIssueComment = async (
   context: Context = github.context
 ): Promise<void> => {

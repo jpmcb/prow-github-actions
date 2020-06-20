@@ -4,12 +4,13 @@ import * as core from '@actions/core'
 import {Context} from '@actions/github/lib/context'
 
 import {getCommandArgs} from '../utils/command'
-import {
-  checkCollaborator,
-  checkIssueComments,
-  checkOrgMember
-} from '../utils/auth'
+import {checkCollaborator, checkCommenterAuth} from '../utils/auth'
 
+/**
+ * /uncc will remove the review request for argument users (or self)
+ *
+ * @param context - the github actions event context
+ */
 export const uncc = async (
   context: Context = github.context
 ): Promise<void> => {
@@ -42,9 +43,14 @@ export const uncc = async (
   // - are members of the org
   // - are collaborators
   // - have previously commented on this issue
-  let authUser = false
+  let authUser: Boolean = false
   try {
-    authUser = await getAuthUser(octokit, context, pullNumber, commenterId)
+    authUser = await checkCommenterAuth(
+      octokit,
+      context,
+      pullNumber,
+      commenterId
+    )
   } catch (e) {
     throw new Error(`could not get authorized users: ${e}`)
   }
@@ -58,32 +64,14 @@ export const uncc = async (
   }
 }
 
-const getAuthUser = async (
-  octokit: github.GitHub,
-  context: Context,
-  pullnum: number,
-  user: string
-): Promise<boolean> => {
-  try {
-    const isOrgMember = await checkOrgMember(octokit, context, user)
-    const isCollaborator = await checkCollaborator(octokit, context, user)
-    const hasCommented = await checkIssueComments(
-      octokit,
-      context,
-      pullnum,
-      user
-    )
-
-    if (isOrgMember || isCollaborator || hasCommented) {
-      return true
-    }
-
-    return false
-  } catch (e) {
-    throw new Error(`could not get authorized user: ${e}`)
-  }
-}
-
+/**
+ * removeSelfReviewReq will remove the self review req if no arguments were provided
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param pullNum - the pr number this runtime is associated with
+ * @param user - the user to self assign
+ */
 const removeSelfReviewReq = async (
   octokit: github.GitHub,
   context: Context,

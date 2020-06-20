@@ -5,6 +5,11 @@ import {Context} from '@actions/github/lib/context'
 
 import {checkCollaborator} from '../utils/auth'
 
+/**
+ * /close will close the issue / PR
+ *
+ * @param context - the github actions event context
+ */
 export const close = async (
   context: Context = github.context
 ): Promise<void> => {

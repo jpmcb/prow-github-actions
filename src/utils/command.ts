@@ -1,3 +1,10 @@
+/**
+ * getLineArgs will return the line entire line associated with a given command
+ * Ex return: '/assign some-user some-other-user'
+ *
+ * @param command - the given command to get arguments for. Ex: '/assign'
+ * @param body - the full body of the comment
+ */
 export const getLineArgs = (command: string, body: string): string => {
   let toReturn = ''
   const lineArray = body.split('\n')
@@ -11,6 +18,13 @@ export const getLineArgs = (command: string, body: string): string => {
   return toReturn
 }
 
+/**
+ * getCommandArgs will return an array of the arguments associated with a command
+ * Ex return: [`some-user', 'some-other-user']
+ *
+ * @param command - the given command to get arguments for. Ex: '/assign'
+ * @param body - the full body of the comment
+ */
 export const getCommandArgs = (command: string, body: string): string[] => {
   const toReturn = []
   const lineArray = body.split('\n')
@@ -41,6 +55,13 @@ export const getCommandArgs = (command: string, body: string): string[] => {
   return stripAtSign(toReturn)
 }
 
+/**
+ * stripAtSign will remove a leading '@' sign from the arguments array
+ * This is necessary as some commands may have arguments with users tagged with
+ * a leading at sign. Ex: /assign @some-user
+ *
+ * @param args - the array to remove at signs from
+ */
 const stripAtSign = (args: string[]): string[] => {
   const toReturn: string[] = []
 

@@ -4,6 +4,12 @@ import * as core from '@actions/core'
 
 import {Context} from '@actions/github/lib/context'
 
+/**
+ * This method handles any pull-request configuration for configured workflows.
+ * At this time, there are no commands for prow-github-actions
+ *
+ * @param context - the github context of the current action event
+ */
 export const handlePullReq = async (
   context: Context = github.context
 ): Promise<void> => {
