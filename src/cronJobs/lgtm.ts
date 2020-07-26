@@ -102,7 +102,7 @@ const tryMergePr = async (
   pr: Octokit.PullsListResponseItem,
   octokit: github.GitHub,
   context: Context = github.context,
-  merge_method: string = core.getInput('merge-method') ? core.getInput('merge-method') : 'merge'
+  merge_method: Octokit.PullsMergeParams = core.getInput('merge-method') ? core.getInput('merge-method') : 'merge'
 ): Promise<void> => {
   // if pr has label 'lgtm', attempt to merge
   // but not if it has the 'hold' label
