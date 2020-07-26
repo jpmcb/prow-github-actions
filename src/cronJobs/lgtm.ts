@@ -101,9 +101,11 @@ const getOpenPrs = async (
 const tryMergePr = async (
   pr: Octokit.PullsListResponseItem,
   octokit: github.GitHub,
-  context: Context = github.context,
-  merge_method: Octokit.PullsMergeParams = core.getInput('merge-method') ? core.getInput('merge-method') : 'merge'
+  context: Context = github.context
 ): Promise<void> => {
+
+  const mergeMethod = core.getInput('merge-method') ? core.getInput('merge-method') : 'merge'
+
   // if pr has label 'lgtm', attempt to merge
   // but not if it has the 'hold' label
   if (
@@ -114,7 +116,7 @@ const tryMergePr = async (
       await octokit.pulls.merge({
         ...context.repo,
         pull_number: pr.number,
-        merge_method: merge_method
+        merge_method: mergeMethod
       })
     } catch (e) {
       core.debug(`could not merge pr ${pr.number}: ${e}`)
