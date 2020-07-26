@@ -16,6 +16,7 @@ jobs:
       - uses: jpmcb/prow-github-actions
         with:
           jobs: 'lgtm'
+          merge-method: merge
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 ```
 This Github workflow will check every hour

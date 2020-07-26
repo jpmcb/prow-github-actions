@@ -112,7 +112,8 @@ const tryMergePr = async (
     try {
       await octokit.pulls.merge({
         ...context.repo,
-        pull_number: pr.number
+        pull_number: pr.number,
+        merge_method: core.getInput('merge-method') ? core.getInput('merge-method') : 'merge'
       })
     } catch (e) {
       core.debug(`could not merge pr ${pr.number}: ${e}`)

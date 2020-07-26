@@ -11,6 +11,10 @@ inputs:
   jobs:
     description: "The jobs to automatically run on event. Space delimited. Expect commands on own line."
     required: false
+  merge-method:
+    description: "How your pull-request will be merged.  Options: merge, squash, rebase"
+    required: false
+    default: merge
 branding:
   color: blue
   icon: anchor
