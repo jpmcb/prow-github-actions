@@ -103,7 +103,7 @@ const tryMergePr = async (
   octokit: github.GitHub,
   context: Context = github.context
 ): Promise<void> => {
-  const strategy = core.getInput('merge-strategy', {required: false})
+  const method = core.getInput('merge-method', {required: false})
 
   // if pr has label 'lgtm', attempt to merge
   // but not if it has the 'hold' label
@@ -112,7 +112,7 @@ const tryMergePr = async (
     !pr.labels.map(e => e.name).includes('hold')
   ) {
     try {
-      switch (strategy) {
+      switch (method) {
         case 'squash':
           await octokit.pulls.merge({
             ...context.repo,

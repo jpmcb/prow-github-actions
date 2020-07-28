@@ -32859,13 +32859,13 @@ const getOpenPrs = (octokit, context = github.context, page) => __awaiter(void 0
  * @param context - the github actions event context
  */
 const tryMergePr = (pr, octokit, context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
-    const strategy = core.getInput('merge-strategy', { required: false });
+    const method = core.getInput('merge-method', { required: false });
     // if pr has label 'lgtm', attempt to merge
     // but not if it has the 'hold' label
     if (pr.labels.map(e => e.name).includes('lgtm') &&
         !pr.labels.map(e => e.name).includes('hold')) {
         try {
-            switch (strategy) {
+            switch (method) {
                 case 'squash':
                     yield octokit.pulls.merge(Object.assign(Object.assign({}, context.repo), { pull_number: pr.number, merge_method: 'squash' }));
                     break;

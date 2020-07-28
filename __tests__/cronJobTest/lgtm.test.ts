@@ -47,7 +47,7 @@ describe('cronLgtm', () => {
 
   it('merges the PR with squash configured', async () => {
     utils.setupJobsEnv('lgtm')
-    process.env['INPUT_MERGE-STRATEGY'] = 'squash'
+    process.env['INPUT_MERGE-METHOD'] = 'squash'
 
     // We can use any context here as "schedule" sends no webhook payload
     // Instead, we use it to gain the repo owner and url
@@ -80,7 +80,7 @@ describe('cronLgtm', () => {
 
   it('merges the PR with rebase configured', async () => {
     utils.setupJobsEnv('lgtm')
-    process.env['INPUT_MERGE-STRATEGY'] = 'rebase'
+    process.env['INPUT_MERGE-METHOD'] = 'rebase'
 
     // We can use any context here as "schedule" sends no webhook payload
     // Instead, we use it to gain the repo owner and url
