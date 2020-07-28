@@ -30,11 +30,84 @@ describe('cronLgtm', () => {
       .get('/repos/Codertocat/Hello-World/pulls?state=open&page=2')
       .reply(200, [])
 
+    let parsedBody = undefined
     nock(utils.api)
-      .put('/repos/Codertocat/Hello-World/pulls/2/merge')
+      .put('/repos/Codertocat/Hello-World/pulls/2/merge', body => {
+        parsedBody = body
+        return body
+      })
       .reply(200)
 
     await handleCronJobs(context)
+    expect(parsedBody).toEqual({
+      merge_method: 'merge'
+    })
+    expect(nock.isDone()).toBe(true)
+  })
+
+  it('merges the PR with squash configured', async () => {
+    utils.setupJobsEnv('lgtm')
+    process.env['INPUT_MERGE-STRATEGY'] = 'squash'
+
+    // We can use any context here as "schedule" sends no webhook payload
+    // Instead, we use it to gain the repo owner and url
+    const context = new utils.mockContext(pullReqOpenedEvent)
+
+    listPullReqs[0].labels[0].name = 'lgtm'
+
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/pulls?state=open&page=1')
+      .reply(200, listPullReqs)
+
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/pulls?state=open&page=2')
+      .reply(200, [])
+
+    let parsedBody = undefined
+    nock(utils.api)
+      .put('/repos/Codertocat/Hello-World/pulls/2/merge', body => {
+        parsedBody = body
+        return body
+      })
+      .reply(200)
+
+    await handleCronJobs(context)
+    expect(parsedBody).toEqual({
+      merge_method: 'squash'
+    })
+    expect(nock.isDone()).toBe(true)
+  })
+
+  it('merges the PR with rebase configured', async () => {
+    utils.setupJobsEnv('lgtm')
+    process.env['INPUT_MERGE-STRATEGY'] = 'rebase'
+
+    // We can use any context here as "schedule" sends no webhook payload
+    // Instead, we use it to gain the repo owner and url
+    const context = new utils.mockContext(pullReqOpenedEvent)
+
+    listPullReqs[0].labels[0].name = 'lgtm'
+
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/pulls?state=open&page=1')
+      .reply(200, listPullReqs)
+
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/pulls?state=open&page=2')
+      .reply(200, [])
+
+    let parsedBody = undefined
+    nock(utils.api)
+      .put('/repos/Codertocat/Hello-World/pulls/2/merge', body => {
+        parsedBody = body
+        return body
+      })
+      .reply(200)
+
+    await handleCronJobs(context)
+    expect(parsedBody).toEqual({
+      merge_method: 'rebase'
+    })
     expect(nock.isDone()).toBe(true)
   })
 

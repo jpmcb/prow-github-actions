@@ -2561,6 +2561,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
+const onPrLgtm_1 = __webpack_require__(350);
 /**
  * This method handles any pull-request configuration for configured workflows.
  * At this time, there are no commands for prow-github-actions
@@ -2572,6 +2573,11 @@ exports.handlePullReq = (context = github.context) => __awaiter(void 0, void 0, 
     yield Promise.all(runConfig.map((command) => __awaiter(void 0, void 0, void 0, function* () {
         core.debug(`${context}`);
         switch (command) {
+            case 'lgtm':
+                core.debug('running pr lgtm new commit job');
+                return yield onPrLgtm_1.onPrLgtm(context).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+                    return e;
+                }));
             case '':
                 return new Error(`please provide a list of space delimited commands / jobs to run. None found`);
             default:
@@ -5786,6 +5792,60 @@ function authenticationRequestError(state, error, options) {
       return state.octokit.request(newOptions);
     });
 }
+
+
+/***/ }),
+
+/***/ 350:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const github = __importStar(__webpack_require__(469));
+const core = __importStar(__webpack_require__(470));
+const labeling_1 = __webpack_require__(508);
+/**
+ * Removes the 'lgtm' label after a pull request event
+ *
+ * @param context - The github actions event context
+ */
+exports.onPrLgtm = (context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = core.getInput('github-token', { required: true });
+    const octokit = new github.GitHub(token);
+    const prNumber = (_a = context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
+    if (prNumber === undefined) {
+        throw new Error(`github context payload missing pr number: ${context.payload}`);
+    }
+    let currentLabels = [];
+    try {
+        currentLabels = yield labeling_1.getCurrentLabels(octokit, context, prNumber);
+        core.debug(`remove-lgtm: found labels for issue ${currentLabels}`);
+    }
+    catch (e) {
+        throw new Error(`could not get labels from issue: ${e}`);
+    }
+    if (currentLabels.includes('lgtm')) {
+        yield labeling_1.removeLabels(octokit, context, prNumber, ['lgtm']);
+    }
+});
 
 
 /***/ }),
@@ -32799,12 +32859,22 @@ const getOpenPrs = (octokit, context = github.context, page) => __awaiter(void 0
  * @param context - the github actions event context
  */
 const tryMergePr = (pr, octokit, context = github.context) => __awaiter(void 0, void 0, void 0, function* () {
+    const strategy = core.getInput('merge-strategy', { required: false });
     // if pr has label 'lgtm', attempt to merge
     // but not if it has the 'hold' label
     if (pr.labels.map(e => e.name).includes('lgtm') &&
         !pr.labels.map(e => e.name).includes('hold')) {
         try {
-            yield octokit.pulls.merge(Object.assign(Object.assign({}, context.repo), { pull_number: pr.number }));
+            switch (strategy) {
+                case 'squash':
+                    yield octokit.pulls.merge(Object.assign(Object.assign({}, context.repo), { pull_number: pr.number, merge_method: 'squash' }));
+                    break;
+                case 'rebase':
+                    yield octokit.pulls.merge(Object.assign(Object.assign({}, context.repo), { pull_number: pr.number, merge_method: 'rebase' }));
+                    break;
+                default:
+                    yield octokit.pulls.merge(Object.assign(Object.assign({}, context.repo), { pull_number: pr.number, merge_method: 'merge' }));
+            }
         }
         catch (e) {
             core.debug(`could not merge pr ${pr.number}: ${e}`);

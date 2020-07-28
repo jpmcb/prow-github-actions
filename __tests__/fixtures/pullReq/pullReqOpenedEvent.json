@@ -1,15 +1,15 @@
 {
     "action": "opened",
-    "number": 2,
+    "number": 1,
     "pull_request": {
-      "url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/2",
+      "url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/1",
       "id": 279147437,
       "node_id": "MDExOlB1bGxSZXF1ZXN0Mjc5MTQ3NDM3",
       "html_url": "https://github.com/Codertocat/Hello-World/pull/2",
       "diff_url": "https://github.com/Codertocat/Hello-World/pull/2.diff",
       "patch_url": "https://github.com/Codertocat/Hello-World/pull/2.patch",
       "issue_url": "https://api.github.com/repos/Codertocat/Hello-World/issues/2",
-      "number": 2,
+      "number": 1,
       "state": "open",
       "locked": false,
       "title": "Update the README with new information.",
@@ -53,8 +53,8 @@
   
       ],
       "milestone": null,
-      "commits_url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits",
-      "review_comments_url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/2/comments",
+      "commits_url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/1/commits",
+      "review_comments_url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/1/comments",
       "review_comment_url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/comments{/number}",
       "comments_url": "https://api.github.com/repos/Codertocat/Hello-World/issues/2/comments",
       "statuses_url": "https://api.github.com/repos/Codertocat/Hello-World/statuses/ec26c3e57ca3a959ca5aad62de7213c562f8c821",
@@ -298,7 +298,7 @@
       },
       "_links": {
         "self": {
-          "href": "https://api.github.com/repos/Codertocat/Hello-World/pulls/2"
+          "href": "https://api.github.com/repos/Codertocat/Hello-World/pulls/1"
         },
         "html": {
           "href": "https://github.com/Codertocat/Hello-World/pull/2"
@@ -310,13 +310,13 @@
           "href": "https://api.github.com/repos/Codertocat/Hello-World/issues/2/comments"
         },
         "review_comments": {
-          "href": "https://api.github.com/repos/Codertocat/Hello-World/pulls/2/comments"
+          "href": "https://api.github.com/repos/Codertocat/Hello-World/pulls/1/comments"
         },
         "review_comment": {
           "href": "https://api.github.com/repos/Codertocat/Hello-World/pulls/comments{/number}"
         },
         "commits": {
-          "href": "https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits"
+          "href": "https://api.github.com/repos/Codertocat/Hello-World/pulls/1/commits"
         },
         "statuses": {
           "href": "https://api.github.com/repos/Codertocat/Hello-World/statuses/ec26c3e57ca3a959ca5aad62de7213c562f8c821"

@@ -3,6 +3,7 @@ import * as github from '@actions/github'
 import * as core from '@actions/core'
 
 import {Context} from '@actions/github/lib/context'
+import {onPrLgtm} from './onPrLgtm'
 
 /**
  * This method handles any pull-request configuration for configured workflows.
@@ -19,6 +20,12 @@ export const handlePullReq = async (
     runConfig.map(async command => {
       core.debug(`${context}`)
       switch (command) {
+        case 'lgtm':
+          core.debug('running pr lgtm new commit job')
+          return await onPrLgtm(context).catch(async e => {
+            return e
+          })
+
         case '':
           return new Error(
             `please provide a list of space delimited commands / jobs to run. None found`

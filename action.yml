@@ -11,6 +11,9 @@ inputs:
   jobs:
     description: "The jobs to automatically run on event. Space delimited. Expect commands on own line."
     required: false
+  merge-strategy:
+    description: "Strategy for Prow-github-actions to take when merging a pull request using the lgtm cron-job. Can be 'squash', 'rebase', or 'merge'. Defaults to 'merge'"
+    required: false
 branding:
   color: blue
   icon: anchor
