@@ -85,6 +85,7 @@ jobs:
         with:
           jobs: 'lgtm'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+          merge-method: 'squash'
 ```
 
 ## Documentation
