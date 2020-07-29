@@ -11,3 +11,4 @@ jobs:
       - uses: ./
         with:
           jobs: 'lgtm'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
