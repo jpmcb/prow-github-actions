@@ -85,6 +85,9 @@ jobs:
         with:
           jobs: 'lgtm'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+          # this is optional and defaults to 'merge'
+          merge-method: 'squash'
 ```
 
 ## Documentation
