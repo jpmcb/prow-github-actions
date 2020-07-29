@@ -20,7 +20,7 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions
+      - uses: jpmcb/prow-github-actions@v1
         with:
           prow-commands: '/assign 
             /unassign 
@@ -52,7 +52,7 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions
+      - uses: jpmcb/prow-github-actions@v1
         with:
           jobs: 'pr-labeler'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
@@ -81,13 +81,28 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions
+      - uses: jpmcb/prow-github-actions@v1
         with:
           jobs: 'lgtm'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
           # this is optional and defaults to 'merge'
           merge-method: 'squash'
+```
+
+Prow Github actions also supports removing the lgtm label when a PR is updated
+```yaml
+name: "Run Jobs on PR"
+on: pull_request
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jpmcb/prow-github-actions@v1
+        with:
+          jobs: 'lgtm'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
 ```
 
 ## Documentation
@@ -97,6 +112,7 @@ jobs:
 - [PR Labeling](./docs/pr-labeling.md)
 - [Cron Jobs](./docs/cron-jobs.md)
 - [Automatic PR merging](./docs/automatic-merging.md)
+- [PR jobs](./docs/pr-jobs.md)
 - [Examples](./docs/examples.md)
 - [Contributing](./docs/contributing.md)
 

@@ -12,7 +12,7 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions
+      - uses: jpmcb/prow-github-actions@v1
         with:
           jobs: 'pr-labeler'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
