@@ -44,3 +44,9 @@ This workflow will remove the `lgtm` label from a PR that gets updated.
 This prevents any un-reviewed code from being automatically merged by the lgtm-merger mechanism.
 
 Refer to the [lgtm command](./commands.md) and the [PR jobs](./pr-jobs.md) for further reference.
+
+## Known limitations
+This job pulls PRs from github in batches of 100. This _may_ trigger a state
+where github rate limits Prow github actions.
+This may only happen with very large projects.
+Please open an issue if you see this consistently happen.

@@ -41,21 +41,19 @@ jobs:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 ```
 
-Automatically label PRs every hour based on your `.github/labels.yaml`:
+Automatically label PRs with the [Github actions/labeler](https://github.com/actions/labeler/blob/main/README.md) based on globs from `.github/labels.yml`:
 ```yaml
-name: "Label PRs from globs"
+name: "Pull Request Labeler"
 on:
-  schedule:
-  - cron: "0 * * * *"
+- pull_request_target
 
 jobs:
-  execute:
+  triage:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions@v1
-        with:
-          jobs: 'pr-labeler'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+    - uses: actions/labeler@main
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
 ```
 
 Your `.github/labels.yaml` may look like:

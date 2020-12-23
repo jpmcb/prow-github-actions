@@ -1,16 +1,11 @@
 name: "Label PRs from globs"
 on:
-  schedule:
-  - cron: "0 0 * * *"
+- pull_request_target
 
 jobs:
-  execute:
+  triage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - run: npm install
-      - run: npm run build
-      - uses: ./
-        with:
-          jobs: 'pr-labeler'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+    - uses: actions/labeler@main
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"

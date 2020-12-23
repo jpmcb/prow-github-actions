@@ -36,7 +36,7 @@ the issue or PR will be labeled with `priority/low`
 source:
   - 'src/**'
 ```
-When the [automatic pr-labeler job](./pr-labeling.md) runs,
+If using the [github actions/labeler](https://github.com/actions/labeler/blob/main/README.md) PR labeler,
 any PR with a changed file that matches file globs found in `.github/labels.yaml`
 will be labeled. So, in this example, a PR with a changed file named `src/some/sourcefile.js`
 will be labeled with `source`. The [Digital Ocean Glob Tool](https://www.digitalocean.com/community/tools/glob)
@@ -44,4 +44,4 @@ can be helpful when specifying file globs.
 
 Note that the Github API will _not_ return a leading slash
 for files found within the repository. 
-So, a root level file will appear as `README.md`.
+So, for example, a root level readme file will appear as `README.md`.

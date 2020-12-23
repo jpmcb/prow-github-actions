@@ -1,23 +1,27 @@
 # Automatic PR labeling
 
-Prow Github actions supports automatic labeling of PRs through Github cron jobs
+Prow Github actions _no longer supports_ automatic labeling of PRs through Github cron jobs.
+Instead, use the Github actions/labeler action with the new `pull_request_target` action.
+
+The labeler is documented [here](https://github.com/actions/labeler).
+
+Refer to this thread and this comment for further discussion on the new action handler:
+https://github.com/actions/labeler/issues/12#issuecomment-670967607
 
 ```yaml
-name: "Label PRs from globs"
+name: "Pull Request Labeler"
 on:
-  schedule:
-  - cron: "0 * * * *"
+- pull_request_target
 
 jobs:
-  execute:
+  triage:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions@v1
-        with:
-          jobs: 'pr-labeler'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+    - uses: actions/labeler@main
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
 ```
-This job will run every hour from the master branch.
+This job will run off of the _main_ branch and _not_ the PR'd code.
 It will inspect the `.github/labels.yaml` file for file globs
 and appropriately label the PR based on changed files.
 
@@ -27,6 +31,6 @@ source:
   - 'src/**'
 ```
 and a PR has changed the file `src/some/sourcefile.js`,
-the `pr-labeler` job will label the pr with `source`.
+the job will label the pr with `source`.
 
-Refer to [the labeling docs](./labeling.md) for more information.
+Again, refer to the PR labeler documentation [here](https://github.com/actions/labeler).

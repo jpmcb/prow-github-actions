@@ -18,6 +18,7 @@ priority:
   - 'high'
 
 # File globs for PR labeler
+# refer to github actions/labeler for further documentation
 tests:
   - '**/*.test.ts'
 
@@ -59,20 +60,19 @@ jobs:
 ```
 
 ### PR Labeler
+Use the Github actions/labeler which now supports `pull_request_target`
 ```yaml
-name: "Label PRs from globs"
+name: "Pull Request Labeler"
 on:
-  schedule:
-  - cron: "0 * * * *"
+- pull_request_target
 
 jobs:
-  execute:
+  triage:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions@v1
-        with:
-          jobs: 'pr-labeler'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+    - uses: actions/labeler@main
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
 ```
 
 ### Automatic PR merger
