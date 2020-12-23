@@ -9,6 +9,7 @@ Jobs | Description
 
 ## PR labeler
 > What is this Chron job PR labeler?
+
 This job is a legacy feature of Github Prow bot which would label PRs
 based on a chron schedule. This was created since Github at the time did not provide a way
 to securely run actions (and therefore code) from PR forks, which could possibly be untrusted. 
@@ -16,6 +17,7 @@ This chron job runs from _the main branch_ and not forks, therefore preventing a
 forked malicious code from being run against the repository.
 
 > Why don't you recommend using it anymore?
+
 Github now has a solution! You can use the [Github labeler](https://github.com/actions/labeler)
 which uses a newer action trigger: `pull_request_target`.
 This is [documented here](https://github.com/actions/labeler/blob/main/README.md).
@@ -25,6 +27,7 @@ but rather, runs from the _main branch_. It can be triggered on each occurence o
 Since this is officially supported by Github, I am recommending people use that to label their PRs.
 
 > Why not just remove the chron labeler all together?
+
 I'm keeping this job as part of the API since it may have additional purposes.
 The chron job will attempt to run on _all PRs_ in a repository
 which may be useful if a repository needs to batch label all their PRs.
@@ -50,5 +53,6 @@ jobs:
 ```
 
 > Interesting! Where's the historical context?
+
 Refer to this thread and this comment for further discussion on the new action handler:
 https://github.com/actions/labeler/issues/12#issuecomment-670967607
