@@ -21,7 +21,7 @@ export const checkOrgMember = async (
       return false
     }
 
-    await octokit.orgs.checkMembership({
+    await octokit.orgs.checkMembershipForUser({
       org: context.payload.repository.owner.login,
       username: user
     })
