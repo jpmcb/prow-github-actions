@@ -5,7 +5,7 @@ import * as core from '@actions/core'
 
 import {getCommandArgs} from '../utils/command'
 import {labelIssue, cancelLabel} from '../utils/labeling'
-import {checkOrgMember, checkCollaborator} from '../utils/auth'
+import {assertAuthorizedByOwnersOrMembership} from '../utils/auth'
 
 /**
  * /lgtm will add the lgtm label.
@@ -30,19 +30,12 @@ export const lgtm = async (
     )
   }
 
-  const isOrgMember = await checkOrgMember(octokit, context, commenterId)
-  const isCollaborator = await checkCollaborator(octokit, context, commenterId)
-
-  if (!isOrgMember && !isCollaborator) {
-    throw new Error(
-      `commenter is not a org member or collaborator. Cannot add lgtm label`
-    )
-  }
+  await assertAuthorizedByOwnersOrMembership(octokit, context, 'reviewers', commenterId)
 
   const commentArgs: string[] = getCommandArgs('/lgtm', commentBody)
 
   // check if canceling last review
-  if (commentArgs.length !== 0 && commentArgs[0]) {
+  if (commentArgs.length !== 0 && commentArgs[0] == "cancel") {
     try {
       await cancelLabel(octokit, context, issueNumber, 'lgtm')
     } catch (e) {

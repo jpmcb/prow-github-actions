@@ -3,6 +3,10 @@ import * as core from '@actions/core'
 
 import {Context} from '@actions/github/lib/context'
 
+import fs from 'fs'
+import yaml from 'js-yaml'
+import { env } from 'process'
+
 /**
  * checkOrgMember will check to see if the given user is a repo org member
  *
@@ -172,4 +176,84 @@ export const checkCommenterAuth = async (
   }
 
   return false
+}
+
+/**
+ * When an OWNERS file is present, use it to authorize the action
+   otherwise fall back to allowing organization members and collaborators
+ * @param role is the role to check
+ * @param username is the user to authorize
+ */
+export const assertAuthorizedByOwnersOrMembership = async(
+  octokit: github.GitHub,
+  context: Context,
+  role: string,
+  username: string) => {
+    core.debug('Checking if the user is authorized to interact with prow')
+  if (hasOwners()) {
+    if (!isInOwners(role, username)) {
+      throw new Error(
+        `user not included in the `+role+` role in the OWNERS file`
+      )
+    }
+  } else {
+    const isOrgMember = await checkOrgMember(octokit, context, username)
+    const isCollaborator = await checkCollaborator(octokit, context, username)
+
+    if (!isOrgMember && !isCollaborator) {
+      throw new Error(
+        `user is not a org member or collaborator`
+      )
+    }
+  }
+}
+
+/**
+ * Check if an OWNERS file exists
+ */
+function hasOwners(): boolean {
+  const ownersPath = getOwnersPath()
+  core.debug(`Looking for an OWNERS file in ${ownersPath}`)
+  
+  if (fs.existsSync(ownersPath)) {
+    core.debug('Using the OWNERS file to authorize the command')
+    return true
+  }
+
+  core.debug('No OWNERS file found')
+  return false
+}
+
+/**
+ * Gets the possible path to an OWNERS file.
+ * Uses GITHUB_WORKSPACE environment variable if set, otherwise
+ * uses the working directory.
+ * @param role - the role to check
+ * @param username - the user to authorize
+ */
+export function getOwnersPath(): string {
+  var workspace = process.env.GITHUB_WORKSPACE
+  if (workspace?.length == 0) {
+    workspace = "."
+  }
+  return workspace + "/OWNERS"
+}
+
+/**
+ * Determine if the user has the specified role in the OWNERS file.
+ * @param role - the role to check
+ * @param username - the user to authorize
+ */
+function isInOwners(role: string, username: string): boolean {
+  core.debug(`checking if ${username} is in the ${role} in the OWNERS file`)
+  var ownersContents = fs.readFileSync(getOwnersPath(), "utf8");
+  var ownersData = yaml.safeLoad(ownersContents);
+
+  var roleMembers = ownersData[role];
+  if ((roleMembers as Array<string>) != undefined){
+    return roleMembers.indexOf(username) > -1;
+  }
+
+  core.info(`${username} is not in the ${role} role in the OWNERS file`)
+  return false;
 }

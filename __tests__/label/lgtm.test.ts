@@ -1,12 +1,15 @@
 import nock from 'nock'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
-import * as core from '@actions/core'
+import { lgtm } from '../../src/labels/lgtm'
+
 import * as utils from '../testUtils'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
-import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
 import issuePayload from '../fixtures/issues/issue.json'
+
+jest.mock('fs')
+import fs from 'fs'
 
 nock.disableNetConnect()
 
@@ -14,6 +17,15 @@ describe('lgtm', () => {
   beforeEach(() => {
     nock.cleanAll()
     utils.setupActionsEnv('/lgtm')
+  })
+  afterEach(()=>{
+    if (!nock.isDone()) {
+      throw new Error(
+        `Not all nock interceptors were used: ${JSON.stringify(
+          nock.pendingMocks()
+        )}`
+      )
+    }
   })
 
   it('labels the issue with the lgtm label', async () => {
@@ -40,7 +52,6 @@ describe('lgtm', () => {
     expect(parsedBody).toEqual({
       labels: ['lgtm']
     })
-    expect(nock.isDone()).toBe(true)
   })
 
   it('removes the lgtm label with /lgtm cancel', async () => {
@@ -74,10 +85,9 @@ describe('lgtm', () => {
       .reply(404)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
   })
 
-  it('adds label if commentor is collaborator', async () => {
+  it('adds label if commenter is collaborator', async () => {
     issueCommentEvent.comment.body = '/lgtm'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -101,10 +111,35 @@ describe('lgtm', () => {
     expect(parsedBody).toEqual({
       labels: ['lgtm']
     })
-    expect(nock.isDone()).toBe(true)
   })
 
-  it('throws if commentor is not org member or collaborator', async () => {
+  it('throws if commenter is not reviewer in OWNERS', async () => {
+    const owners = `
+approvers:
+- Codertocat
+`
+   
+    fs.readFileSync = jest.fn();                
+    (fs.readFileSync as jest.Mock).mockReturnValue(owners)
+    fs.existsSync = jest.fn();
+    (fs.existsSync as jest.Mock).mockReturnValue(true)
+
+    issueCommentEvent.comment.body = '/lgtm'
+    const commentContext = new utils.mockContext(issueCommentEvent)
+
+    expect(() => lgtm(commentContext))
+      .rejects.toThrowError('user not included in the reviewers role in the OWNERS file')
+  })
+
+  it('throws if commenter is not org member or collaborator', async () => {
+    issueCommentEvent.comment.body = '/lgtm'
+    const commentContext = new utils.mockContext(issueCommentEvent)
+
+    expect(() => lgtm(commentContext))
+      .rejects.toThrowError('user is not a org member or collaborator')
+  })
+
+  it('adds label if commenter is reviewer in OWNERS', async() => {
     issueCommentEvent.comment.body = '/lgtm'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -116,16 +151,19 @@ describe('lgtm', () => {
       })
       .reply(200)
 
-    nock(utils.api)
-      .get('/orgs/Codertocat/members/Codertocat')
-      .reply(404)
+    const owners = `
+reviewers:
+- Codertocat
+`
+   
+    fs.readFileSync = jest.fn();                
+    (fs.readFileSync as jest.Mock).mockReturnValue(owners)
+    fs.existsSync = jest.fn();
+    (fs.existsSync as jest.Mock).mockReturnValue(true)
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
-      .reply(404)
-
-    const spy = jest.spyOn(core, 'setFailed')
     await handleIssueComment(commentContext)
-    expect(spy).toHaveBeenCalled()
+    expect(parsedBody).toEqual({
+      labels: ['lgtm']
+    })
   })
 })
