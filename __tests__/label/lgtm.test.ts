@@ -128,7 +128,7 @@ approvers:
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     expect(() => lgtm(commentContext))
-      .rejects.toThrowError('user not included in the reviewers role in the OWNERS file')
+      .rejects.toThrowError('Codertocat is not included in the reviewers role in the OWNERS file')
   })
 
   it('throws if commenter is not org member or collaborator', async () => {
@@ -136,7 +136,7 @@ approvers:
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     expect(() => lgtm(commentContext))
-      .rejects.toThrowError('user is not a org member or collaborator')
+      .rejects.toThrowError('Codertocat is not a org member or collaborator')
   })
 
   it('adds label if commenter is reviewer in OWNERS', async() => {

@@ -30,12 +30,17 @@ export const lgtm = async (
     )
   }
 
-  await assertAuthorizedByOwnersOrMembership(octokit, context, 'reviewers', commenterId)
+  await assertAuthorizedByOwnersOrMembership(
+    octokit,
+    context,
+    'reviewers',
+    commenterId
+  )
 
   const commentArgs: string[] = getCommandArgs('/lgtm', commentBody)
 
   // check if canceling last review
-  if (commentArgs.length !== 0 && commentArgs[0] == "cancel") {
+  if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
     try {
       await cancelLabel(octokit, context, issueNumber, 'lgtm')
     } catch (e) {

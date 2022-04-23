@@ -11949,7 +11949,7 @@ exports.lgtm = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     yield auth_1.assertAuthorizedByOwnersOrMembership(octokit, context, 'reviewers', commenterId);
     const commentArgs = command_1.getCommandArgs('/lgtm', commentBody);
     // check if canceling last review
-    if (commentArgs.length !== 0 && commentArgs[0] == "cancel") {
+    if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
         try {
             yield labeling_1.cancelLabel(octokit, context, issueNumber, 'lgtm');
         }
@@ -12415,7 +12415,7 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     yield auth_1.assertAuthorizedByOwnersOrMembership(octokit, context, 'approvers', commenterLogin);
     const commentArgs = command_1.getCommandArgs('/approve', commentBody);
     // check if canceling last review
-    if (commentArgs.length !== 0 && commentArgs[0] == 'cancel') {
+    if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
         try {
             yield cancel(octokit, context, issueNumber, commenterLogin);
         }
@@ -14276,14 +14276,14 @@ exports.assertAuthorizedByOwnersOrMembership = (octokit, context, role, username
     core.debug('Checking if the user is authorized to interact with prow');
     if (hasOwners()) {
         if (!isInOwners(role, username)) {
-            throw new Error(`user not included in the ` + role + ` role in the OWNERS file`);
+            throw new Error(`${username} is not included in the ${role} role in the OWNERS file`);
         }
     }
     else {
         const isOrgMember = yield exports.checkOrgMember(octokit, context, username);
         const isCollaborator = yield exports.checkCollaborator(octokit, context, username);
         if (!isOrgMember && !isCollaborator) {
-            throw new Error(`user is not a org member or collaborator`);
+            throw new Error(`${username} is not a org member or collaborator`);
         }
     }
 });
@@ -14309,11 +14309,11 @@ function hasOwners() {
  */
 function getOwnersPath() {
     var _a;
-    var workspace = process.env.GITHUB_WORKSPACE;
-    if (((_a = workspace) === null || _a === void 0 ? void 0 : _a.length) == 0) {
-        workspace = ".";
+    let workspace = process.env.GITHUB_WORKSPACE;
+    if (((_a = workspace) === null || _a === void 0 ? void 0 : _a.length) === 0) {
+        workspace = '.';
     }
-    return workspace + "/OWNERS";
+    return `${workspace}/OWNERS`;
 }
 exports.getOwnersPath = getOwnersPath;
 /**
@@ -14323,10 +14323,10 @@ exports.getOwnersPath = getOwnersPath;
  */
 function isInOwners(role, username) {
     core.debug(`checking if ${username} is in the ${role} in the OWNERS file`);
-    var ownersContents = fs_1.default.readFileSync(getOwnersPath(), "utf8");
-    var ownersData = js_yaml_1.default.safeLoad(ownersContents);
-    var roleMembers = ownersData[role];
-    if (roleMembers != undefined) {
+    const ownersContents = fs_1.default.readFileSync(getOwnersPath(), 'utf8');
+    const ownersData = js_yaml_1.default.safeLoad(ownersContents);
+    const roleMembers = ownersData[role];
+    if (roleMembers !== undefined) {
         return roleMembers.indexOf(username) > -1;
     }
     core.info(`${username} is not in the ${role} role in the OWNERS file`);

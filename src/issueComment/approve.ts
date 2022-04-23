@@ -4,7 +4,7 @@ import * as core from '@actions/core'
 import {Octokit} from '@octokit/rest'
 import {Context} from '@actions/github/lib/context'
 import {getCommandArgs} from '../utils/command'
-import { assertAuthorizedByOwnersOrMembership } from '../utils/auth'
+import {assertAuthorizedByOwnersOrMembership} from '../utils/auth'
 
 /**
  * the /approve command will create a "approve" review
@@ -33,13 +33,17 @@ export const approve = async (
     )
   }
 
-  await assertAuthorizedByOwnersOrMembership(octokit, context, 'approvers', commenterLogin)
-  
+  await assertAuthorizedByOwnersOrMembership(
+    octokit,
+    context,
+    'approvers',
+    commenterLogin
+  )
 
   const commentArgs: string[] = getCommandArgs('/approve', commentBody)
 
   // check if canceling last review
-  if (commentArgs.length !== 0 && commentArgs[0] == 'cancel') {
+  if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
     try {
       await cancel(octokit, context, issueNumber, commenterLogin)
     } catch (e) {
