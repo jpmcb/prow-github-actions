@@ -14274,8 +14274,8 @@ exports.checkCommenterAuth = (octokit, context, issueNum, user) => __awaiter(voi
  */
 exports.assertAuthorizedByOwnersOrMembership = (octokit, context, role, username) => __awaiter(void 0, void 0, void 0, function* () {
     core.debug('Checking if the user is authorized to interact with prow');
-    if (hasOwners()) {
-        if (!isInOwners(role, username)) {
+    if (hasOwnersFile()) {
+        if (!isInOwnersFile(role, username)) {
             throw new Error(`${username} is not included in the ${role} role in the OWNERS file`);
         }
     }
@@ -14290,8 +14290,8 @@ exports.assertAuthorizedByOwnersOrMembership = (octokit, context, role, username
 /**
  * Check if an OWNERS file exists
  */
-function hasOwners() {
-    const ownersPath = getOwnersPath();
+function hasOwnersFile() {
+    const ownersPath = getOwnersFilePath();
     core.debug(`Looking for an OWNERS file in ${ownersPath}`);
     if (fs_1.default.existsSync(ownersPath)) {
         core.debug('Using the OWNERS file to authorize the command');
@@ -14307,7 +14307,7 @@ function hasOwners() {
  * @param role - the role to check
  * @param username - the user to authorize
  */
-function getOwnersPath() {
+function getOwnersFilePath() {
     var _a;
     let workspace = process.env.GITHUB_WORKSPACE;
     if (((_a = workspace) === null || _a === void 0 ? void 0 : _a.length) === 0) {
@@ -14315,15 +14315,15 @@ function getOwnersPath() {
     }
     return `${workspace}/OWNERS`;
 }
-exports.getOwnersPath = getOwnersPath;
+exports.getOwnersFilePath = getOwnersFilePath;
 /**
  * Determine if the user has the specified role in the OWNERS file.
  * @param role - the role to check
  * @param username - the user to authorize
  */
-function isInOwners(role, username) {
+function isInOwnersFile(role, username) {
     core.debug(`checking if ${username} is in the ${role} in the OWNERS file`);
-    const ownersContents = fs_1.default.readFileSync(getOwnersPath(), 'utf8');
+    const ownersContents = fs_1.default.readFileSync(getOwnersFilePath(), 'utf8');
     const ownersData = js_yaml_1.default.safeLoad(ownersContents);
     const roleMembers = ownersData[role];
     if (roleMembers !== undefined) {

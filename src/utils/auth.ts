@@ -190,8 +190,8 @@ export const assertAuthorizedByOwnersOrMembership = async (
   username: string
 ): Promise<void> => {
   core.debug('Checking if the user is authorized to interact with prow')
-  if (hasOwners()) {
-    if (!isInOwners(role, username)) {
+  if (hasOwnersFile()) {
+    if (!isInOwnersFile(role, username)) {
       throw new Error(
         `${username} is not included in the ${role} role in the OWNERS file`
       )
@@ -209,8 +209,8 @@ export const assertAuthorizedByOwnersOrMembership = async (
 /**
  * Check if an OWNERS file exists
  */
-function hasOwners(): boolean {
-  const ownersPath = getOwnersPath()
+function hasOwnersFile(): boolean {
+  const ownersPath = getOwnersFilePath()
   core.debug(`Looking for an OWNERS file in ${ownersPath}`)
 
   if (fs.existsSync(ownersPath)) {
@@ -229,7 +229,7 @@ function hasOwners(): boolean {
  * @param role - the role to check
  * @param username - the user to authorize
  */
-export function getOwnersPath(): string {
+export function getOwnersFilePath(): string {
   let workspace = process.env.GITHUB_WORKSPACE
   if (workspace?.length === 0) {
     workspace = '.'
@@ -242,9 +242,9 @@ export function getOwnersPath(): string {
  * @param role - the role to check
  * @param username - the user to authorize
  */
-function isInOwners(role: string, username: string): boolean {
+function isInOwnersFile(role: string, username: string): boolean {
   core.debug(`checking if ${username} is in the ${role} in the OWNERS file`)
-  const ownersContents = fs.readFileSync(getOwnersPath(), 'utf8')
+  const ownersContents = fs.readFileSync(getOwnersFilePath(), 'utf8')
   const ownersData = yaml.safeLoad(ownersContents)
 
   const roleMembers = ownersData[role]
