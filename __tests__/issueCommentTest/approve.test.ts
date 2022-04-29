@@ -8,9 +8,6 @@ import * as utils from '../testUtils'
 import pullReqListReviews from '../fixtures/pullReq/pullReqListReviews.json'
 import issueCommentEventAssign from '../fixtures/issues/assign/issueCommentEventAssign.json'
 
-jest.mock('fs')
-import fs from 'fs'
-
 nock.disableNetConnect()
 
 describe('/approve', () => {
@@ -29,15 +26,23 @@ describe('/approve', () => {
   })
   
   it('throws if commenter is not an approver in OWNERS', async () => {
-    const owners = `
+    const owners = Buffer.from(`
 reviewers:
 - Codertocat
-`
-   
-    fs.readFileSync = jest.fn();
-    (fs.readFileSync as jest.Mock).mockReturnValue(owners)
-    fs.existsSync = jest.fn();
-    (fs.existsSync as jest.Mock).mockReturnValue(true)
+    `).toString('base64')
+  
+    const contentResponse = {
+      type: "file",
+      encoding: "base64",
+      size: 4096,
+      name: "OWNERS",
+      path: "OWNERS",
+      content: owners
+    }
+    
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(200, contentResponse)
 
     issueCommentEventAssign.comment.body = '/approve'
     const commentContext = new utils.mockContext(issueCommentEventAssign)
@@ -47,6 +52,10 @@ reviewers:
   })
 
   it('throws if commenter is not an org member or collaborator', async () => {
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+
     issueCommentEventAssign.comment.body = '/approve'
     const commentContext = new utils.mockContext(issueCommentEventAssign)
 
@@ -55,15 +64,22 @@ reviewers:
   })
 
   it('approves if commenter is an approver in OWNERS', async () => {
-    const owners = `
+    const owners = Buffer.from(`
 approvers:
 - Codertocat
-`
-   
-    fs.readFileSync = jest.fn();                
-    (fs.readFileSync as jest.Mock).mockReturnValue(owners)
-    fs.existsSync = jest.fn();
-    (fs.existsSync as jest.Mock).mockReturnValue(true)
+    `).toString('base64')
+     
+    const contentResponse = {
+      type: "file",
+      encoding: "base64",
+      size: 4096,
+      name: "OWNERS",
+      path: "OWNERS",
+      content: owners
+    }
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(200, contentResponse)
 
     nock(utils.api)
       .post('/repos/Codertocat/Hello-World/pulls/1/reviews', body => {
@@ -81,6 +97,10 @@ approvers:
   })
 
   it('approves if commenter is an org member', async () => {
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+
     nock(utils.api)
       .get('/orgs/Codertocat/members/Codertocat')
       .reply(204)
@@ -105,15 +125,22 @@ approvers:
   })
 
   it('removes approval with the /approve cancel command if approver in OWNERS file', async () => {
-    const owners = `
+    const owners = Buffer.from(`
 approvers:
 - some-user
-`
-   
-    fs.readFileSync = jest.fn();                
-    (fs.readFileSync as jest.Mock).mockReturnValue(owners)
-    fs.existsSync = jest.fn();
-    (fs.existsSync as jest.Mock).mockReturnValue(true)
+`).toString('base64')
+         
+    const contentResponse = {
+      type: "file",
+      encoding: "base64",
+      size: 4096,
+      name: "OWNERS",
+      path: "OWNERS",
+      content: owners
+    }
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(200, contentResponse)
 
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/pulls/1/reviews')
@@ -139,6 +166,10 @@ approvers:
   })
 
   it('removes approval with the /approve cancel command if commenter is collaborator', async () => {
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+      
     nock(utils.api)
       .get('/orgs/Codertocat/members/some-user')
       .reply(404)

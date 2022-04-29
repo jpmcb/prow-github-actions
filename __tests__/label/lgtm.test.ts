@@ -8,9 +8,6 @@ import * as utils from '../testUtils'
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import issuePayload from '../fixtures/issues/issue.json'
 
-jest.mock('fs')
-import fs from 'fs'
-
 nock.disableNetConnect()
 
 describe('lgtm', () => {
@@ -46,6 +43,10 @@ describe('lgtm', () => {
 
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
+      .reply(404)
+
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
       .reply(404)
 
     await handleIssueComment(commentContext)
@@ -84,6 +85,10 @@ describe('lgtm', () => {
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+
     await handleIssueComment(commentContext)
   })
 
@@ -107,6 +112,10 @@ describe('lgtm', () => {
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(204)
 
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
       labels: ['lgtm']
@@ -114,15 +123,22 @@ describe('lgtm', () => {
   })
 
   it('throws if commenter is not reviewer in OWNERS', async () => {
-    const owners = `
+    const owners = Buffer.from(`
 approvers:
 - Codertocat
-`
-   
-    fs.readFileSync = jest.fn();                
-    (fs.readFileSync as jest.Mock).mockReturnValue(owners)
-    fs.existsSync = jest.fn();
-    (fs.existsSync as jest.Mock).mockReturnValue(true)
+`).toString('base64')
+         
+    const contentResponse = {
+      type: "file",
+      encoding: "base64",
+      size: 4096,
+      name: "OWNERS",
+      path: "OWNERS",
+      content: owners
+    }
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(200, contentResponse)
 
     issueCommentEvent.comment.body = '/lgtm'
     const commentContext = new utils.mockContext(issueCommentEvent)
@@ -132,6 +148,10 @@ approvers:
   })
 
   it('throws if commenter is not org member or collaborator', async () => {
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+
     issueCommentEvent.comment.body = '/lgtm'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -151,15 +171,22 @@ approvers:
       })
       .reply(200)
 
-    const owners = `
+    const owners = Buffer.from(`
 reviewers:
 - Codertocat
-`
-   
-    fs.readFileSync = jest.fn();                
-    (fs.readFileSync as jest.Mock).mockReturnValue(owners)
-    fs.existsSync = jest.fn();
-    (fs.existsSync as jest.Mock).mockReturnValue(true)
+`).toString('base64')
+               
+    const contentResponse = {
+      type: "file",
+      encoding: "base64",
+      size: 4096,
+      name: "OWNERS",
+      path: "OWNERS",
+      content: owners
+    }
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(200, contentResponse)
 
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({

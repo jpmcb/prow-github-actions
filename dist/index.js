@@ -14140,7 +14140,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const fs_1 = __importDefault(__webpack_require__(747));
+const request_error_1 = __webpack_require__(463);
 const js_yaml_1 = __importDefault(__webpack_require__(414));
 /**
  * checkOrgMember will check to see if the given user is a repo org member
@@ -14274,8 +14274,9 @@ exports.checkCommenterAuth = (octokit, context, issueNum, user) => __awaiter(voi
  */
 exports.assertAuthorizedByOwnersOrMembership = (octokit, context, role, username) => __awaiter(void 0, void 0, void 0, function* () {
     core.debug('Checking if the user is authorized to interact with prow');
-    if (hasOwnersFile()) {
-        if (!isInOwnersFile(role, username)) {
+    const owners = yield retrieveOwnersFile(octokit, context);
+    if (owners !== '') {
+        if (!isInOwnersFile(owners, role, username)) {
             throw new Error(`${username} is not included in the ${role} role in the OWNERS file`);
         }
     }
@@ -14288,42 +14289,43 @@ exports.assertAuthorizedByOwnersOrMembership = (octokit, context, role, username
     }
 });
 /**
- * Check if an OWNERS file exists
+ * Retrieve the contents of the OWNERS file at the root of the repository.
+ * If the file does not exist, returns an empty string.
  */
-function hasOwnersFile() {
-    const ownersPath = getOwnersFilePath();
-    core.debug(`Looking for an OWNERS file in ${ownersPath}`);
-    if (fs_1.default.existsSync(ownersPath)) {
-        core.debug('Using the OWNERS file to authorize the command');
-        return true;
-    }
-    core.debug('No OWNERS file found');
-    return false;
+function retrieveOwnersFile(octokit, context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        core.debug(`Looking for an OWNERS file at the root of the repository`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let data = undefined;
+        try {
+            const response = yield octokit.repos.getContents(Object.assign(Object.assign({}, context.repo), { path: 'OWNERS' }));
+            data = response.data;
+        }
+        catch (e) {
+            if (e instanceof request_error_1.RequestError) {
+                if (e.status === 404) {
+                    core.debug('No OWNERS file found');
+                    return '';
+                }
+            }
+            throw new Error(`error checking for an OWNERS file at the root of the repository: ${e}`);
+        }
+        if (!data.content || !data.encoding) {
+            throw new Error(`invalid OWNERS file returned from GitHub API: ${data}`);
+        }
+        const decoded = Buffer.from(data.content, data.encoding).toString();
+        core.debug(`OWNERS file contents: ${decoded}`);
+        return decoded;
+    });
 }
-/**
- * Gets the possible path to an OWNERS file.
- * Uses GITHUB_WORKSPACE environment variable if set, otherwise
- * uses the working directory.
- * @param role - the role to check
- * @param username - the user to authorize
- */
-function getOwnersFilePath() {
-    var _a;
-    let workspace = process.env.GITHUB_WORKSPACE;
-    if (((_a = workspace) === null || _a === void 0 ? void 0 : _a.length) === 0) {
-        workspace = '.';
-    }
-    return `${workspace}/OWNERS`;
-}
-exports.getOwnersFilePath = getOwnersFilePath;
 /**
  * Determine if the user has the specified role in the OWNERS file.
+ * @param ownersContents - the contents of the OWNERS file
  * @param role - the role to check
  * @param username - the user to authorize
  */
-function isInOwnersFile(role, username) {
+function isInOwnersFile(ownersContents, role, username) {
     core.debug(`checking if ${username} is in the ${role} in the OWNERS file`);
-    const ownersContents = fs_1.default.readFileSync(getOwnersFilePath(), 'utf8');
     const ownersData = js_yaml_1.default.safeLoad(ownersContents);
     const roleMembers = ownersData[role];
     if (roleMembers !== undefined) {

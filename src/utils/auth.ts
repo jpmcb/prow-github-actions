@@ -1,9 +1,8 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-
+import {RequestError} from '@octokit/request-error'
 import {Context} from '@actions/github/lib/context'
 
-import fs from 'fs'
 import yaml from 'js-yaml'
 
 /**
@@ -190,8 +189,10 @@ export const assertAuthorizedByOwnersOrMembership = async (
   username: string
 ): Promise<void> => {
   core.debug('Checking if the user is authorized to interact with prow')
-  if (hasOwnersFile()) {
-    if (!isInOwnersFile(role, username)) {
+  const owners = await retrieveOwnersFile(octokit, context)
+
+  if (owners !== '') {
+    if (!isInOwnersFile(owners, role, username)) {
       throw new Error(
         `${username} is not included in the ${role} role in the OWNERS file`
       )
@@ -207,44 +208,56 @@ export const assertAuthorizedByOwnersOrMembership = async (
 }
 
 /**
- * Check if an OWNERS file exists
+ * Retrieve the contents of the OWNERS file at the root of the repository.
+ * If the file does not exist, returns an empty string.
  */
-function hasOwnersFile(): boolean {
-  const ownersPath = getOwnersFilePath()
-  core.debug(`Looking for an OWNERS file in ${ownersPath}`)
+async function retrieveOwnersFile(
+  octokit: github.GitHub,
+  context: Context
+): Promise<string> {
+  core.debug(`Looking for an OWNERS file at the root of the repository`)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any = undefined
+  try {
+    const response = await octokit.repos.getContents({
+      ...context.repo,
+      path: 'OWNERS'
+    })
+    data = response.data
+  } catch (e) {
+    if (e instanceof RequestError) {
+      if (e.status === 404) {
+        core.debug('No OWNERS file found')
+        return ''
+      }
+    }
 
-  if (fs.existsSync(ownersPath)) {
-    core.debug('Using the OWNERS file to authorize the command')
-    return true
+    throw new Error(
+      `error checking for an OWNERS file at the root of the repository: ${e}`
+    )
   }
 
-  core.debug('No OWNERS file found')
-  return false
-}
-
-/**
- * Gets the possible path to an OWNERS file.
- * Uses GITHUB_WORKSPACE environment variable if set, otherwise
- * uses the working directory.
- * @param role - the role to check
- * @param username - the user to authorize
- */
-export function getOwnersFilePath(): string {
-  let workspace = process.env.GITHUB_WORKSPACE
-  if (workspace?.length === 0) {
-    workspace = '.'
+  if (!data.content || !data.encoding) {
+    throw new Error(`invalid OWNERS file returned from GitHub API: ${data}`)
   }
-  return `${workspace}/OWNERS`
+
+  const decoded = Buffer.from(data.content, data.encoding).toString()
+  core.debug(`OWNERS file contents: ${decoded}`)
+  return decoded
 }
 
 /**
  * Determine if the user has the specified role in the OWNERS file.
+ * @param ownersContents - the contents of the OWNERS file
  * @param role - the role to check
  * @param username - the user to authorize
  */
-function isInOwnersFile(role: string, username: string): boolean {
+function isInOwnersFile(
+  ownersContents: string,
+  role: string,
+  username: string
+): boolean {
   core.debug(`checking if ${username} is in the ${role} in the OWNERS file`)
-  const ownersContents = fs.readFileSync(getOwnersFilePath(), 'utf8')
   const ownersData = yaml.safeLoad(ownersContents)
 
   const roleMembers = ownersData[role]
