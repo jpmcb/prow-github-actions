@@ -28,7 +28,7 @@ Label Commands | Policy | Description
 
 ## OWNERS
 
-A simplified version of [Prow's OWNERS](https://go.k8s.io/owners) file is supported. When an OWNERS file is present at the root of the repository, it is used to authorize the /lgtm and /approve commands. The prow action requires that the repository has already been cloned into the working directory. See an [example][owners-example] of how to clone the repository before running the Prow action.
+A simplified version of [Prow's OWNERS](https://go.k8s.io/owners) file is supported. When an OWNERS file is present at the root of the repository, it is used to authorize the /lgtm and /approve commands. See an [example][owners-example] using an OWNERS file.
 
 The `reviewers` role grants access to the /lgtm command and the approvers role grants access to the /approve command.
 
@@ -50,4 +50,4 @@ approvers:
 - admin1
 ```
 
-[owners-example]: ./examples.md#owners
+[owners-example]: ./examples.md#review-and-approve-pull-requests

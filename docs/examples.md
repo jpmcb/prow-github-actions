@@ -1,7 +1,7 @@
 # Examples
 
 * [.github/labels.yaml](#githublabelsyaml)
-* [OWNERS](#owners)
+* [Review and Approve Pull Requests](#review-and-approve-pull-requests)
 * [All prow github actions](#all-prow-github-actions)
 * [PR Labeler](#pr-labeler)
 * [Automatic PR merger](#automatic-pr-merger)
@@ -33,10 +33,26 @@ source:
   - 'src/**'
 ```
 
-### OWNERS
+### Review and Approve Pull Requests
 
 Below is an example of how to use an [OWNERS](./commands.md#owners) file with the Prow action.
 
+Add an OWNERS file to the root of the repository in the default branch.
+```yaml
+# List of usernames who may use /lgtm
+reviewers:
+- user1
+- user2
+- user3
+
+# List of usernames who may use /approve
+approvers:
+- user1
+- user2
+- admin1
+```
+
+Grant the default GITHUB_TOKEN permission to label issues and review pull requests.
 ```yaml
 name: "Handle prow slash commands"
 on:
@@ -54,8 +70,6 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
-      # Clone the repository so that the OWNERS file can be used by prow
-      - run: hub clone ${{ github.server_url }}/${{ github.repository }} .
       - uses: jpmcb/prow-github-actions@v1
         with:
           prow-commands: |
