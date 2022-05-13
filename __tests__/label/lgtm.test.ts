@@ -1,11 +1,11 @@
 import nock from 'nock'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
-import * as core from '@actions/core'
+import { lgtm } from '../../src/labels/lgtm'
+
 import * as utils from '../testUtils'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
-import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
 import issuePayload from '../fixtures/issues/issue.json'
 
 nock.disableNetConnect()
@@ -14,6 +14,15 @@ describe('lgtm', () => {
   beforeEach(() => {
     nock.cleanAll()
     utils.setupActionsEnv('/lgtm')
+  })
+  afterEach(()=>{
+    if (!nock.isDone()) {
+      throw new Error(
+        `Not all nock interceptors were used: ${JSON.stringify(
+          nock.pendingMocks()
+        )}`
+      )
+    }
   })
 
   it('labels the issue with the lgtm label', async () => {
@@ -36,11 +45,14 @@ describe('lgtm', () => {
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
       labels: ['lgtm']
     })
-    expect(nock.isDone()).toBe(true)
   })
 
   it('removes the lgtm label with /lgtm cancel', async () => {
@@ -73,11 +85,14 @@ describe('lgtm', () => {
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
   })
 
-  it('adds label if commentor is collaborator', async () => {
+  it('adds label if commenter is collaborator', async () => {
     issueCommentEvent.comment.body = '/lgtm'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -97,14 +112,54 @@ describe('lgtm', () => {
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(204)
 
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+
     await handleIssueComment(commentContext)
     expect(parsedBody).toEqual({
       labels: ['lgtm']
     })
-    expect(nock.isDone()).toBe(true)
   })
 
-  it('throws if commentor is not org member or collaborator', async () => {
+  it('throws if commenter is not reviewer in OWNERS', async () => {
+    const owners = Buffer.from(`
+approvers:
+- Codertocat
+`).toString('base64')
+         
+    const contentResponse = {
+      type: "file",
+      encoding: "base64",
+      size: 4096,
+      name: "OWNERS",
+      path: "OWNERS",
+      content: owners
+    }
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(200, contentResponse)
+
+    issueCommentEvent.comment.body = '/lgtm'
+    const commentContext = new utils.mockContext(issueCommentEvent)
+
+    expect(() => lgtm(commentContext))
+      .rejects.toThrowError('Codertocat is not included in the reviewers role in the OWNERS file')
+  })
+
+  it('throws if commenter is not org member or collaborator', async () => {
+    nock(utils.api)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(404)
+
+    issueCommentEvent.comment.body = '/lgtm'
+    const commentContext = new utils.mockContext(issueCommentEvent)
+
+    expect(() => lgtm(commentContext))
+      .rejects.toThrowError('Codertocat is not a org member or collaborator')
+  })
+
+  it('adds label if commenter is reviewer in OWNERS', async() => {
     issueCommentEvent.comment.body = '/lgtm'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -116,16 +171,26 @@ describe('lgtm', () => {
       })
       .reply(200)
 
+    const owners = Buffer.from(`
+reviewers:
+- Codertocat
+`).toString('base64')
+               
+    const contentResponse = {
+      type: "file",
+      encoding: "base64",
+      size: 4096,
+      name: "OWNERS",
+      path: "OWNERS",
+      content: owners
+    }
     nock(utils.api)
-      .get('/orgs/Codertocat/members/Codertocat')
-      .reply(404)
+      .get('/repos/Codertocat/Hello-World/contents/OWNERS')
+      .reply(200, contentResponse)
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
-      .reply(404)
-
-    const spy = jest.spyOn(core, 'setFailed')
     await handleIssueComment(commentContext)
-    expect(spy).toHaveBeenCalled()
+    expect(parsedBody).toEqual({
+      labels: ['lgtm']
+    })
   })
 })

@@ -1,5 +1,6 @@
 module.exports = {
   clearMocks: true,
+  resetMocks: true,
   moduleFileExtensions: ['js', 'ts'],
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],

@@ -1,6 +1,6 @@
 # Prow Github Actions ⛵️
 
-This project is inspired by [Prow](https://github.com/kubernetes/test-infra/tree/master/prow) and brings it's chat-ops functionality and project management to a simple, Github actions workflow.
+This project is inspired by [Prow](https://github.com/kubernetes/test-infra/tree/master/prow) and brings its chat-ops functionality and project management to a simple, Github actions workflow.
 
 > Prow is a Kubernetes based CI/CD system ... and provides GitHub automation in the form of policy enforcement, chat-ops via /foo style commands, and automatic PR merging.
 

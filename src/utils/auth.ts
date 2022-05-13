@@ -1,7 +1,9 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-
+import {RequestError} from '@octokit/request-error'
 import {Context} from '@actions/github/lib/context'
+
+import yaml from 'js-yaml'
 
 /**
  * checkOrgMember will check to see if the given user is a repo org member
@@ -171,5 +173,98 @@ export const checkCommenterAuth = async (
     return true
   }
 
+  return false
+}
+
+/**
+ * When an OWNERS file is present, use it to authorize the action
+   otherwise fall back to allowing organization members and collaborators
+ * @param role is the role to check
+ * @param username is the user to authorize
+ */
+export const assertAuthorizedByOwnersOrMembership = async (
+  octokit: github.GitHub,
+  context: Context,
+  role: string,
+  username: string
+): Promise<void> => {
+  core.debug('Checking if the user is authorized to interact with prow')
+  const owners = await retrieveOwnersFile(octokit, context)
+
+  if (owners !== '') {
+    if (!isInOwnersFile(owners, role, username)) {
+      throw new Error(
+        `${username} is not included in the ${role} role in the OWNERS file`
+      )
+    }
+  } else {
+    const isOrgMember = await checkOrgMember(octokit, context, username)
+    const isCollaborator = await checkCollaborator(octokit, context, username)
+
+    if (!isOrgMember && !isCollaborator) {
+      throw new Error(`${username} is not a org member or collaborator`)
+    }
+  }
+}
+
+/**
+ * Retrieve the contents of the OWNERS file at the root of the repository.
+ * If the file does not exist, returns an empty string.
+ */
+async function retrieveOwnersFile(
+  octokit: github.GitHub,
+  context: Context
+): Promise<string> {
+  core.debug(`Looking for an OWNERS file at the root of the repository`)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any = undefined
+  try {
+    const response = await octokit.repos.getContents({
+      ...context.repo,
+      path: 'OWNERS'
+    })
+    data = response.data
+  } catch (e) {
+    if (e instanceof RequestError) {
+      if (e.status === 404) {
+        core.debug('No OWNERS file found')
+        return ''
+      }
+    }
+
+    throw new Error(
+      `error checking for an OWNERS file at the root of the repository: ${e}`
+    )
+  }
+
+  if (!data.content || !data.encoding) {
+    throw new Error(`invalid OWNERS file returned from GitHub API: ${data}`)
+  }
+
+  const decoded = Buffer.from(data.content, data.encoding).toString()
+  core.debug(`OWNERS file contents: ${decoded}`)
+  return decoded
+}
+
+/**
+ * Determine if the user has the specified role in the OWNERS file.
+ * @param ownersContents - the contents of the OWNERS file
+ * @param role - the role to check
+ * @param username - the user to authorize
+ */
+function isInOwnersFile(
+  ownersContents: string,
+  role: string,
+  username: string
+): boolean {
+  core.debug(`checking if ${username} is in the ${role} in the OWNERS file`)
+  const ownersData = yaml.safeLoad(ownersContents)
+
+  const roleMembers = ownersData[role]
+  if ((roleMembers as string[]) !== undefined) {
+    return roleMembers.indexOf(username) > -1
+  }
+
+  core.info(`${username} is not in the ${role} role in the OWNERS file`)
   return false
 }
