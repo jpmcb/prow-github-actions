@@ -9,7 +9,17 @@ test('runs with no options', () => {
     env: process.env
   }
 
+  console.log(process.env)
+  
+  try{
   expect(cp.execSync(`node ${ip}`, options).toString()).toContain(
     'not yet supported'
   )
+  } catch(e) {
+    console.log("FAILED COMMAND OUTPUT",e)
+    console.log("FAILED COMMAND STDERR",e.stderr.toString())
+    console.log("FAILED COMMAND OUTPUT",e.output.toString())
+    console.log("FAILED COMMAND STDOUT",e.stdout.toString())
+    throw e
+  }
 })
