@@ -9,7 +9,21 @@ test('runs with no options', () => {
     env: process.env
   }
 
-  expect(cp.execSync(`node ${ip}`, options).toString()).toContain(
-    'not yet supported'
-  )
+  // When this test is run through GitHub Actions, GITHUB_EVENT_NAME is set to pull_request
+  // clear it out so that we hit the default behavior when nothing is specified
+  if (options.env) {
+    options.env.GITHUB_EVENT_NAME = ''
+  }
+
+  try {
+    expect(cp.execSync(`node ${ip}`, options).toString()).toContain(
+      'not yet supported'
+    )
+  } catch (e) {
+    console.log(
+      "Calling the github action's main function without any context failed:",
+      e.output.toString()
+    )
+    throw e
+  }
 })
