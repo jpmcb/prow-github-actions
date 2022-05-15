@@ -11929,6 +11929,7 @@ const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const labeling_1 = __webpack_require__(508);
 const auth_1 = __webpack_require__(683);
+const comments_1 = __webpack_require__(646);
 /**
  * /lgtm will add the lgtm label.
  * Note - this label is used to indicate automatic merging
@@ -11946,7 +11947,22 @@ exports.lgtm = (context = github.context) => __awaiter(void 0, void 0, void 0, f
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
-    yield auth_1.assertAuthorizedByOwnersOrMembership(octokit, context, 'reviewers', commenterId);
+    try {
+        yield auth_1.assertAuthorizedByOwnersOrMembership(octokit, context, 'reviewers', commenterId);
+    }
+    catch (e) {
+        const msg = `Cannot apply the lgtm label because ${e}`;
+        core.error(msg);
+        // Try to reply back that the user is unauthorized
+        try {
+            comments_1.createComment(octokit, context, issueNumber, msg);
+        }
+        catch (commentE) {
+            // Log the comment error but continue to throw the original auth error
+            core.error(`Could not comment with an auth error: ${commentE}`);
+        }
+        throw e;
+    }
     const commentArgs = command_1.getCommandArgs('/lgtm', commentBody);
     // check if canceling last review
     if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
@@ -12392,6 +12408,7 @@ const github = __importStar(__webpack_require__(469));
 const core = __importStar(__webpack_require__(470));
 const command_1 = __webpack_require__(535);
 const auth_1 = __webpack_require__(683);
+const comments_1 = __webpack_require__(646);
 /**
  * the /approve command will create a "approve" review
  * from the github-actions bot
@@ -12412,7 +12429,22 @@ exports.approve = (context = github.context) => __awaiter(void 0, void 0, void 0
     if (issueNumber === undefined) {
         throw new Error(`github context payload missing issue number: ${context.payload}`);
     }
-    yield auth_1.assertAuthorizedByOwnersOrMembership(octokit, context, 'approvers', commenterLogin);
+    try {
+        yield auth_1.assertAuthorizedByOwnersOrMembership(octokit, context, 'approvers', commenterLogin);
+    }
+    catch (e) {
+        const msg = `Cannot approve the pull request: ${e}`;
+        core.error(msg);
+        // Try to reply back that the user is unauthorized
+        try {
+            comments_1.createComment(octokit, context, issueNumber, msg);
+        }
+        catch (commentE) {
+            // Log the comment error but continue to throw the original auth error
+            core.error(`Could not comment with an auth error: ${commentE}`);
+        }
+        throw e;
+    }
     const commentArgs = command_1.getCommandArgs('/approve', commentBody);
     // check if canceling last review
     if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
@@ -13896,6 +13928,41 @@ function resolveYamlMerge(data) {
 module.exports = new Type('tag:yaml.org,2002:merge', {
   kind: 'scalar',
   resolve: resolveYamlMerge
+});
+
+
+/***/ }),
+
+/***/ 646:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * createComment comments on the specified issue or pull request
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param issueNum - the issue associated with this runtime
+ * @param message - the comment message body
+ */
+exports.createComment = (octokit, context, issueNum, message) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield octokit.issues.createComment(Object.assign(Object.assign({}, context.repo), { issue_number: issueNum, body: message }));
+    }
+    catch (e) {
+        throw new Error(`could not add comment: ${e}`);
+    }
 });
 
 

@@ -5,6 +5,7 @@ import {Octokit} from '@octokit/rest'
 import {Context} from '@actions/github/lib/context'
 import {getCommandArgs} from '../utils/command'
 import {assertAuthorizedByOwnersOrMembership} from '../utils/auth'
+import {createComment} from '../utils/comments'
 
 /**
  * the /approve command will create a "approve" review
@@ -33,12 +34,26 @@ export const approve = async (
     )
   }
 
-  await assertAuthorizedByOwnersOrMembership(
-    octokit,
-    context,
-    'approvers',
-    commenterLogin
-  )
+  try {
+    await assertAuthorizedByOwnersOrMembership(
+      octokit,
+      context,
+      'approvers',
+      commenterLogin
+    )
+  } catch (e) {
+    const msg = `Cannot approve the pull request: ${e}`
+    core.error(msg)
+
+    // Try to reply back that the user is unauthorized
+    try {
+      createComment(octokit, context, issueNumber, msg)
+    } catch (commentE) {
+      // Log the comment error but continue to throw the original auth error
+      core.error(`Could not comment with an auth error: ${commentE}`)
+    }
+    throw e
+  }
 
   const commentArgs: string[] = getCommandArgs('/approve', commentBody)
 

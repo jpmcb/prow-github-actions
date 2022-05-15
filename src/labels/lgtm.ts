@@ -6,6 +6,7 @@ import * as core from '@actions/core'
 import {getCommandArgs} from '../utils/command'
 import {labelIssue, cancelLabel} from '../utils/labeling'
 import {assertAuthorizedByOwnersOrMembership} from '../utils/auth'
+import {createComment} from '../utils/comments'
 
 /**
  * /lgtm will add the lgtm label.
@@ -30,12 +31,26 @@ export const lgtm = async (
     )
   }
 
-  await assertAuthorizedByOwnersOrMembership(
-    octokit,
-    context,
-    'reviewers',
-    commenterId
-  )
+  try {
+    await assertAuthorizedByOwnersOrMembership(
+      octokit,
+      context,
+      'reviewers',
+      commenterId
+    )
+  } catch (e) {
+    const msg = `Cannot apply the lgtm label because ${e}`
+    core.error(msg)
+
+    // Try to reply back that the user is unauthorized
+    try {
+      createComment(octokit, context, issueNumber, msg)
+    } catch (commentE) {
+      // Log the comment error but continue to throw the original auth error
+      core.error(`Could not comment with an auth error: ${commentE}`)
+    }
+    throw e
+  }
 
   const commentArgs: string[] = getCommandArgs('/lgtm', commentBody)
 
