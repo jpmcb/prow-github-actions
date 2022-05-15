@@ -25,7 +25,7 @@ describe('/approve', () => {
     }
   })
 
-  it('throws if commenter is not an approver in OWNERS', async () => {
+  it('fails if commenter is not an approver in OWNERS', async () => {
     const owners = Buffer.from(
       `
 reviewers:
@@ -50,21 +50,27 @@ reviewers:
 
     // Mock the reply that the user is not authorized
     nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/issues/1/comments')
+      .post('/repos/Codertocat/Hello-World/issues/1/comments', (req) => {
+        expect(req.body).toContain(wantErr)
+        return true
+      })
       .reply(200)
 
     issueCommentEventAssign.comment.body = '/approve'
     const commentContext = new utils.mockContext(issueCommentEventAssign)
 
-    await expect(() => approve(commentContext)).rejects.toThrowError(wantErr)
+    await handleIssueComment(commentContext)
   })
 
-  it('throws if commenter is not an org member or collaborator', async () => {
+  it('fails if commenter is not an org member or collaborator', async () => {
     const wantErr = `Codertocat is not a org member or collaborator`
 
     // Mock the reply that the user is not authorized
     nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/issues/1/comments')
+      .post('/repos/Codertocat/Hello-World/issues/1/comments', (req) => {
+        expect(req.body).toContain(wantErr)
+        return true
+      })
       .reply(200)
 
     nock(utils.api)
@@ -74,7 +80,7 @@ reviewers:
     issueCommentEventAssign.comment.body = '/approve'
     const commentContext = new utils.mockContext(issueCommentEventAssign)
 
-    await expect(() => approve(commentContext)).rejects.toThrowError(wantErr)
+    await handleIssueComment(commentContext)
   })
 
   it('approves if commenter is an approver in OWNERS', async () => {

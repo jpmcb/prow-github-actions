@@ -116,7 +116,7 @@ describe('lgtm', () => {
     })
   })
 
-  it('throws if commenter is not reviewer in OWNERS', async () => {
+  it('fails if commenter is not reviewer in OWNERS', async () => {
     const owners = Buffer.from(
       `
 approvers:
@@ -140,21 +140,27 @@ approvers:
 
     // Mock the reply that the user is not authorized
     nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/issues/1/comments')
+      .post('/repos/Codertocat/Hello-World/issues/1/comments', (req) => {
+        expect(req.body).toContain(wantErr)
+        return true
+      })
       .reply(200)
 
     issueCommentEvent.comment.body = '/lgtm'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
-    await expect(() => lgtm(commentContext)).rejects.toThrowError(wantErr)
+    await handleIssueComment(commentContext)
   })
 
-  it('throws if commenter is not org member or collaborator', async () => {
+  it('fails if commenter is not org member or collaborator', async () => {
     const wantErr = `Codertocat is not a org member or collaborator`
 
     // Mock the reply that the user is not authorized
     nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/issues/1/comments')
+      .post('/repos/Codertocat/Hello-World/issues/1/comments', (req) => {
+        expect(req.body).toContain(wantErr)
+        return true
+      })
       .reply(200)
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/OWNERS')
@@ -163,7 +169,7 @@ approvers:
     issueCommentEvent.comment.body = '/lgtm'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
-    await expect(() => lgtm(commentContext)).rejects.toThrowError(wantErr)
+    await handleIssueComment(commentContext)
   })
 
   it('adds label if commenter is reviewer in OWNERS', async () => {
