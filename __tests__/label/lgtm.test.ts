@@ -1,7 +1,6 @@
 import nock from 'nock'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
-import {lgtm} from '../../src/labels/lgtm'
 
 import * as utils from '../testUtils'
 

@@ -1,7 +1,6 @@
 import nock from 'nock'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
-import {approve} from '../../src/issueComment/approve'
 
 import * as utils from '../testUtils'
 
