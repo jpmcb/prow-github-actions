@@ -9,7 +9,6 @@ import issueListComments from '../fixtures/issues/assign/issueListComments.json'
 
 nock.disableNetConnect()
 
-
 describe('/assign', () => {
   beforeEach(() => {
     nock.cleanAll()

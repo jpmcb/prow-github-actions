@@ -50,7 +50,7 @@ describe('hold', () => {
     nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/issues/1/labels/hold')
       .reply(200)
-    
+
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1')
       .reply(200, issuePayload)
