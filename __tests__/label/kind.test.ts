@@ -25,7 +25,7 @@ describe('kind', () => {
         return body
       })
       .reply(200)
-    
+
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
       .reply(200, labelFileContents)

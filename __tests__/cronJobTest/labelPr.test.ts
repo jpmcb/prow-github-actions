@@ -23,7 +23,7 @@ describe('cronLabelPr', () => {
     // We can use any context here as "schedule" sends no webhook payload
     // Instead, we use it to gain the repo owner and url
     const context = new utils.mockContext(pullReqOpenedEvent)
-    
+
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/pulls?page=1')
       .reply(200, listPullReqs)
@@ -61,7 +61,7 @@ describe('cronLabelPr', () => {
     // We can use any context here as "schedule" sends no webhook payload
     // Instead, we use it to gain the repo owner and url
     const context = new utils.mockContext(pullReqOpenedEvent)
-    
+
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/pulls?page=1')
       .reply(200, listPullReqs)

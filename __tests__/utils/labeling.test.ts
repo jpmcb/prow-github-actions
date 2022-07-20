@@ -49,7 +49,7 @@ describe('utils labeling', () => {
 
     issueCommentEvent.comment.body = '/area important'
     const commentContext = new utils.mockContext(issueCommentEvent)
-    
+
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/contents/.github/labels.yml')
       .reply(200, malformedFileContents)

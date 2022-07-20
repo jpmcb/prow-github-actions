@@ -22,7 +22,7 @@ describe('remove', () => {
     nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/issues/1/labels/some-label')
       .reply(200)
-    
+
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1')
       .reply(200, issuePayload)
@@ -46,7 +46,7 @@ describe('remove', () => {
     nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/issues/1/labels/some-other-label')
       .reply(200)
-    
+
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1')
       .reply(200, issuePayload)
@@ -66,7 +66,7 @@ describe('remove', () => {
     nock(utils.api)
       .delete('/repos/Codertocat/Hello-World/issues/1/labels/some-label')
       .reply(200)
-    
+
     nock(utils.api)
       .get('/repos/Codertocat/Hello-World/issues/1')
       .reply(200, issuePayload)
@@ -75,7 +75,6 @@ describe('remove', () => {
       .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
       .reply(404)
 
-    
     const spy = jest.spyOn(core, 'setFailed')
     await handleIssueComment(commentContext)
     expect(spy).toHaveBeenCalled()

@@ -26,7 +26,7 @@ describe('/retitle', () => {
         return true
       })
       .reply(200)
-    
+
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
