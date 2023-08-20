@@ -3,6 +3,7 @@ import {Octokit} from '@octokit/rest'
 
 import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
+import * as types from '@octokit/types'
 
 import * as yaml from 'js-yaml'
 import * as minimatch from 'minimatch'
@@ -10,6 +11,16 @@ import * as minimatch from 'minimatch'
 // This variable is used to track number of jobs processed
 // while recursing through pages of the github api
 let jobsDone = 0
+
+const token = core.getInput('github-token', {required: true})
+const hydratedOctokit = new Octokit({
+  auth: token
+})
+
+// TODO: Abstract out types?
+type PullsListResponseType = types.GetResponseDataTypeFromEndpointMethod<
+  typeof hydratedOctokit.pulls.list
+>
 
 /**
  * Inspired by https://github.com/actions/stale
@@ -26,10 +37,12 @@ export const cronLabelPr = async (
   core.info(`starting PR labeler page ${currentPage}`)
 
   const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const octokit = new Octokit({
+    auth: token
+  })
 
   // Get next batch
-  let prs: Octokit.PullsListResponseItem[]
+  let prs: PullsListResponseType
   try {
     prs = await getPrs(octokit, context, currentPage)
   } catch (e) {
@@ -69,10 +82,10 @@ export const cronLabelPr = async (
  * @param page - the page number to get from the api
  */
 const getPrs = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context = github.context,
   page: number
-): Promise<Octokit.PullsListResponse> => {
+): Promise<PullsListResponseType> => {
   core.debug(`getting prs page ${page}...`)
   const prResults = await octokit.pulls.list({
     ...context.repo,
@@ -95,7 +108,7 @@ const getPrs = async (
 const labelPr = async (
   prNum: number,
   context: Context = github.context,
-  octokit: github.GitHub
+  octokit: Octokit
 ): Promise<void> => {
   const changedFiles = await getChangedFiles(octokit, context, prNum)
   const labels = await getLabelsFromFileGlobs(octokit, context, changedFiles)
@@ -116,7 +129,7 @@ const labelPr = async (
  * @param prNum - the PR to check
  */
 const getChangedFiles = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   prNum: number
 ): Promise<string[]> => {
@@ -141,7 +154,7 @@ const getChangedFiles = async (
  * @param files - the list of files that have changed in the PR
  */
 const getLabelsFromFileGlobs = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   files: string[]
 ): Promise<string[]> => {
@@ -151,13 +164,13 @@ const getLabelsFromFileGlobs = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let response: any = undefined
   try {
-    response = await octokit.repos.getContents({
+    response = await octokit.rest.repos.getContent({
       ...context.repo,
       path: '.github/labels.yaml'
     })
   } catch (e) {
     try {
-      response = await octokit.repos.getContents({
+      response = await octokit.rest.repos.getContent({
         ...context.repo,
         path: '.github/labels.yml'
       })
@@ -180,7 +193,7 @@ const getLabelsFromFileGlobs = async (
   ).toString()
 
   core.debug(`label file contents: ${decoded}`)
-  const content = yaml.safeLoad(decoded)
+  const content: any = yaml.load(decoded)
 
   const labelMap: Map<string, string[]> = new Map()
 
@@ -235,7 +248,7 @@ const checkGlobs = (files: string[], globs: string[]): boolean => {
  * @param labels - the labels for the PR
  */
 export const sendLabels = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   prNum: number,
   labels: string[]
