@@ -22,11 +22,13 @@ export const approve = async (
   core.debug(`starting approve job`)
 
   const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const octokit = new Octokit({
+    auth: token
+  })
 
   const issueNumber: number | undefined = context.payload.issue?.number
-  const commentBody: string = context.payload['comment']['body']
-  const commenterLogin: string = context.payload['comment']['user']['login']
+  const commentBody: string = context.payload.comment?.body
+  const commenterLogin: string = context.payload.comment?.user.login
 
   if (issueNumber === undefined) {
     throw new Error(
@@ -89,7 +91,7 @@ export const approve = async (
  * @param commenterLogin - the login name of the user who made comment
  */
 const cancel = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   issueNumber: number,
   commenterLogin: string
