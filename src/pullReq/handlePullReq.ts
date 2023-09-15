@@ -2,8 +2,8 @@ import * as github from '@actions/github'
 
 import * as core from '@actions/core'
 
-import {Context} from '@actions/github/lib/context'
-import {onPrLgtm} from './onPrLgtm'
+import { Context } from '@actions/github/lib/context'
+import { onPrLgtm } from './onPrLgtm'
 
 /**
  * This method handles any pull-request configuration for configured workflows.
@@ -14,7 +14,7 @@ import {onPrLgtm} from './onPrLgtm'
 export const handlePullReq = async (
   context: Context = github.context
 ): Promise<void> => {
-  const runConfig = core.getInput('jobs', {required: false}).split(' ')
+  const runConfig = core.getInput('jobs', { required: false }).split(' ')
 
   await Promise.all(
     runConfig.map(async command => {

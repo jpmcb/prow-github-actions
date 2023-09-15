@@ -1,24 +1,24 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
-import {Context} from '@actions/github/lib/context'
+import { Context } from '@actions/github/lib/context'
 
-import {assign} from './assign'
-import {unassign} from './unassign'
-import {approve} from './approve'
-import {retitle} from './retitle'
-import {remove} from '../labels/remove'
-import {area} from '../labels/area'
-import {kind} from '../labels/kind'
-import {priority} from '../labels/priority'
-import {lgtm} from '../labels/lgtm'
-import {hold} from '../labels/hold'
-import {close} from './close'
-import {reopen} from './reopen'
-import {lock} from './lock'
-import {cc} from './cc'
-import {uncc} from './uncc'
-import {milestone} from './milestone'
+import { assign } from './assign'
+import { unassign } from './unassign'
+import { approve } from './approve'
+import { retitle } from './retitle'
+import { remove } from '../labels/remove'
+import { area } from '../labels/area'
+import { kind } from '../labels/kind'
+import { priority } from '../labels/priority'
+import { lgtm } from '../labels/lgtm'
+import { hold } from '../labels/hold'
+import { close } from './close'
+import { reopen } from './reopen'
+import { lock } from './lock'
+import { cc } from './cc'
+import { uncc } from './uncc'
+import { milestone } from './milestone'
 
 /**
  * This Method handles any issue comments
@@ -31,10 +31,10 @@ export const handleIssueComment = async (
   context: Context = github.context
 ): Promise<void> => {
   const commandConfig = core
-    .getInput('prow-commands', {required: false})
+    .getInput('prow-commands', { required: false })
     .replace(/\n/g, ' ')
     .split(' ')
-  const commentBody: string = context.payload['comment']['body']
+  const commentBody: string = context.payload.comment?.body
 
   await Promise.all(
     commandConfig.map(async command => {

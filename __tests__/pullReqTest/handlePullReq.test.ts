@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as utils from '../testUtils'
 
-import {handlePullReq} from '../../src/pullReq/handlePullReq'
+import { handlePullReq } from '../../src/pullReq/handlePullReq'
 
 import prCreatedEvent from '../fixtures/pullReq/pullReqOpenedEvent.json'
 

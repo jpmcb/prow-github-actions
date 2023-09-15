@@ -1,12 +1,13 @@
 import * as github from '@actions/github'
+import { Octokit } from '@octokit/rest'
 
-import {Context} from '@actions/github/lib/context'
+import { Context } from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
-import {getCommandArgs} from '../utils/command'
-import {labelIssue, cancelLabel} from '../utils/labeling'
-import {assertAuthorizedByOwnersOrMembership} from '../utils/auth'
-import {createComment} from '../utils/comments'
+import { getCommandArgs } from '../utils/command'
+import { labelIssue, cancelLabel } from '../utils/labeling'
+import { assertAuthorizedByOwnersOrMembership } from '../utils/auth'
+import { createComment } from '../utils/comments'
 
 /**
  * /lgtm will add the lgtm label.
@@ -18,12 +19,14 @@ import {createComment} from '../utils/comments'
 export const lgtm = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const token = core.getInput('github-token', { required: true })
+  const octokit = new Octokit({
+    auth: token
+  })
 
   const issueNumber: number | undefined = context.payload.issue?.number
-  const commentBody: string = context.payload['comment']['body']
-  const commenterId: string = context.payload['comment']['user']['login']
+  const commentBody: string = context.payload.comment?.body
+  const commenterId: string = context.payload.comment?.user?.login
 
   if (issueNumber === undefined) {
     throw new Error(

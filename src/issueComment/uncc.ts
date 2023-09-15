@@ -1,10 +1,11 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
+import { Octokit } from '@octokit/rest'
 
-import {Context} from '@actions/github/lib/context'
+import { Context } from '@actions/github/lib/context'
 
-import {getCommandArgs} from '../utils/command'
-import {checkCollaborator, checkCommenterAuth} from '../utils/auth'
+import { getCommandArgs } from '../utils/command'
+import { checkCollaborator, checkCommenterAuth } from '../utils/auth'
 
 /**
  * /uncc will remove the review request for argument users (or self)
@@ -14,12 +15,14 @@ import {checkCollaborator, checkCommenterAuth} from '../utils/auth'
 export const uncc = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const token = core.getInput('github-token', { required: true })
+  const octokit = new Octokit({
+    auth: token
+  })
 
   const pullNumber: number | undefined = context.payload.issue?.number
-  const commenterId: string = context.payload['comment']['user']['login']
-  const commentBody: string = context.payload['comment']['body']
+  const commenterId: string = context.payload.comment?.user?.login
+  const commentBody: string = context.payload.comment?.body
 
   if (pullNumber === undefined) {
     throw new Error(
@@ -56,11 +59,13 @@ export const uncc = async (
   }
 
   if (authUser) {
-    await octokit.pulls.deleteReviewRequest({
+    /* eslint-disable @typescript-eslint/naming-convention */
+    await octokit.pulls.removeRequestedReviewers({
       ...context.repo,
       pull_number: pullNumber,
       reviewers: commentArgs
     })
+    /* eslint-enable @typescript-eslint/naming-convention */
   }
 }
 
@@ -73,7 +78,7 @@ export const uncc = async (
  * @param user - the user to self assign
  */
 const removeSelfReviewReq = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   pullNum: number,
   user: string
@@ -81,10 +86,12 @@ const removeSelfReviewReq = async (
   const isCollaborator = await checkCollaborator(octokit, context, user)
 
   if (isCollaborator) {
-    await octokit.pulls.deleteReviewRequest({
+    /* eslint-disable @typescript-eslint/naming-convention */
+    await octokit.pulls.removeRequestedReviewers({
       ...context.repo,
       pull_number: pullNum,
       reviewers: [user]
     })
+    /* eslint-enable @typescript-eslint/naming-convention */
   }
 }

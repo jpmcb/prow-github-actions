@@ -1,9 +1,10 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
+import { Octokit } from '@octokit/rest'
 
-import {Context} from '@actions/github/lib/context'
+import { Context } from '@actions/github/lib/context'
 
-import {checkCollaborator} from '../utils/auth'
+import { checkCollaborator } from '../utils/auth'
 
 /**
  * /close will close the issue / PR
@@ -13,11 +14,13 @@ import {checkCollaborator} from '../utils/auth'
 export const close = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const token = core.getInput('github-token', { required: true })
+  const octokit = new Octokit({
+    auth: token
+  })
 
   const issueNumber: number | undefined = context.payload.issue?.number
-  const commenterId: string = context.payload['comment']['user']['login']
+  const commenterId: string = context.payload.comment?.user?.login
 
   if (issueNumber === undefined) {
     throw new Error(
@@ -36,11 +39,13 @@ export const close = async (
 
   if (isAuthUser) {
     try {
+      /* eslint-disable @typescript-eslint/naming-convention */
       await octokit.issues.update({
         ...context.repo,
         issue_number: issueNumber,
         state: 'closed'
       })
+      /* eslint-enable @typescript-eslint/naming-convention */
     } catch (e) {
       throw new Error(`could not close issue: ${e}`)
     }

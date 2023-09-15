@@ -1,11 +1,12 @@
 import * as github from '@actions/github'
+import { Octokit } from '@octokit/rest'
 
-import {Context} from '@actions/github/lib/context'
+import { Context } from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
-import {getCommandArgs} from '../utils/command'
-import {getCurrentLabels, removeLabels} from '../utils/labeling'
-import {checkCollaborator} from '../utils/auth'
+import { getCommandArgs } from '../utils/command'
+import { getCurrentLabels, removeLabels } from '../utils/labeling'
+import { checkCollaborator } from '../utils/auth'
 
 /**
  * /remove will remove a label based on the command argument
@@ -15,12 +16,14 @@ import {checkCollaborator} from '../utils/auth'
 export const remove = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const token = core.getInput('github-token', { required: true })
+  const octokit = new Octokit({
+    auth: token
+  })
 
   const issueNumber: number | undefined = context.payload.issue?.number
-  const commentBody: string = context.payload['comment']['body']
-  const commenterId: string = context.payload['comment']['user']['login']
+  const commentBody: string = context.payload.comment?.body
+  const commenterId: string = context.payload.comment?.user?.login
 
   if (issueNumber === undefined) {
     throw new Error(
