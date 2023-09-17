@@ -1,11 +1,11 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { Octokit } from '@octokit/rest'
+import {Octokit} from '@octokit/rest'
 
-import { Context } from '@actions/github/lib/context'
+import {Context} from '@actions/github/lib/context'
 
-import { checkCollaborator } from '../utils/auth'
-import { getCommandArgs } from '../utils/command'
+import {checkCollaborator} from '../utils/auth'
+import {getCommandArgs} from '../utils/command'
 
 /**
  * /lock will lock the issue / PR.
@@ -16,7 +16,7 @@ import { getCommandArgs } from '../utils/command'
 export const lock = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })

@@ -1,10 +1,10 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { Octokit } from '@octokit/rest'
+import {Octokit} from '@octokit/rest'
 
-import { Context } from '@actions/github/lib/context'
+import {Context} from '@actions/github/lib/context'
 
-import { checkCollaborator } from '../utils/auth'
+import {checkCollaborator} from '../utils/auth'
 
 /**
  * /reopen will reopen the issue / PR. May be called after /close
@@ -14,7 +14,7 @@ import { checkCollaborator } from '../utils/auth'
 export const reopen = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })

@@ -1,11 +1,11 @@
 import * as github from '@actions/github'
-import { Octokit } from '@octokit/rest'
+import {Octokit} from '@octokit/rest'
 
-import { Context } from '@actions/github/lib/context'
+import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
-import { getCommandArgs } from '../utils/command'
-import { getArgumentLabels, labelIssue, addPrefix } from '../utils/labeling'
+import {getCommandArgs} from '../utils/command'
+import {getArgumentLabels, labelIssue, addPrefix} from '../utils/labeling'
 
 /**
  * /priority will add a priority/some-priority label
@@ -15,7 +15,7 @@ import { getArgumentLabels, labelIssue, addPrefix } from '../utils/labeling'
 export const priority = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })

@@ -1,12 +1,12 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 
-import { Octokit } from '@octokit/rest'
+import {Octokit} from '@octokit/rest'
 
-import { Context } from '@actions/github/lib/context'
+import {Context} from '@actions/github/lib/context'
 
-import { getCommandArgs } from '../utils/command'
-import { getOrgCollabCommentUsers, checkCommenterAuth } from '../utils/auth'
+import {getCommandArgs} from '../utils/command'
+import {getOrgCollabCommentUsers, checkCommenterAuth} from '../utils/auth'
 
 /**
  * /assign will self assign with no argument
@@ -19,7 +19,7 @@ export const assign = async (
 ): Promise<void> => {
   core.debug(`starting assign job`)
 
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })

@@ -1,11 +1,11 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { Octokit } from '@octokit/rest'
+import {Octokit} from '@octokit/rest'
 
-import { Context } from '@actions/github/lib/context'
+import {Context} from '@actions/github/lib/context'
 
-import { getCommandArgs } from '../utils/command'
-import { checkCommenterAuth } from '../utils/auth'
+import {getCommandArgs} from '../utils/command'
+import {checkCommenterAuth} from '../utils/auth'
 
 /**
  * /unassign will remove the assignment for argument users (or self)
@@ -15,7 +15,7 @@ import { checkCommenterAuth } from '../utils/auth'
 export const unassign = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })

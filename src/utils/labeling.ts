@@ -1,5 +1,5 @@
-import { Octokit } from '@octokit/rest'
-import { Context } from '@actions/github/lib/context'
+import {Octokit} from '@octokit/rest'
+import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
 import * as yaml from 'js-yaml'
@@ -110,7 +110,7 @@ export const getCurrentLabels = async (
 
     return issue.data.labels.map((e): string => {
       if (typeof e == 'object') {
-        return e.name || ""
+        return e.name || ''
       }
       return e
     })

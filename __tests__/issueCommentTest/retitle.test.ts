@@ -1,16 +1,18 @@
-import { setupServer } from 'msw/node'
-import { rest } from 'msw'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
 import * as utils from '../testUtils'
 
-import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
+import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 
 const server = setupServer()
-beforeAll(() => server.listen({
-  onUnhandledRequest: 'warn',
-}))
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
@@ -23,14 +25,18 @@ describe('/retitle', () => {
     issueCommentEvent.comment.body = '/retitle much better title'
 
     server.use(
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(204)),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
     )
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.patch(`${utils.api}/repos/Codertocat/Hello-World/issues/1`,
-        utils.mockResponse(200, null, observeReq)),
+      rest.patch(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
+        utils.mockResponse(200, null, observeReq)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
@@ -38,7 +44,7 @@ describe('/retitle', () => {
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      title: "much better title"
+      title: 'much better title'
     })
   })
 

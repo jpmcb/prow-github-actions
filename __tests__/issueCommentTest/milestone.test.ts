@@ -1,18 +1,20 @@
-import { setupServer } from 'msw/node'
-import { rest } from 'msw'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
 import * as utils from '../testUtils'
 import * as core from '@actions/core'
 
-import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
+import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import repoMilestones from '../fixtures/milestones/repoListMilestones.json'
 
 const server = setupServer()
-beforeAll(() => server.listen({
-  onUnhandledRequest: 'warn',
-}))
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
@@ -25,19 +27,25 @@ describe('/milestone', () => {
     issueCommentEvent.comment.body = '/milestone some milestone'
 
     server.use(
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/milestones`,
-        utils.mockResponse(200, repoMilestones)),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/milestones`,
+        utils.mockResponse(200, repoMilestones)
+      )
     )
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.patch(`${utils.api}/repos/Codertocat/Hello-World/issues/1`,
-        utils.mockResponse(200, null, observeReq)),
+      rest.patch(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
+        utils.mockResponse(200, null, observeReq)
+      )
     )
 
     server.use(
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(204)),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
@@ -53,13 +61,17 @@ describe('/milestone', () => {
     issueCommentEvent.comment.body = '/milestone some milestone'
 
     server.use(
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/milestones`,
-        utils.mockResponse(200, repoMilestones)),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/milestones`,
+        utils.mockResponse(200, repoMilestones)
+      )
     )
 
     server.use(
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(404)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEvent)

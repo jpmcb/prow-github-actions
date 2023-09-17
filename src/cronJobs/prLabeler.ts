@@ -1,9 +1,9 @@
 import * as github from '@actions/github'
-import { Octokit } from '@octokit/rest'
+import {Octokit} from '@octokit/rest'
 
-import { Context } from '@actions/github/lib/context'
+import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
-import { Endpoints } from '@octokit/types'
+import {Endpoints} from '@octokit/types'
 
 import * as yaml from 'js-yaml'
 import * as minimatch from 'minimatch'
@@ -12,7 +12,8 @@ import * as minimatch from 'minimatch'
 // while recursing through pages of the github api
 let jobsDone = 0
 
-type PullsListResponseDataType = Endpoints["GET /repos/{owner}/{repo}/pulls"]["response"]["data"]
+type PullsListResponseDataType =
+  Endpoints['GET /repos/{owner}/{repo}/pulls']['response']['data']
 
 /**
  * Inspired by https://github.com/actions/stale
@@ -28,7 +29,7 @@ export const cronLabelPr = async (
 ): Promise<number> => {
   core.info(`starting PR labeler page ${currentPage}`)
 
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })

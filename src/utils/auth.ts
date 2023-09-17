@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
-import { Octokit } from '@octokit/rest'
-import { Context } from '@actions/github/lib/context'
+import {Octokit} from '@octokit/rest'
+import {Context} from '@actions/github/lib/context'
 
 import yaml from 'js-yaml'
 

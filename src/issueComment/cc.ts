@@ -1,11 +1,11 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { Octokit } from '@octokit/rest'
+import {Octokit} from '@octokit/rest'
 
-import { Context } from '@actions/github/lib/context'
+import {Context} from '@actions/github/lib/context'
 
-import { getCommandArgs } from '../utils/command'
-import { checkCollaborator, getOrgCollabCommentUsers } from '../utils/auth'
+import {getCommandArgs} from '../utils/command'
+import {checkCollaborator, getOrgCollabCommentUsers} from '../utils/auth'
 
 /**
  * /cc will request a review from self with no arguments or the users specified
@@ -14,7 +14,7 @@ import { checkCollaborator, getOrgCollabCommentUsers } from '../utils/auth'
  * @param context - the github actions event context
  */
 export const cc = async (context: Context = github.context): Promise<void> => {
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })

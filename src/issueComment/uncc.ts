@@ -1,11 +1,11 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { Octokit } from '@octokit/rest'
+import {Octokit} from '@octokit/rest'
 
-import { Context } from '@actions/github/lib/context'
+import {Context} from '@actions/github/lib/context'
 
-import { getCommandArgs } from '../utils/command'
-import { checkCollaborator, checkCommenterAuth } from '../utils/auth'
+import {getCommandArgs} from '../utils/command'
+import {checkCollaborator, checkCommenterAuth} from '../utils/auth'
 
 /**
  * /uncc will remove the review request for argument users (or self)
@@ -15,7 +15,7 @@ import { checkCollaborator, checkCommenterAuth } from '../utils/auth'
 export const uncc = async (
   context: Context = github.context
 ): Promise<void> => {
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })

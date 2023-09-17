@@ -1,14 +1,15 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { Endpoints } from '@octokit/types'
+import {Endpoints} from '@octokit/types'
 
-import { Octokit } from '@octokit/rest'
-import { Context } from '@actions/github/lib/context'
-import { getCommandArgs } from '../utils/command'
-import { assertAuthorizedByOwnersOrMembership } from '../utils/auth'
-import { createComment } from '../utils/comments'
+import {Octokit} from '@octokit/rest'
+import {Context} from '@actions/github/lib/context'
+import {getCommandArgs} from '../utils/command'
+import {assertAuthorizedByOwnersOrMembership} from '../utils/auth'
+import {createComment} from '../utils/comments'
 
-type PullsListReviewsResponseType = Endpoints["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews"]["response"]
+type PullsListReviewsResponseType =
+  Endpoints['GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews']['response']
 
 /**
  * the /approve command will create a "approve" review
@@ -23,7 +24,7 @@ export const approve = async (
   context: Context = github.context
 ): Promise<void> => {
   core.debug(`starting approve job`)
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })

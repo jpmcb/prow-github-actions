@@ -1,5 +1,5 @@
-import { Octokit } from '@octokit/rest'
-import { Context } from '@actions/github/lib/context'
+import {Octokit} from '@octokit/rest'
+import {Context} from '@actions/github/lib/context'
 
 /**
  * createComment comments on the specified issue or pull request

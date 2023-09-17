@@ -1,7 +1,7 @@
-import { setupServer } from 'msw/node'
-import { rest } from 'msw'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
-import { handleCronJobs } from '../../src/cronJobs/handleCronJob'
+import {handleCronJobs} from '../../src/cronJobs/handleCronJob'
 import * as utils from '../testUtils'
 
 import pullReqOpenedEvent from '../fixtures/pullReq/pullReqOpenedEvent.json'
@@ -9,7 +9,8 @@ import listPullReqs from '../fixtures/pullReq/pullReqListPulls.json'
 
 const server = setupServer(
   // /repos/Codertocat/Hello-World/pulls?state=open&page={1,2}
-  rest.get(`${utils.api}/repos/Codertocat/Hello-World/pulls`,
+  rest.get(
+    `${utils.api}/repos/Codertocat/Hello-World/pulls`,
     (req, res, ctx) => {
       const page = req.url.searchParams.get('page')
 
@@ -19,11 +20,13 @@ const server = setupServer(
         return res(ctx.status(200), ctx.json([]))
       }
     }
-  ),
+  )
 )
-beforeAll(() => server.listen({
-  onUnhandledRequest: 'warn',
-}))
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
@@ -37,10 +40,12 @@ describe('cronLgtm', () => {
 
     listPullReqs[0].labels[0].name = 'lgtm'
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.put(`${utils.api}/repos/Codertocat/Hello-World/pulls/2/merge`,
-        utils.mockResponse(200, null, observeReq)),
+      rest.put(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/2/merge`,
+        utils.mockResponse(200, null, observeReq)
+      )
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
@@ -59,10 +64,12 @@ describe('cronLgtm', () => {
 
     listPullReqs[0].labels[0].name = 'lgtm'
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.put(`${utils.api}/repos/Codertocat/Hello-World/pulls/2/merge`,
-        utils.mockResponse(200, null, observeReq)),
+      rest.put(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/2/merge`,
+        utils.mockResponse(200, null, observeReq)
+      )
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
@@ -81,10 +88,12 @@ describe('cronLgtm', () => {
 
     listPullReqs[0].labels[0].name = 'lgtm'
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.put(`${utils.api}/repos/Codertocat/Hello-World/pulls/2/merge`,
-        utils.mockResponse(200, null, observeReq)),
+      rest.put(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/2/merge`,
+        utils.mockResponse(200, null, observeReq)
+      )
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
@@ -102,13 +111,13 @@ describe('cronLgtm', () => {
 
     listPullReqs[0].labels[0].name = 'lgtm'
     listPullReqs[0].labels.push({
-      "id": 1,
-      "node_id": "123",
-      "url": "https://api.github.com/repos/octocat/Hello-World/labels/hold",
-      "name": "hold",
-      "description": "looks good to me",
-      "color": "f29513",
-      "default": true
+      id: 1,
+      node_id: '123',
+      url: 'https://api.github.com/repos/octocat/Hello-World/labels/hold',
+      name: 'hold',
+      description: 'looks good to me',
+      color: 'f29513',
+      default: true
     })
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()

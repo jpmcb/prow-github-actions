@@ -1,7 +1,7 @@
-import { setupServer } from 'msw/node'
-import { rest } from 'msw'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
-import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
+import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 import * as utils from '../testUtils'
 import * as core from '@actions/core'
 
@@ -9,9 +9,11 @@ import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import issuePayload from '../fixtures/issues/issue.json'
 
 const server = setupServer()
-beforeAll(() => server.listen({
-  onUnhandledRequest: 'warn',
-}))
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
@@ -25,12 +27,18 @@ describe('remove', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     server.use(
-      rest.delete(`${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-label`,
-        utils.mockResponse(200)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1`,
-        utils.mockResponse(200, issuePayload)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(204)),
+      rest.delete(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-label`,
+        utils.mockResponse(200)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
+        utils.mockResponse(200, issuePayload)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
     )
 
     await handleIssueComment(commentContext)
@@ -41,14 +49,22 @@ describe('remove', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     server.use(
-      rest.delete(`${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-label`,
-        utils.mockResponse(200)),
-      rest.delete(`${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-other-label`,
-        utils.mockResponse(200)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1`,
-        utils.mockResponse(200, issuePayload)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(204)),
+      rest.delete(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-label`,
+        utils.mockResponse(200)
+      ),
+      rest.delete(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-other-label`,
+        utils.mockResponse(200)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
+        utils.mockResponse(200, issuePayload)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
     )
 
     await handleIssueComment(commentContext)
@@ -59,12 +75,18 @@ describe('remove', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     server.use(
-      rest.delete(`${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-label`,
-        utils.mockResponse(200)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1`,
-        utils.mockResponse(200, issuePayload)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)),
+      rest.delete(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-label`,
+        utils.mockResponse(200)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
+        utils.mockResponse(200, issuePayload)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(404)
+      )
     )
 
     const spy = jest.spyOn(core, 'setFailed')

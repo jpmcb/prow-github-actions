@@ -1,13 +1,14 @@
 import * as github from '@actions/github'
-import { Octokit } from '@octokit/rest'
-import { Endpoints } from '@octokit/types'
+import {Octokit} from '@octokit/rest'
+import {Endpoints} from '@octokit/types'
 
-import { Context } from '@actions/github/lib/context'
+import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
 let jobsDone = 0
 
-type PullsListResponseDataType = Endpoints["GET /repos/{owner}/{repo}/pulls"]["response"]["data"]
+type PullsListResponseDataType =
+  Endpoints['GET /repos/{owner}/{repo}/pulls']['response']['data']
 
 type PullsListResponseItem = PullsListResponseDataType extends (infer Item)[]
   ? Item
@@ -27,7 +28,7 @@ export const cronLgtm = async (
 ): Promise<number> => {
   core.info(`starting lgtm merger page: ${currentPage}`)
 
-  const token = core.getInput('github-token', { required: true })
+  const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
   })
@@ -112,13 +113,13 @@ const tryMergePr = async (
   octokit: Octokit,
   context: Context = github.context
 ): Promise<void> => {
-  const method = core.getInput('merge-method', { required: false })
+  const method = core.getInput('merge-method', {required: false})
 
   // if pr has label 'lgtm', attempt to merge
   // but not if it has the 'hold' label
   if (
-    pr.labels.map((e) => e.name).includes('lgtm') &&
-    !pr.labels.map((e) => e.name).includes('hold')
+    pr.labels.map(e => e.name).includes('lgtm') &&
+    !pr.labels.map(e => e.name).includes('hold')
   ) {
     try {
       switch (method) {

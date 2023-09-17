@@ -1,7 +1,7 @@
-import { setupServer } from 'msw/node'
-import { rest } from 'msw'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
-import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
+import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 import * as utils from '../testUtils'
 
 import issueAssignedResp from '../fixtures/issues/assign/issueAssignedResponse.json'
@@ -9,9 +9,11 @@ import issueCommentEventAssign from '../fixtures/issues/assign/issueCommentEvent
 import issueListComments from '../fixtures/issues/assign/issueListComments.json'
 
 const server = setupServer()
-beforeAll(() => server.listen({
-  onUnhandledRequest: 'warn',
-}))
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
@@ -22,18 +24,26 @@ describe('/assign', () => {
 
   it('handles self assigning with comment /assign', async () => {
     server.use(
-      rest.get(`${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(204)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)),
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/Codertocat`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
     )
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.post(`${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueAssignedResp, observeReq)),
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
+        utils.mockResponse(201, issueAssignedResp, observeReq)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEventAssign)
@@ -49,18 +59,26 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
     server.use(
-      rest.get(`${utils.api}/orgs/Codertocat/members/some-user`,
-        utils.mockResponse(204)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
-        utils.mockResponse(404)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)),
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
     )
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.post(`${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueAssignedResp, observeReq)),
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
+        utils.mockResponse(201, issueAssignedResp, observeReq)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEventAssign)
@@ -76,18 +94,26 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign some-user'
 
     server.use(
-      rest.get(`${utils.api}/orgs/Codertocat/members/some-user`,
-        utils.mockResponse(204)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
-        utils.mockResponse(404)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)),
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
     )
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.post(`${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueAssignedResp, observeReq)),
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
+        utils.mockResponse(201, issueAssignedResp, observeReq)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEventAssign)
@@ -103,22 +129,34 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user @other-user'
 
     server.use(
-      rest.get(`${utils.api}/orgs/Codertocat/members/some-user`,
-        utils.mockResponse(204)),
-      rest.get(`${utils.api}/orgs/Codertocat/members/other-user`,
-        utils.mockResponse(204)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
-        utils.mockResponse(404)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/other-user`,
-        utils.mockResponse(404)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)),
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/other-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/other-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
     )
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.post(`${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueAssignedResp, observeReq)),
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
+        utils.mockResponse(201, issueAssignedResp, observeReq)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEventAssign)
@@ -134,18 +172,26 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
     server.use(
-      rest.get(`${utils.api}/orgs/Codertocat/members/some-user`,
-        utils.mockResponse(204)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
-        utils.mockResponse(404)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)),
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
     )
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.post(`${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueAssignedResp, observeReq)),
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
+        utils.mockResponse(201, issueAssignedResp, observeReq)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEventAssign)
@@ -161,18 +207,26 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
     server.use(
-      rest.get(`${utils.api}/orgs/Codertocat/members/some-user`,
-        utils.mockResponse(404)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
-        utils.mockResponse(204)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)),
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
     )
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.post(`${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueAssignedResp, observeReq)),
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
+        utils.mockResponse(201, issueAssignedResp, observeReq)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEventAssign)
@@ -188,18 +242,26 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
     server.use(
-      rest.get(`${utils.api}/orgs/Codertocat/members/some-user`,
-        utils.mockResponse(404)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
-        utils.mockResponse(404)),
-      rest.get(`${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(200, issueListComments)),
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(200, issueListComments)
+      )
     )
 
-    const observeReq = new utils.observeRequest
+    const observeReq = new utils.observeRequest()
     server.use(
-      rest.post(`${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueAssignedResp, observeReq)),
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
+        utils.mockResponse(201, issueAssignedResp, observeReq)
+      )
     )
 
     const commentContext = new utils.mockContext(issueCommentEventAssign)
