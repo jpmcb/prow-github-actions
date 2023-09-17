@@ -1,5 +1,6 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
+import {Octokit} from '@octokit/rest'
 
 import {Context} from '@actions/github/lib/context'
 
@@ -16,11 +17,13 @@ export const retitle = async (
   context: Context = github.context
 ): Promise<void> => {
   const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const octokit = new Octokit({
+    auth: token
+  })
 
   const issueNumber: number | undefined = context.payload.issue?.number
-  const commenterId: string = context.payload['comment']['user']['login']
-  const commentBody: string = context.payload['comment']['body']
+  const commenterId: string = context.payload.comment?.user?.login
+  const commentBody: string = context.payload.comment?.body
 
   if (issueNumber === undefined) {
     throw new Error(
@@ -46,11 +49,13 @@ export const retitle = async (
 
   if (isAuthUser) {
     try {
+      /* eslint-disable @typescript-eslint/naming-convention */
       await octokit.issues.update({
         ...context.repo,
         issue_number: issueNumber,
         title: commentArgs.join(' ')
       })
+      /* eslint-enable @typescript-eslint/naming-convention */
     } catch (e) {
       throw new Error(`could not update issue: ${e}`)
     }

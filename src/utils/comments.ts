@@ -1,4 +1,4 @@
-import * as github from '@actions/github'
+import {Octokit} from '@octokit/rest'
 import {Context} from '@actions/github/lib/context'
 
 /**
@@ -10,17 +10,19 @@ import {Context} from '@actions/github/lib/context'
  * @param message - the comment message body
  */
 export const createComment = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   issueNum: number,
   message: string
 ): Promise<void> => {
   try {
+    /* eslint-disable @typescript-eslint/naming-convention */
     await octokit.issues.createComment({
       ...context.repo,
       issue_number: issueNum,
       body: message
     })
+    /* eslint-enable @typescript-eslint/naming-convention */
   } catch (e) {
     throw new Error(`could not add comment: ${e}`)
   }

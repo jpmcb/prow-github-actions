@@ -1,10 +1,20 @@
-import nock from 'nock'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
 import * as utils from '../testUtils'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
+
+const server = setupServer()
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
 
 describe('/lock', () => {
   beforeEach(() => {
@@ -14,87 +24,106 @@ describe('/lock', () => {
   it('locks the associated issue', async () => {
     issueCommentEvent.comment.body = '/lock'
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
-      .reply(204)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
+    )
 
-    nock(utils.api)
-      .put('/repos/Codertocat/Hello-World/issues/1/lock')
-      .reply(200)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.put(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
+        utils.mockResponse(200, null, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
+    await expect(observeReq.called()).resolves.toBe('called')
   })
 
   it('locks the associated issue with given reason off-topic', async () => {
     issueCommentEvent.comment.body = '/lock off-topic'
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
-      .reply(204)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
+    )
 
-    nock(utils.api)
-      .put('/repos/Codertocat/Hello-World/issues/1/lock', body => {
-        expect(body).toMatchObject({
-          lock_reason: 'off-topic'
-        })
-        return true
-      })
-      .reply(200)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.put(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
+        utils.mockResponse(200, null, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      lock_reason: 'off-topic'
+    })
   })
 
   it('locks the associated issue with given reason too-heated', async () => {
     issueCommentEvent.comment.body = '/lock too-heated'
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
-      .reply(204)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
+    )
 
-    nock(utils.api)
-      .put('/repos/Codertocat/Hello-World/issues/1/lock', body => {
-        expect(body).toMatchObject({
-          lock_reason: 'too heated'
-        })
-        return true
-      })
-      .reply(200)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.put(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
+        utils.mockResponse(200, null, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      lock_reason: 'too heated'
+    })
   })
 
   it('locks the associated issue with given reason spam', async () => {
     issueCommentEvent.comment.body = '/lock spam'
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
-      .reply(204)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
+    )
 
-    nock(utils.api)
-      .put('/repos/Codertocat/Hello-World/issues/1/lock', body => {
-        expect(body).toMatchObject({
-          lock_reason: 'spam'
-        })
-        return true
-      })
-      .reply(200)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.put(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
+        utils.mockResponse(200, null, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      lock_reason: 'spam'
+    })
   })
 
   describe('error', () => {

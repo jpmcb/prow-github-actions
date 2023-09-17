@@ -28,3 +28,51 @@ export const setupJobsEnv = (arg: string = '') => {
   process.env['INPUT_JOBS'] = arg
   process.env['INPUT_GITHUB-TOKEN'] = 'some-token'
 }
+
+export class observeRequest {
+  private _ref: any = {}
+
+  public set ref(req: any) {
+    this._ref = req
+  }
+
+  public get ref() {
+    return this._ref
+  }
+
+  public body() {
+    const decoder = new TextDecoder('utf-8')
+
+    return JSON.parse(decoder.decode(this._ref?._body))
+  }
+
+  public called() {
+    const obj = this
+    return new Promise(resolve => {
+      const interval = setInterval(() => {
+        if ('method' in obj.ref) {
+          resolve('called')
+          clearInterval(interval)
+        }
+      }, 1)
+    })
+  }
+}
+
+export const mockResponse = (
+  replyCode: number,
+  replyBody?: any,
+  observeReq?: observeRequest
+) => {
+  return (req: any, res: any, ctx: any) => {
+    if (observeReq instanceof observeRequest) {
+      observeReq.ref = req
+    }
+
+    if (replyBody) {
+      return res(ctx.status(replyCode), ctx.json(replyBody))
+    } else {
+      return res(ctx.status(replyCode))
+    }
+  }
+}
