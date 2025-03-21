@@ -10,6 +10,7 @@ Check out the _"EXAMPLE"_ issues and pull requests (open and closed) in this rep
 
 ---
 Run specified actions or jobs for issue and PR comments through a `workflow.yaml` file:
+
 ```yaml
 name: "Prow github actions"
 on:
@@ -41,34 +42,8 @@ jobs:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 ```
 
-Automatically label PRs with the [Github actions/labeler](https://github.com/actions/labeler/blob/main/README.md) based on globs from `.github/labels.yml`:
-```yaml
-name: "Pull Request Labeler"
-on:
-- pull_request_target
-
-jobs:
-  triage:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/labeler@main
-      with:
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
-```
-
-Your `.github/labels.yaml` may look like:
-```yaml
-# labels to be used with /area command
-area:
-  - 'bug'
-  - 'important'
-
-# File globs for PR labeler
-tests:
-  - '**/*.test.ts'
-```
-
 You can automatically merge PRs based on a cron schedule if it contains the `lgtm` label:
+
 ```yaml
 name: "Merge on lgtm label"
 on:
@@ -89,6 +64,7 @@ jobs:
 ```
 
 Prow Github actions also supports removing the lgtm label when a PR is updated
+
 ```yaml
 name: "Run Jobs on PR"
 on: pull_request
@@ -115,6 +91,7 @@ jobs:
 - [Contributing](./docs/contributing.md)
 
 ---
+
 _open water breeze  
 the ocean seas are endless  
 forward to the prow_

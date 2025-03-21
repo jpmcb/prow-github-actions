@@ -3,7 +3,7 @@
     "encoding": "base64",
     "size": 5362,
     "name": "labels.yaml",
-    "path": ".github/labels.yaml",
+    "path": ".prowlabels.yaml",
     "content": "Cm15LXNwaWN5LWxhYmVsczoKICBhcmVhOgogIC0gJ2J1ZycKICAtICdpbXBvcnRhbnQnCgpraW5kOgogIC0gJ2ZhaWxpbmctdGVzdCcKICAtICdjbGVhbnVwJwoKdGVzdHM6CiAgLSAnX190ZXN0c19fLyonCgpzb3VyY2U6CiAgLSAnc3JjLyonCg==",
     "sha": "3d21ec53a331a6f037a91c368710b99387d012c1",
     "url": "https://api.github.com/repos/octokit/octokit.rb/contents/.github.com/labels.yaml",

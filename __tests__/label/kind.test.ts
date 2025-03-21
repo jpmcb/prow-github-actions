@@ -35,7 +35,7 @@ describe('kind', () => {
 
     server.use(
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(200, labelFileContents)
       )
     )
@@ -61,7 +61,7 @@ describe('kind', () => {
 
     server.use(
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(200, labelFileContents)
       )
     )
@@ -73,7 +73,7 @@ describe('kind', () => {
     })
   })
 
-  it('only adds kind labels for files in .github/labels.yaml', async () => {
+  it('only adds kind labels for files in .prowlabels.yaml', async () => {
     issueCommentEvent.comment.body = '/kind cleanup bad failing-test'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -87,7 +87,7 @@ describe('kind', () => {
 
     server.use(
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(200, labelFileContents)
       )
     )

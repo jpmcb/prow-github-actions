@@ -1,3 +1,10 @@
+/**
+ * @deprecated - it's no longer recommended to use the cron labeler for PRs.
+ * As of ~2020, GitHub actions support `pull_request_target` which can be used with
+ * the "actions/labeler" workflow. This supports labeling PRs when they are opened,
+ * even from forks (which this feature attempted to subvert via a cron).
+ */
+
 import * as github from '@actions/github'
 import {Octokit} from '@octokit/rest'
 

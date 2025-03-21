@@ -1,14 +1,15 @@
 # Examples
 
-* [.github/labels.yaml](#githublabelsyaml)
+* [`.prowlabels.yaml`](#prowlabelsyaml)
 * [Review and Approve Pull Requests](#review-and-approve-pull-requests)
 * [All prow github actions](#all-prow-github-actions)
 * [PR Labeler](#pr-labeler)
 * [Automatic PR merger](#automatic-pr-merger)
 * [PR job to remove lgtm label on update](#pr-job-to-remove-lgtm-label-on-update)
 
-### .github/labels.yaml
-A `.github/labels.yaml` file is necessary for most of the labeling commands & jobs
+### `.prowlabels.yaml`
+
+A `.prowlabels.yaml` file is necessary for most of the labeling commands & jobs:
 
 ```yaml
 area:
@@ -23,14 +24,6 @@ priority:
   - 'low'
   - 'mid'
   - 'high'
-
-# File globs for PR labeler
-# refer to github actions/labeler for further documentation
-tests:
-  - '**/*.test.ts'
-
-source:
-  - 'src/**'
 ```
 
 ### Review and Approve Pull Requests

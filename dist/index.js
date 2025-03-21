@@ -238,6 +238,12 @@ const tryMergePr = async (pr, octokit, context = github.context) => {
 
 "use strict";
 
+/**
+ * @deprecated - it's no longer recommended to use the cron labeler for PRs.
+ * As of ~2020, GitHub actions support `pull_request_target` which can be used with
+ * the "actions/labeler" workflow. This supports labeling PRs when they are opened,
+ * even from forks (which this feature attempted to subvert via a cron).
+ */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -2774,7 +2780,7 @@ exports.cancelLabel = exports.addPrefix = exports.removeLabels = exports.getCurr
 const core = __importStar(__nccwpck_require__(2186));
 const yaml = __importStar(__nccwpck_require__(1917));
 /**
- * getArgumentLabels will get the .github/labels.yaml or .github.labels.yml file.
+ * getArgumentLabels will get the .prowlabels.yaml or .prowlabels.yml file.
  * it will then return the section specified by arg.
  *
  * This method has some eslint ignores related to
@@ -2790,18 +2796,18 @@ const getArgumentLabels = async (octokit, context, arg) => {
     try {
         response = await octokit.repos.getContent({
             ...context.repo,
-            path: '.github/labels.yaml'
+            path: '.prowlabels.yaml'
         });
     }
     catch (e) {
         try {
             response = await octokit.repos.getContent({
                 ...context.repo,
-                path: '.github/labels.yml'
+                path: '.prowlabels.yml'
             });
         }
         catch (e2) {
-            throw new Error(`could not get .github/labels.yaml or .github/labels.yml: ${e} ${e2}`);
+            throw new Error(`could not get .prowlabels.yaml or .prowlabels.yml: ${e} ${e2}`);
         }
     }
     if (!response.data.content || !response.data.encoding) {

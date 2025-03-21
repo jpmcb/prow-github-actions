@@ -5,7 +5,7 @@ import * as core from '@actions/core'
 import * as yaml from 'js-yaml'
 
 /**
- * getArgumentLabels will get the .github/labels.yaml or .github.labels.yml file.
+ * getArgumentLabels will get the .prowlabels.yaml or .prowlabels.yml file.
  * it will then return the section specified by arg.
  *
  * This method has some eslint ignores related to
@@ -25,17 +25,17 @@ export const getArgumentLabels = async (
   try {
     response = await octokit.repos.getContent({
       ...context.repo,
-      path: '.github/labels.yaml'
+      path: '.prowlabels.yaml'
     })
   } catch (e) {
     try {
       response = await octokit.repos.getContent({
         ...context.repo,
-        path: '.github/labels.yml'
+        path: '.prowlabels.yml'
       })
     } catch (e2) {
       throw new Error(
-        `could not get .github/labels.yaml or .github/labels.yml: ${e} ${e2}`
+        `could not get .prowlabels.yaml or .prowlabels.yml: ${e} ${e2}`
       )
     }
   }

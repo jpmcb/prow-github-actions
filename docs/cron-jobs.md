@@ -5,14 +5,13 @@ The following jobs are supported through [cron Github workflows]().
 Jobs | Description
 --- | ---
 `lgtm` | Will attempt to automatically merge a PR with the `lgtm` label. Blocked by the `hold` label. Removed by the [lgtm PR job on pr update](./pr-jobs.md)
-`pr-labeler` | Labels PRs with labels based on file globs found in `.github/labels.yaml`. See [docs on PR labeler for more info](pr-labeling.md)
+`pr-labeler` | **(DEPRECATED)** Labels PRs with labels based on file globs found in `.github/labels.yaml`. See [docs on PR labeler for more info](pr-labeling.md)
 
-## PR labeler
-> What is this Chron job PR labeler?
+> What is the Chron job PR labeler?
 
 This job is a legacy feature of Github Prow bot which would label PRs
 based on a chron schedule. This was created since Github at the time did not provide a way
-to securely run actions (and therefore code) from PR forks, which could possibly be untrusted. 
+to securely run actions (and therefore code) from PR forks, which could possibly be untrusted.
 This chron job runs from _the main branch_ and not forks, therefore preventing any
 forked malicious code from being run against the repository.
 
@@ -36,6 +35,7 @@ However, this has some known limitations. The chron labeler queries Github in 10
 This can trigger github to rate limit the bot.
 
 This job may be run with the following workflow configuration:
+
 ```yml
 name: "Label PRs from globs"
 on:

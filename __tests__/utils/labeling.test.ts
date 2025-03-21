@@ -38,11 +38,11 @@ describe('utils labeling', () => {
 
     server.use(
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yml`,
         utils.mockResponse(200, labelFileContents)
       ),
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(404)
       )
     )
@@ -62,11 +62,11 @@ describe('utils labeling', () => {
 
     server.use(
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yml`,
         utils.mockResponse(200, malformedFileContents)
       ),
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(404)
       )
     )

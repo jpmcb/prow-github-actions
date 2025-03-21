@@ -35,7 +35,7 @@ describe('area', () => {
 
     server.use(
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(200, labelFileContents)
       )
     )
@@ -61,7 +61,7 @@ describe('area', () => {
 
     server.use(
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(200, labelFileContents)
       )
     )
@@ -73,7 +73,7 @@ describe('area', () => {
     })
   })
 
-  it('only adds area labels for files in .github/labels.yaml', async () => {
+  it('only adds area labels for files in .prowlabels.yaml', async () => {
     issueCommentEvent.comment.body = '/area bug bad important'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
@@ -87,7 +87,7 @@ describe('area', () => {
 
     server.use(
       rest.get(
-        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(200, labelFileContents)
       )
     )

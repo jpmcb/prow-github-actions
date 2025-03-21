@@ -9,9 +9,3 @@ kind:
 priority:
   - 'low'
   - 'high'
-
-tests:
-  - '**/*.test.ts'
-
-source:
-  - 'src/**'
