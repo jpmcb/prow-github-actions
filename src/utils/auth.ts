@@ -1,6 +1,5 @@
-import * as github from '@actions/github'
 import * as core from '@actions/core'
-import {RequestError} from '@octokit/request-error'
+import {Octokit} from '@octokit/rest'
 import {Context} from '@actions/github/lib/context'
 
 import yaml from 'js-yaml'
@@ -13,7 +12,7 @@ import yaml from 'js-yaml'
  * @param user - the users to check auth on
  */
 export const checkOrgMember = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   user: string
 ): Promise<boolean> => {
@@ -23,7 +22,7 @@ export const checkOrgMember = async (
       return false
     }
 
-    await octokit.orgs.checkMembership({
+    await octokit.orgs.checkMembershipForUser({
       org: context.payload.repository.owner.login,
       username: user
     })
@@ -42,7 +41,7 @@ export const checkOrgMember = async (
  * @param user - the users to check auth on
  */
 export const checkCollaborator = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   user: string
 ): Promise<boolean> => {
@@ -68,19 +67,21 @@ export const checkCollaborator = async (
  * @param user - the users to check auth on
  */
 export const checkIssueComments = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   issueNum: number,
   user: string
 ): Promise<boolean> => {
   try {
+    /* eslint-disable @typescript-eslint/naming-convention */
     const comments = await octokit.issues.listComments({
       ...context.repo,
       issue_number: issueNum
     })
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     for (const e of comments.data) {
-      if (e.user.login === user) {
+      if (e.user?.login === user) {
         return true
       }
     }
@@ -101,7 +102,7 @@ export const checkIssueComments = async (
  * @param args - the users to check auth on
  */
 export const getOrgCollabCommentUsers = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   issueNum: number,
   args: string[]
@@ -142,7 +143,7 @@ export const getOrgCollabCommentUsers = async (
  * @param args - the users to check auth on
  */
 export const checkCommenterAuth = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   issueNum: number,
   user: string
@@ -183,7 +184,7 @@ export const checkCommenterAuth = async (
  * @param username is the user to authorize
  */
 export const assertAuthorizedByOwnersOrMembership = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   role: string,
   username: string
@@ -212,24 +213,22 @@ export const assertAuthorizedByOwnersOrMembership = async (
  * If the file does not exist, returns an empty string.
  */
 async function retrieveOwnersFile(
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context
 ): Promise<string> {
   core.debug(`Looking for an OWNERS file at the root of the repository`)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let data: any = undefined
   try {
-    const response = await octokit.repos.getContents({
+    const response = await octokit.repos.getContent({
       ...context.repo,
       path: 'OWNERS'
     })
     data = response.data
   } catch (e) {
-    if (e instanceof RequestError) {
-      if (e.status === 404) {
-        core.debug('No OWNERS file found')
-        return ''
-      }
+    if (typeof e === 'object' && e && 'status' in e && e.status === 404) {
+      core.debug('No OWNERS file found')
+      return ''
     }
 
     throw new Error(
@@ -258,7 +257,8 @@ function isInOwnersFile(
   username: string
 ): boolean {
   core.debug(`checking if ${username} is in the ${role} in the OWNERS file`)
-  const ownersData = yaml.safeLoad(ownersContents)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ownersData: any = yaml.load(ownersContents)
 
   const roleMembers = ownersData[role]
   if ((roleMembers as string[]) !== undefined) {

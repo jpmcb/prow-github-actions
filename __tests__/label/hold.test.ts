@@ -1,4 +1,5 @@
-import nock from 'nock'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 import * as utils from '../testUtils'
@@ -6,11 +7,17 @@ import * as utils from '../testUtils'
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import issuePayload from '../fixtures/issues/issue.json'
 
-nock.disableNetConnect()
+const server = setupServer()
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
 
 describe('hold', () => {
   beforeEach(() => {
-    nock.cleanAll()
     utils.setupActionsEnv('/hold')
   })
 
@@ -18,19 +25,19 @@ describe('hold', () => {
     issueCommentEvent.comment.body = '/hold'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
-    let parsedBody = undefined
-    nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/issues/1/labels', body => {
-        parsedBody = body
-        return body
-      })
-      .reply(200)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
+        utils.mockResponse(200, null, observeReq)
+      )
+    )
 
     await handleIssueComment(commentContext)
-    expect(parsedBody).toEqual({
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
       labels: ['hold']
     })
-    expect(nock.isDone()).toBe(true)
   })
 
   it('removes the hold label with /hold cancel', async () => {
@@ -38,24 +45,30 @@ describe('hold', () => {
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     issuePayload.labels.push({
-      "id": 1,
-      "node_id": "123",
-      "url": "https://api.github.com/repos/octocat/Hello-World/labels/lgtm",
-      "name": "hold",
-      "description": "looks good to me",
-      "color": "f29513",
-      "default": true
+      id: 1,
+      node_id: '123',
+      url: 'https://api.github.com/repos/octocat/Hello-World/labels/lgtm',
+      name: 'hold',
+      description: 'looks good to me',
+      color: 'f29513',
+      default: true
     })
 
-    nock(utils.api)
-      .delete('/repos/Codertocat/Hello-World/issues/1/labels/hold')
-      .reply(200)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/issues/1')
-      .reply(200, issuePayload)
+    const observeReqDelete = new utils.observeRequest()
+    const observeReqGet = new utils.observeRequest()
+    server.use(
+      rest.delete(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/hold`,
+        utils.mockResponse(200, null, observeReqDelete)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
+        utils.mockResponse(200, issuePayload, observeReqGet)
+      )
+    )
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
+    await expect(observeReqDelete.called()).resolves.toBe('called')
+    await expect(observeReqGet.called()).resolves.toBe('called')
   })
 })

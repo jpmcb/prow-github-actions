@@ -1,5 +1,6 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
+import {Octokit} from '@octokit/rest'
 
 import {Context} from '@actions/github/lib/context'
 
@@ -16,11 +17,13 @@ export const lock = async (
   context: Context = github.context
 ): Promise<void> => {
   const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const octokit = new Octokit({
+    auth: token
+  })
 
   const issueNumber: number | undefined = context.payload.issue?.number
-  const commenterId: string = context.payload['comment']['user']['login']
-  const commentBody: string = context.payload['comment']['body']
+  const commenterId: string = context.payload.comment?.user?.login
+  const commentBody: string = context.payload.comment?.body
 
   if (issueNumber === undefined) {
     throw new Error(
@@ -44,10 +47,12 @@ export const lock = async (
       switch (commentArgs[0]) {
         case 'resolved':
           try {
+            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
               issue_number: issueNumber
             })
+            /* eslint-enable @typescript-eslint/naming-convention */
           } catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
@@ -55,11 +60,13 @@ export const lock = async (
 
         case 'off-topic':
           try {
+            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
               issue_number: issueNumber,
               lock_reason: 'off-topic'
             })
+            /* eslint-enable @typescript-eslint/naming-convention */
           } catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
@@ -67,11 +74,13 @@ export const lock = async (
 
         case 'too-heated':
           try {
+            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
               issue_number: issueNumber,
               lock_reason: 'too heated'
             })
+            /* eslint-enable @typescript-eslint/naming-convention */
           } catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
@@ -79,11 +88,13 @@ export const lock = async (
 
         case 'spam':
           try {
+            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
               issue_number: issueNumber,
               lock_reason: 'spam'
             })
+            /* eslint-enable @typescript-eslint/naming-convention */
           } catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
@@ -91,10 +102,12 @@ export const lock = async (
 
         default:
           try {
+            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
               issue_number: issueNumber
             })
+            /* eslint-enable @typescript-eslint/naming-convention */
           } catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
@@ -102,10 +115,12 @@ export const lock = async (
       }
     } else {
       try {
+        /* eslint-disable @typescript-eslint/naming-convention */
         await octokit.issues.lock({
           ...context.repo,
           issue_number: issueNumber
         })
+        /* eslint-enable @typescript-eslint/naming-convention */
       } catch (e) {
         throw new Error(`could not lock issue: ${e}`)
       }

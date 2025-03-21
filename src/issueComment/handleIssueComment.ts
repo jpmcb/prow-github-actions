@@ -34,7 +34,7 @@ export const handleIssueComment = async (
     .getInput('prow-commands', {required: false})
     .replace(/\n/g, ' ')
     .split(' ')
-  const commentBody: string = context.payload['comment']['body']
+  const commentBody: string = context.payload.comment?.body
 
   await Promise.all(
     commandConfig.map(async command => {

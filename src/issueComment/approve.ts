@@ -1,11 +1,15 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
+import {Endpoints} from '@octokit/types'
 
 import {Octokit} from '@octokit/rest'
 import {Context} from '@actions/github/lib/context'
 import {getCommandArgs} from '../utils/command'
 import {assertAuthorizedByOwnersOrMembership} from '../utils/auth'
 import {createComment} from '../utils/comments'
+
+type PullsListReviewsResponseType =
+  Endpoints['GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews']['response']
 
 /**
  * the /approve command will create a "approve" review
@@ -20,7 +24,6 @@ export const approve = async (
   context: Context = github.context
 ): Promise<void> => {
   core.debug(`starting approve job`)
-
   const token = core.getInput('github-token', {required: true})
   const octokit = new Octokit({
     auth: token
@@ -71,12 +74,14 @@ export const approve = async (
 
   try {
     core.debug(`creating a review`)
+    /* eslint-disable @typescript-eslint/naming-convention */
     await octokit.pulls.createReview({
       ...context.repo,
       pull_number: issueNumber,
       event: 'APPROVE',
       comments: []
     })
+    /* eslint-enable @typescript-eslint/naming-convention */
   } catch (e) {
     throw new Error(`could not create review: ${e}`)
   }
@@ -98,20 +103,23 @@ const cancel = async (
 ): Promise<void> => {
   core.debug(`canceling latest review`)
 
-  let reviews: Octokit.Response<Octokit.PullsListReviewsResponse>
+  let reviews: PullsListReviewsResponseType
   try {
+    /* eslint-disable @typescript-eslint/naming-convention */
     reviews = await octokit.pulls.listReviews({
       ...context.repo,
       pull_number: issueNumber
     })
+    /* eslint-enable @typescript-eslint/naming-convention */
   } catch (e) {
     throw new Error(`could not list reviews for PR ${issueNumber}: ${e}`)
   }
 
   let latestReview = undefined
+
   for (const e of reviews.data) {
-    core.debug(`checking review: ${e.user.login}`)
-    if (e.user.login === 'github-actions[bot]' && e.state === 'APPROVED') {
+    core.debug(`checking review: ${e.user?.login}`)
+    if (e.user?.login === 'github-actions[bot]' && e.state === 'APPROVED') {
       latestReview = e
     }
   }
@@ -121,12 +129,14 @@ const cancel = async (
   }
 
   try {
+    /* eslint-disable @typescript-eslint/naming-convention */
     await octokit.pulls.dismissReview({
       ...context.repo,
       pull_number: issueNumber,
       review_id: latestReview.id,
       message: `Canceled through prow-github-actions by @${commenterLogin}`
     })
+    /* eslint-enable @typescript-eslint/naming-convention */
   } catch (e) {
     throw new Error(`could not dismiss review: ${e}`)
   }

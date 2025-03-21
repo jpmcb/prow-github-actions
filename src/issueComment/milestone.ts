@@ -1,4 +1,5 @@
 import * as github from '@actions/github'
+import {Octokit} from '@octokit/rest'
 
 import {Context} from '@actions/github/lib/context'
 
@@ -17,11 +18,13 @@ export const milestone = async (
   context: Context = github.context
 ): Promise<void> => {
   const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const octokit = new Octokit({
+    auth: token
+  })
 
   const issueNumber: number | undefined = context.payload.issue?.number
-  const commentBody: string = context.payload['comment']['body']
-  const commenterId: string = context.payload['comment']['user']['login']
+  const commentBody: string = context.payload.comment?.body
+  const commenterId: string = context.payload.comment?.user?.login
 
   if (issueNumber === undefined) {
     throw new Error(
@@ -50,17 +53,19 @@ export const milestone = async (
     throw new Error(`please provide a milestone to add`)
   }
 
-  const ms = await octokit.issues.listMilestonesForRepo({
+  const ms = await octokit.issues.listMilestones({
     ...context.repo
   })
 
   for (const m of ms.data) {
     if (m.title === milestoneToAdd) {
+      /* eslint-disable @typescript-eslint/naming-convention */
       await octokit.issues.update({
         ...context.repo,
         issue_number: issueNumber,
         milestone: m.number
       })
+      /* eslint-enable @typescript-eslint/naming-convention */
     }
   }
 }

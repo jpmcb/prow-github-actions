@@ -1,4 +1,5 @@
-import nock from 'nock'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
 import * as utils from '../testUtils'
 import * as core from '@actions/core'
@@ -8,6 +9,15 @@ import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import repoMilestones from '../fixtures/milestones/repoListMilestones.json'
 
+const server = setupServer()
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
+
 describe('/milestone', () => {
   beforeEach(() => {
     utils.setupActionsEnv('/milestone')
@@ -16,48 +26,53 @@ describe('/milestone', () => {
   it('adds issue to milestone that already exists', async () => {
     issueCommentEvent.comment.body = '/milestone some milestone'
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/milestones')
-      .reply(200, repoMilestones)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/milestones`,
+        utils.mockResponse(200, repoMilestones)
+      )
+    )
 
-      nock(utils.api)
-      .patch('/repos/Codertocat/Hello-World/issues/1', body => {
-        expect(body).toMatchObject({
-          milestone: 1
-        })
-        return true
-      })
-      .reply(200)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.patch(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
+        utils.mockResponse(200, null, observeReq)
+      )
+    )
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
-      .reply(204)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      milestone: 1
+    })
   })
 
   it('fails when commenter is not a collaborator', async () => {
     issueCommentEvent.comment.body = '/milestone some milestone'
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/milestones')
-      .reply(200, repoMilestones)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/milestones`,
+        utils.mockResponse(200, repoMilestones)
+      )
+    )
 
-      nock(utils.api)
-      .patch('/repos/Codertocat/Hello-World/issues/1', body => {
-        expect(body).toMatchObject({
-          milestone: 1
-        })
-        return true
-      })
-      .reply(200)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
-      .reply(404)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(404)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 

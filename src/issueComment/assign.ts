@@ -1,6 +1,8 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 
+import {Octokit} from '@octokit/rest'
+
 import {Context} from '@actions/github/lib/context'
 
 import {getCommandArgs} from '../utils/command'
@@ -18,11 +20,13 @@ export const assign = async (
   core.debug(`starting assign job`)
 
   const token = core.getInput('github-token', {required: true})
-  const octokit = new github.GitHub(token)
+  const octokit = new Octokit({
+    auth: token
+  })
 
   const issueNumber: number | undefined = context.payload.issue?.number
-  const commenterId: string = context.payload['comment']['user']['login']
-  const commentBody: string = context.payload['comment']['body']
+  const commenterId: string = context.payload.comment?.user?.login
+  const commentBody: string = context.payload.comment?.body
 
   if (issueNumber === undefined) {
     throw new Error(
@@ -66,11 +70,13 @@ export const assign = async (
 
     default:
       try {
+        /* eslint-disable @typescript-eslint/naming-convention */
         await octokit.issues.addAssignees({
           ...context.repo,
           issue_number: issueNumber,
           assignees: authUsers
         })
+        /* eslint-enable @typescript-eslint/naming-convention */
       } catch (e) {
         throw new Error(`could not add assignees: ${e}`)
       }
@@ -87,7 +93,7 @@ export const assign = async (
  * @param user - the user to self assign
  */
 const selfAssign = async (
-  octokit: github.GitHub,
+  octokit: Octokit,
   context: Context,
   issueNum: number,
   user: string
@@ -100,10 +106,12 @@ const selfAssign = async (
   )
 
   if (isAuthorized) {
+    /* eslint-disable @typescript-eslint/naming-convention */
     await octokit.issues.addAssignees({
       ...context.repo,
       issue_number: issueNum,
       assignees: [user]
     })
+    /* eslint-enable @typescript-eslint/naming-convention */
   }
 }
