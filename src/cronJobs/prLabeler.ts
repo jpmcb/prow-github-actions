@@ -3,7 +3,7 @@ import {Octokit} from '@octokit/rest'
 
 import {Context} from '@actions/github/lib/context'
 import * as core from '@actions/core'
-import * as types from '@octokit/types'
+import {Endpoints} from '@octokit/types'
 
 import * as yaml from 'js-yaml'
 import * as minimatch from 'minimatch'
@@ -12,15 +12,8 @@ import * as minimatch from 'minimatch'
 // while recursing through pages of the github api
 let jobsDone = 0
 
-const token = core.getInput('github-token', {required: true})
-const hydratedOctokit = new Octokit({
-  auth: token
-})
-
-// TODO: Abstract out types?
-type PullsListResponseType = types.GetResponseDataTypeFromEndpointMethod<
-  typeof hydratedOctokit.pulls.list
->
+type PullsListResponseDataType =
+  Endpoints['GET /repos/{owner}/{repo}/pulls']['response']['data']
 
 /**
  * Inspired by https://github.com/actions/stale
@@ -42,7 +35,7 @@ export const cronLabelPr = async (
   })
 
   // Get next batch
-  let prs: PullsListResponseType
+  let prs: PullsListResponseDataType
   try {
     prs = await getPrs(octokit, context, currentPage)
   } catch (e) {
@@ -85,7 +78,7 @@ const getPrs = async (
   octokit: Octokit,
   context: Context = github.context,
   page: number
-): Promise<PullsListResponseType> => {
+): Promise<PullsListResponseDataType> => {
   core.debug(`getting prs page ${page}...`)
   const prResults = await octokit.pulls.list({
     ...context.repo,
@@ -134,10 +127,12 @@ const getChangedFiles = async (
   prNum: number
 ): Promise<string[]> => {
   core.debug(`getting changed files for pr ${prNum}`)
+  /* eslint-disable @typescript-eslint/naming-convention */
   const listFilesResponse = await octokit.pulls.listFiles({
     ...context.repo,
     pull_number: prNum
   })
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   const changedFiles = listFilesResponse.data.map(f => f.filename)
   core.debug(`files changed: ${changedFiles}`)
@@ -193,6 +188,7 @@ const getLabelsFromFileGlobs = async (
   ).toString()
 
   core.debug(`label file contents: ${decoded}`)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const content: any = yaml.load(decoded)
 
   const labelMap: Map<string, string[]> = new Map()
@@ -255,11 +251,13 @@ export const sendLabels = async (
 ): Promise<void> => {
   try {
     core.debug(`sending labels ${labels} for PR ${prNum}`)
+    /* eslint-disable @typescript-eslint/naming-convention */
     await octokit.issues.addLabels({
       ...context.repo,
       issue_number: prNum,
       labels
     })
+    /* eslint-enable @typescript-eslint/naming-convention */
   } catch (e) {
     throw new Error(`sending labels: ${e}`)
   }

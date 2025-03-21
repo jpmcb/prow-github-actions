@@ -20,10 +20,17 @@ test('runs with no options', () => {
       'not yet supported'
     )
   } catch (e) {
-    console.log(
-      "Calling the github action's main function without any context failed:",
-      e.output.toString()
-    )
+    if (
+      typeof e === 'object' &&
+      e &&
+      'output' in e &&
+      typeof e.output === 'string'
+    ) {
+      console.log(
+        "Calling the github action's main function without any context failed:",
+        e.output.toString()
+      )
+    }
     throw e
   }
 })

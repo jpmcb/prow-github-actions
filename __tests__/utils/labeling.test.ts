@@ -1,6 +1,7 @@
-import nock from 'nock'
-import * as core from '@actions/core'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
+import * as core from '@actions/core'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 import * as utils from '../testUtils'
@@ -9,11 +10,17 @@ import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
 import malformedFileContents from '../fixtures/labels/labelFileMalformedResponse.json'
 
-nock.disableNetConnect()
+const server = setupServer()
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
 
 describe('utils labeling', () => {
   beforeEach(() => {
-    nock.cleanAll()
     utils.setupActionsEnv('/area')
   })
 
@@ -21,45 +28,51 @@ describe('utils labeling', () => {
     issueCommentEvent.comment.body = '/area important'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
-    let parsedBody = undefined
-    const scope = nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/issues/1/labels', body => {
-        parsedBody = body
-        return body
-      })
-      .reply(200)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
+        utils.mockResponse(200, null, observeReq)
+      )
+    )
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/contents/.github/labels.yml')
-      .reply(200, labelFileContents)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
-      .reply(404)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yml`,
+        utils.mockResponse(200, labelFileContents)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        utils.mockResponse(404)
+      )
+    )
 
     await handleIssueComment(commentContext)
-    expect(parsedBody).toEqual({
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
       labels: ['area/important']
     })
-    expect(scope.isDone()).toBe(true)
   })
 
   it('can error correctly on malformed label.yaml', async () => {
-    const spy = jest.spyOn(core, 'setFailed');
+    const spy = jest.spyOn(core, 'setFailed')
 
     issueCommentEvent.comment.body = '/area important'
     const commentContext = new utils.mockContext(issueCommentEvent)
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/contents/.github/labels.yml')
-      .reply(200, malformedFileContents)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
-      .reply(404)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yml`,
+        utils.mockResponse(200, malformedFileContents)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+        utils.mockResponse(404)
+      )
+    )
 
     await handleIssueComment(commentContext)
 
-    expect(spy).toHaveBeenCalled();
+    expect(spy).toHaveBeenCalled()
   })
 })

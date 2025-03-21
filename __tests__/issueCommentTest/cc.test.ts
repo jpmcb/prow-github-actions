@@ -1,4 +1,5 @@
-import nock from 'nock'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
 import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
 import * as utils from '../testUtils'
@@ -7,224 +8,260 @@ import pullReviewRequested from '../fixtures/pullReq/pullReviewRequested.json'
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import issueListComments from '../fixtures/issues/assign/issueListComments.json'
 
-nock.disableNetConnect()
+const server = setupServer()
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
 
 describe('/cc', () => {
   beforeEach(() => {
-    nock.cleanAll()
     utils.setupActionsEnv('/cc')
   })
 
   it('handles self cc-ing with comment /cc', async () => {
     issueCommentEvent.comment.body = '/cc'
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/Codertocat')
-      .reply(204)
+    server.use(
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
+        utils.mockResponse(204)
+      )
+    )
 
-    nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
-        expect(body).toMatchObject({
-          reviewers: ['Codertocat']
-        })
-        return true
-      })
-      .reply(201, pullReviewRequested)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
+        utils.mockResponse(201, pullReviewRequested, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      reviewers: ['Codertocat']
+    })
   })
 
   it('handles cc-ing another user with /cc @username', async () => {
     issueCommentEvent.comment.body = '/cc @some-user'
+    server.use(
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
+    )
 
-    nock(utils.api)
-      .get('/orgs/Codertocat/members/some-user')
-      .reply(204)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/some-user')
-      .reply(404)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/issues/1/comments')
-      .reply(404)
-
-    nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
-        expect(body).toMatchObject({
-          reviewers: ['some-user']
-        })
-        return true
-      })
-      .reply(201, pullReviewRequested)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
+        utils.mockResponse(201, pullReviewRequested, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      reviewers: ['some-user']
+    })
   })
 
   it('handles cc-ing another user with /cc username', async () => {
     issueCommentEvent.comment.body = '/cc some-user'
 
-    nock(utils.api)
-      .get('/orgs/Codertocat/members/some-user')
-      .reply(204)
+    server.use(
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
+    )
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/some-user')
-      .reply(404)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/issues/1/comments')
-      .reply(404)
-
-    nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
-        expect(body).toMatchObject({
-          reviewers: ['some-user']
-        })
-        return true
-      })
-      .reply(201, pullReviewRequested)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
+        utils.mockResponse(201, pullReviewRequested, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      reviewers: ['some-user']
+    })
   })
 
   it('handles cc-ing multiple users', async () => {
     issueCommentEvent.comment.body = '/cc @some-user @other-user'
 
-    nock(utils.api)
-      .get('/orgs/Codertocat/members/some-user')
-      .reply(204)
+    server.use(
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/other-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/other-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
+    )
 
-    nock(utils.api)
-      .get('/orgs/Codertocat/members/other-user')
-      .reply(204)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/some-user')
-      .reply(404)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/issues/1/comments')
-      .reply(404)
-
-    nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
-        expect(body).toMatchObject({
-          reviewers: ['some-user', 'other-user']
-        })
-        return true
-      })
-      .reply(201, pullReviewRequested)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
+        utils.mockResponse(201, pullReviewRequested, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    expect(observeReq.body()).toMatchObject({
+      reviewers: ['some-user', 'other-user']
+    })
   })
 
   it('ccs user if they are an org member', async () => {
     issueCommentEvent.comment.body = '/cc @some-user'
 
-    nock(utils.api)
-      .get('/orgs/Codertocat/members/some-user')
-      .reply(204)
+    server.use(
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
+    )
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/some-user')
-      .reply(404)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/issues/1/comments')
-      .reply(404)
-
-    nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
-        expect(body).toMatchObject({
-          reviewers: ['some-user']
-        })
-        return true
-      })
-      .reply(201, pullReviewRequested)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
+        utils.mockResponse(201, pullReviewRequested, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      reviewers: ['some-user']
+    })
   })
 
   it('assigns user if they are a repo collaborator', async () => {
     issueCommentEvent.comment.body = '/cc @some-user'
 
-    nock(utils.api)
-      .get('/orgs/Codertocat/members/some-user')
-      .reply(404)
+    server.use(
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(204)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(404)
+      )
+    )
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/some-user')
-      .reply(204)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/issues/1/comments')
-      .reply(404)
-
-    nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
-        expect(body).toMatchObject({
-          reviewers: ['some-user']
-        })
-        return true
-      })
-      .reply(201, pullReviewRequested)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
+        utils.mockResponse(201, pullReviewRequested, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      reviewers: ['some-user']
+    })
   })
 
   it('assigns user if they have previously commented', async () => {
     issueCommentEvent.comment.body = '/cc @some-user'
 
-    nock(utils.api)
-      .get('/orgs/Codertocat/members/some-user')
-      .reply(404)
+    server.use(
+      rest.get(
+        `${utils.api}/orgs/Codertocat/members/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
+        utils.mockResponse(404)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
+        utils.mockResponse(200, issueListComments)
+      )
+    )
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/collaborators/some-user')
-      .reply(404)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/issues/1/comments')
-      .reply(200, issueListComments)
-
-    nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/pulls/1/requested_reviewers', body => {
-        expect(body).toMatchObject({
-          reviewers: ['some-user']
-        })
-        return true
-      })
-      .reply(201, pullReviewRequested)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
+        utils.mockResponse(201, pullReviewRequested, observeReq)
+      )
+    )
 
     const commentContext = new utils.mockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
-    expect(nock.isDone()).toBe(true)
-    expect.assertions(2)
+    await observeReq.called()
+    expect(observeReq.body()).toMatchObject({
+      reviewers: ['some-user']
+    })
   })
 })

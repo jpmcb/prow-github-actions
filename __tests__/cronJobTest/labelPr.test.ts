@@ -1,4 +1,5 @@
-import nock from 'nock'
+import {setupServer} from 'msw/node'
+import {rest} from 'msw'
 
 import {handleCronJobs} from '../../src/cronJobs/handleCronJob'
 import * as utils from '../testUtils'
@@ -9,11 +10,35 @@ import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
 import prListFiles from '../fixtures/pullReq/pullReqListFiles.json'
 import prListTestFiles from '../fixtures/pullReq/pullReqListTestFiles.json'
 
-nock.disableNetConnect()
+const server = setupServer(
+  // /repos/Codertocat/Hello-World/pulls?page={1,2}
+  rest.get(
+    `${utils.api}/repos/Codertocat/Hello-World/pulls`,
+    (req, res, ctx) => {
+      const page = req.url.searchParams.get('page')
+
+      if (page == '1') {
+        return res(ctx.status(200), ctx.json(listPullReqs))
+      } else {
+        return res(ctx.status(200), ctx.json([]))
+      }
+    }
+  ),
+  rest.get(
+    `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
+    utils.mockResponse(200, labelFileContents)
+  )
+)
+beforeAll(() =>
+  server.listen({
+    onUnhandledRequest: 'warn'
+  })
+)
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
 
 describe('cronLabelPr', () => {
   beforeEach(() => {
-    nock.cleanAll()
     utils.setupActionsEnv('/area')
   })
 
@@ -24,35 +49,22 @@ describe('cronLabelPr', () => {
     // Instead, we use it to gain the repo owner and url
     const context = new utils.mockContext(pullReqOpenedEvent)
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/pulls?page=1')
-      .reply(200, listPullReqs)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/2/labels`,
+        utils.mockResponse(200, null, observeReq)
+      ),
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/2/files`,
+        utils.mockResponse(200, prListFiles)
+      )
+    )
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/pulls?page=2')
-      .reply(200, [])
-
-    let parsedBody = undefined
-    const scope = nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/issues/2/labels', body => {
-        parsedBody = body
-        return body
-      })
-      .reply(200)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
-      .reply(200, labelFileContents)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/pulls/2/files')
-      .reply(200, prListFiles)
-
-    await handleCronJobs(context)
-    expect(parsedBody).toEqual({
+    await expect(handleCronJobs(context)).resolves.not.toThrow()
+    expect(observeReq.body()).toEqual({
       labels: ['source']
     })
-    expect(scope.isDone()).toBe(true)
   })
 
   it('labels the PR with the test label from glob', async () => {
@@ -62,34 +74,22 @@ describe('cronLabelPr', () => {
     // Instead, we use it to gain the repo owner and url
     const context = new utils.mockContext(pullReqOpenedEvent)
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/pulls?page=1')
-      .reply(200, listPullReqs)
+    const observeReq = new utils.observeRequest()
+    server.use(
+      rest.post(
+        `${utils.api}/repos/Codertocat/Hello-World/issues/2/labels`,
+        utils.mockResponse(200, null, observeReq)
+      ),
 
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/pulls?page=2')
-      .reply(200, [])
+      rest.get(
+        `${utils.api}/repos/Codertocat/Hello-World/pulls/2/files`,
+        utils.mockResponse(200, prListTestFiles)
+      )
+    )
 
-    let parsedBody = undefined
-    const scope = nock(utils.api)
-      .post('/repos/Codertocat/Hello-World/issues/2/labels', body => {
-        parsedBody = body
-        return body
-      })
-      .reply(200)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/contents/.github/labels.yaml')
-      .reply(200, labelFileContents)
-
-    nock(utils.api)
-      .get('/repos/Codertocat/Hello-World/pulls/2/files')
-      .reply(200, prListTestFiles)
-
-    await handleCronJobs(context)
-    expect(parsedBody).toEqual({
+    await expect(handleCronJobs(context)).resolves.not.toThrow()
+    expect(observeReq.body()).toEqual({
       labels: ['tests']
     })
-    expect(scope.isDone()).toBe(true)
   })
 })
