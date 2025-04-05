@@ -1,11 +1,11 @@
-import * as github from '@actions/github'
-import {Octokit} from '@octokit/rest'
-
-import {Context} from '@actions/github/lib/context'
+import type { Context } from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
-import {getCommandArgs} from '../utils/command'
-import {labelIssue, cancelLabel} from '../utils/labeling'
+import * as github from '@actions/github'
+import { Octokit } from '@octokit/rest'
+
+import { getCommandArgs } from '../utils/command'
+import { cancelLabel, labelIssue } from '../utils/labeling'
 
 /**
  * /hold will add the hold label
@@ -14,12 +14,10 @@ import {labelIssue, cancelLabel} from '../utils/labeling'
  *
  * @param context - the github actions event context
  */
-export const hold = async (
-  context: Context = github.context
-): Promise<void> => {
-  const token = core.getInput('github-token', {required: true})
+export async function hold(context: Context = github.context): Promise<void> {
+  const token = core.getInput('github-token', { required: true })
   const octokit = new Octokit({
-    auth: token
+    auth: token,
   })
 
   const issueNumber: number | undefined = context.payload.issue?.number
@@ -27,7 +25,7 @@ export const hold = async (
 
   if (issueNumber === undefined) {
     throw new Error(
-      `github context payload missing issue number: ${context.payload}`
+      `github context payload missing issue number: ${context.payload}`,
     )
   }
 
@@ -37,7 +35,8 @@ export const hold = async (
   if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
     try {
       await cancelLabel(octokit, context, issueNumber, 'hold')
-    } catch (e) {
+    }
+    catch (e) {
       throw new Error(`could not remove the hold label: ${e}`)
     }
     return

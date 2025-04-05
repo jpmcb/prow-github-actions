@@ -1,5 +1,8 @@
-import {Octokit} from '@octokit/rest'
-import {Context} from '@actions/github/lib/context'
+import type { Context } from '@actions/github/lib/context'
+import type { Octokit } from '@octokit/rest'
+
+import { Buffer } from 'node:buffer'
+
 import * as core from '@actions/core'
 
 import * as yaml from 'js-yaml'
@@ -15,46 +18,46 @@ import * as yaml from 'js-yaml'
  * @param context - the github actions event context
  * @param arg - the label section to return. For example, may be 'area', etc
  */
-export const getArgumentLabels = async (
+export async function getArgumentLabels(
   octokit: Octokit,
   context: Context,
-  arg: string
-): Promise<string[]> => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let response: any = undefined
+  arg: string,
+): Promise<string[]> {
+  let response: any
   try {
     response = await octokit.repos.getContent({
       ...context.repo,
-      path: '.prowlabels.yaml'
+      path: '.prowlabels.yaml',
     })
-  } catch (e) {
+  }
+  catch (e) {
     try {
       response = await octokit.repos.getContent({
         ...context.repo,
-        path: '.prowlabels.yml'
+        path: '.prowlabels.yml',
       })
-    } catch (e2) {
+    }
+    catch (e2) {
       throw new Error(
-        `could not get .prowlabels.yaml or .prowlabels.yml: ${e} ${e2}`
+        `could not get .prowlabels.yaml or .prowlabels.yml: ${e} ${e2}`,
       )
     }
   }
 
   if (!response.data.content || !response.data.encoding) {
     throw new Error(
-      `area: error parsing data from content response: ${response.data}`
+      `area: error parsing data from content response: ${response.data}`,
     )
   }
 
   const decoded = Buffer.from(
     response.data.content,
-    response.data.encoding
+    response.data.encoding,
   ).toString()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const content: any = yaml.load(decoded)
 
-  if (!content[arg] && !(content[arg] instanceof Array)) {
+  if (!content[arg] && !Array.isArray(content[arg])) {
     throw new Error(`${arg}: yaml malformed, expected '${arg}' top level key`)
   }
 
@@ -69,21 +72,20 @@ export const getArgumentLabels = async (
  * @param issueNum - the issue associated with this runtime
  * @param labels - the labels to add to the issue
  */
-export const labelIssue = async (
+export async function labelIssue(
   octokit: Octokit,
   context: Context,
   issueNum: number,
-  labels: string[]
-): Promise<void> => {
+  labels: string[],
+): Promise<void> {
   try {
-    /* eslint-disable @typescript-eslint/naming-convention */
     await octokit.issues.addLabels({
       ...context.repo,
       issue_number: issueNum,
-      labels
+      labels,
     })
-    /* eslint-enable @typescript-eslint/naming-convention */
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`could not add labels: ${e}`)
   }
 }
@@ -95,18 +97,16 @@ export const labelIssue = async (
  * @param context - the github actions event context
  * @param issueNum - the issue associated with this runtime
  */
-export const getCurrentLabels = async (
+export async function getCurrentLabels(
   octokit: Octokit,
   context: Context,
-  issueNum: number
-): Promise<string[]> => {
+  issueNum: number,
+): Promise<string[]> {
   try {
-    /* eslint-disable @typescript-eslint/naming-convention */
     const issue = await octokit.issues.get({
       ...context.repo,
-      issue_number: issueNum
+      issue_number: issueNum,
     })
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     return issue.data.labels.map((e): string => {
       if (typeof e == 'object') {
@@ -114,7 +114,8 @@ export const getCurrentLabels = async (
       }
       return e
     })
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`could not get issue: ${e}`)
   }
 }
@@ -127,22 +128,21 @@ export const getCurrentLabels = async (
  * @param issueNum - the issue associated with this runtime
  * @param labels - the labels to remove from the issue
  */
-export const removeLabels = async (
+export async function removeLabels(
   octokit: Octokit,
   context: Context,
   issueNum: number,
-  labels: string[]
-): Promise<void> => {
+  labels: string[],
+): Promise<void> {
   for (const label of labels) {
     try {
-      /* eslint-disable @typescript-eslint/naming-convention */
       await octokit.issues.removeLabel({
         ...context.repo,
         issue_number: issueNum,
-        name: label
+        name: label,
       })
-      /* eslint-enable @typescript-eslint/naming-convention */
-    } catch (e) {
+    }
+    catch (e) {
       core.debug(`could not remove labels: ${e}`)
     }
   }
@@ -154,7 +154,7 @@ export const removeLabels = async (
  * @param prefix - the prefix to add to the args
  * @param args - the strings to add the prefix to
  */
-export const addPrefix = (prefix: string, args: string[]): string[] => {
+export function addPrefix(prefix: string, args: string[]): string[] {
   const toReturn: string[] = []
 
   for (const arg of args) {
@@ -172,27 +172,30 @@ export const addPrefix = (prefix: string, args: string[]): string[] => {
  * @param issueNum - the issue associated with this runtime
  * @param labels - the label to remove from the issue
  */
-export const cancelLabel = async (
+export async function cancelLabel(
   octokit: Octokit,
   context: Context,
   issueNum: number,
-  label: string
-): Promise<void> => {
+  label: string,
+): Promise<void> {
   let currentLabels: string[] = []
   try {
     currentLabels = await getCurrentLabels(octokit, context, issueNum)
     core.debug(`remove: found labels for issue ${currentLabels}`)
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`could not get labels from issue: ${e}`)
   }
 
   if (currentLabels.includes(label)) {
     try {
       await removeLabels(octokit, context, issueNum, [label])
-    } catch (e) {
+    }
+    catch (e) {
       throw new Error(`could not remove ${label} label: ${e}`)
     }
-  } else {
+  }
+  else {
     core.debug(`could not find ${label} to remove`)
   }
 }

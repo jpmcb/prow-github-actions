@@ -1,13 +1,13 @@
-import * as github from '@actions/github'
-import {Octokit} from '@octokit/rest'
-
-import {Context} from '@actions/github/lib/context'
+import type { Context } from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
-import {getCommandArgs} from '../utils/command'
-import {labelIssue, cancelLabel} from '../utils/labeling'
-import {assertAuthorizedByOwnersOrMembership} from '../utils/auth'
-import {createComment} from '../utils/comments'
+import * as github from '@actions/github'
+import { Octokit } from '@octokit/rest'
+
+import { assertAuthorizedByOwnersOrMembership } from '../utils/auth'
+import { getCommandArgs } from '../utils/command'
+import { createComment } from '../utils/comments'
+import { cancelLabel, labelIssue } from '../utils/labeling'
 
 /**
  * /lgtm will add the lgtm label.
@@ -16,12 +16,10 @@ import {createComment} from '../utils/comments'
  *
  * @param context - the github actions event context
  */
-export const lgtm = async (
-  context: Context = github.context
-): Promise<void> => {
-  const token = core.getInput('github-token', {required: true})
+export async function lgtm(context: Context = github.context): Promise<void> {
+  const token = core.getInput('github-token', { required: true })
   const octokit = new Octokit({
-    auth: token
+    auth: token,
   })
 
   const issueNumber: number | undefined = context.payload.issue?.number
@@ -30,7 +28,7 @@ export const lgtm = async (
 
   if (issueNumber === undefined) {
     throw new Error(
-      `github context payload missing issue number: ${context.payload}`
+      `github context payload missing issue number: ${context.payload}`,
     )
   }
 
@@ -39,16 +37,18 @@ export const lgtm = async (
       octokit,
       context,
       'reviewers',
-      commenterId
+      commenterId,
     )
-  } catch (e) {
+  }
+  catch (e) {
     const msg = `Cannot apply the lgtm label because ${e}`
     core.error(msg)
 
     // Try to reply back that the user is unauthorized
     try {
       createComment(octokit, context, issueNumber, msg)
-    } catch (commentE) {
+    }
+    catch (commentE) {
       // Log the comment error but continue to throw the original auth error
       core.error(`Could not comment with an auth error: ${commentE}`)
     }
@@ -61,7 +61,8 @@ export const lgtm = async (
   if (commentArgs.length !== 0 && commentArgs[0] === 'cancel') {
     try {
       await cancelLabel(octokit, context, issueNumber, 'lgtm')
-    } catch (e) {
+    }
+    catch (e) {
       throw new Error(`could not remove latest review: ${e}`)
     }
     return

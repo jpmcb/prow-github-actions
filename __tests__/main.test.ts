@@ -1,12 +1,12 @@
-import * as process from 'process'
-import * as cp from 'child_process'
-import * as path from 'path'
+import * as cp from 'node:child_process'
+import * as path from 'node:path'
+import * as process from 'node:process'
 
 // shows how the runner will run a javascript action with env / stdout protocol
-test('runs with no options', () => {
+it('runs with no options', () => {
   const ip = path.join(__dirname, '..', 'lib', 'main.js')
   const options: cp.ExecSyncOptions = {
-    env: process.env
+    env: process.env,
   }
 
   // When this test is run through GitHub Actions, GITHUB_EVENT_NAME is set to pull_request
@@ -17,18 +17,19 @@ test('runs with no options', () => {
 
   try {
     expect(cp.execSync(`node ${ip}`, options).toString()).toContain(
-      'not yet supported'
+      'not yet supported',
     )
-  } catch (e) {
+  }
+  catch (e) {
     if (
-      typeof e === 'object' &&
-      e &&
-      'output' in e &&
-      typeof e.output === 'string'
+      typeof e === 'object'
+      && e
+      && 'output' in e
+      && typeof e.output === 'string'
     ) {
-      console.log(
-        "Calling the github action's main function without any context failed:",
-        e.output.toString()
+      console.warn(
+        'Calling the github action\'s main function without any context failed:',
+        e.output.toString(),
       )
     }
     throw e

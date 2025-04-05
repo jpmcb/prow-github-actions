@@ -12,7 +12,7 @@ Check out the _"EXAMPLE"_ issues and pull requests (open and closed) in this rep
 Run specified actions or jobs for issue and PR comments through a `workflow.yaml` file:
 
 ```yaml
-name: "Prow github actions"
+name: Prow github actions
 on:
   issue_comment:
     types: [created]
@@ -23,32 +23,17 @@ jobs:
     steps:
       - uses: jpmcb/prow-github-actions@v1
         with:
-          prow-commands: '/assign 
-            /unassign 
-            /approve 
-            /retitle 
-            /area 
-            /kind 
-            /priority 
-            /remove 
-            /lgtm 
-            /close 
-            /reopen 
-            /lock 
-            /milestone 
-            /hold 
-            /cc 
-            /uncc'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          prow-commands: /assign /unassign /approve /retitle /area /kind /priority /remove /lgtm /close /reopen /lock /milestone /hold /cc /uncc
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
 ```
 
 You can automatically merge PRs based on a cron schedule if it contains the `lgtm` label:
 
 ```yaml
-name: "Merge on lgtm label"
+name: Merge on lgtm label
 on:
   schedule:
-  - cron: "0 * * * *"
+    - cron: '0 * * * *'
 
 jobs:
   execute:
@@ -56,17 +41,17 @@ jobs:
     steps:
       - uses: jpmcb/prow-github-actions@v1
         with:
-          jobs: 'lgtm'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          jobs: lgtm
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
 
           # this is optional and defaults to 'merge'
-          merge-method: 'squash'
+          merge-method: squash
 ```
 
 Prow Github actions also supports removing the lgtm label when a PR is updated
 
 ```yaml
-name: "Run Jobs on PR"
+name: Run Jobs on PR
 on: pull_request
 
 jobs:
@@ -75,8 +60,8 @@ jobs:
     steps:
       - uses: jpmcb/prow-github-actions@v1
         with:
-          jobs: 'lgtm'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          jobs: lgtm
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
 ```
 
 ## Documentation
@@ -92,6 +77,6 @@ jobs:
 
 ---
 
-_open water breeze  
-the ocean seas are endless  
+_open water breeze
+the ocean seas are endless
 forward to the prow_

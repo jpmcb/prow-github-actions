@@ -1,4 +1,4 @@
-name: "Test issue comments"
+name: Test issue comments
 on:
   issue_comment:
     types: [created]
@@ -12,20 +12,5 @@ jobs:
       - run: npm run build
       - uses: ./
         with:
-          prow-commands: '/assign 
-            /unassign 
-            /approve 
-            /retitle 
-            /area 
-            /kind 
-            /priority 
-            /remove 
-            /lgtm 
-            /close 
-            /reopen 
-            /lock 
-            /milestone 
-            /hold 
-            /cc 
-            /uncc'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          prow-commands: /assign /unassign /approve /retitle /area /kind /priority /remove /lgtm /close /reopen /lock /milestone /hold /cc /uncc
+          github-token: '${{ secrets.GITHUB_TOKEN }}'

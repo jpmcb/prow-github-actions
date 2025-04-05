@@ -1,11 +1,11 @@
 area:
-  - 'bug'
-  - 'important'
+  - bug
+  - important
 
 kind:
-  - 'failing-test'
-  - 'cleanup'
+  - failing-test
+  - cleanup
 
 priority:
-  - 'low'
-  - 'high'
+  - low
+  - high

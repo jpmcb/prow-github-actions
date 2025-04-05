@@ -1,17 +1,17 @@
-import {setupServer} from 'msw/node'
-import {rest} from 'msw'
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 
-import * as utils from '../testUtils'
-
-import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
+import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
+
+import * as utils from '../testUtils'
 
 const server = setupServer()
 beforeAll(() =>
   server.listen({
-    onUnhandledRequest: 'warn'
-  })
+    onUnhandledRequest: 'warn',
+  }),
 )
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
@@ -27,19 +27,19 @@ describe('/lock', () => {
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(204)
-      )
+        utils.mockResponse(204),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.put(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
     await expect(observeReq.called()).resolves.toBe('called')
@@ -51,24 +51,24 @@ describe('/lock', () => {
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(204)
-      )
+        utils.mockResponse(204),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.put(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      lock_reason: 'off-topic'
+      lock_reason: 'off-topic',
     })
   })
 
@@ -78,24 +78,24 @@ describe('/lock', () => {
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(204)
-      )
+        utils.mockResponse(204),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.put(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      lock_reason: 'too heated'
+      lock_reason: 'too heated',
     })
   })
 
@@ -105,24 +105,24 @@ describe('/lock', () => {
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(204)
-      )
+        utils.mockResponse(204),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.put(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      lock_reason: 'spam'
+      lock_reason: 'spam',
     })
   })
 

@@ -8,7 +8,7 @@ Fixes # (issue)
 
 # Testing
 
-Please describe the tests that you ran, created, or modified in order to verify your changes. 
+Please describe the tests that you ran, created, or modified in order to verify your changes.
 
 - [ ] Test A
 - [ ] Test B

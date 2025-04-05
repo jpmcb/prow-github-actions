@@ -1,17 +1,17 @@
-import {setupServer} from 'msw/node'
-import {rest} from 'msw'
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 
-import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
-import * as utils from '../testUtils'
+import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
+import issuePayload from '../fixtures/issues/issue.json'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
-import issuePayload from '../fixtures/issues/issue.json'
+import * as utils from '../testUtils'
 
 const server = setupServer()
 beforeAll(() =>
   server.listen({
-    onUnhandledRequest: 'warn'
-  })
+    onUnhandledRequest: 'warn',
+  }),
 )
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
@@ -23,26 +23,26 @@ describe('hold', () => {
 
   it('labels the issue with the hold label', async () => {
     issueCommentEvent.comment.body = '/hold'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      labels: ['hold']
+      labels: ['hold'],
     })
   })
 
   it('removes the hold label with /hold cancel', async () => {
     issueCommentEvent.comment.body = '/hold cancel'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
     issuePayload.labels.push({
       id: 1,
@@ -51,20 +51,20 @@ describe('hold', () => {
       name: 'hold',
       description: 'looks good to me',
       color: 'f29513',
-      default: true
+      default: true,
     })
 
-    const observeReqDelete = new utils.observeRequest()
-    const observeReqGet = new utils.observeRequest()
+    const observeReqDelete = new utils.ObserveRequest()
+    const observeReqGet = new utils.ObserveRequest()
     server.use(
       rest.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/hold`,
-        utils.mockResponse(200, null, observeReqDelete)
+        utils.mockResponse(200, null, observeReqDelete),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
-        utils.mockResponse(200, issuePayload, observeReqGet)
-      )
+        utils.mockResponse(200, issuePayload, observeReqGet),
+      ),
     )
 
     await handleIssueComment(commentContext)

@@ -1,4 +1,4 @@
-name: "Run Jobs on PR"
+name: Run Jobs on PR
 on: pull_request
 
 jobs:
@@ -10,5 +10,5 @@ jobs:
       - run: npm run build
       - uses: ./
         with:
-          jobs: 'lgtm'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          jobs: lgtm
+          github-token: '${{ secrets.GITHUB_TOKEN }}'

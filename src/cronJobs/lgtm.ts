@@ -1,9 +1,9 @@
-import * as github from '@actions/github'
-import {Octokit} from '@octokit/rest'
-import {Endpoints} from '@octokit/types'
-
-import {Context} from '@actions/github/lib/context'
+import type { Context } from '@actions/github/lib/context'
+import type { Endpoints } from '@octokit/types'
 import * as core from '@actions/core'
+
+import * as github from '@actions/github'
+import { Octokit } from '@octokit/rest'
 
 let jobsDone = 0
 
@@ -22,22 +22,23 @@ type PullsListResponseItem = PullsListResponseDataType extends (infer Item)[]
  * @param currentPage - the page to return from the github api
  * @param context - The github actions event context
  */
-export const cronLgtm = async (
+export async function cronLgtm(
   currentPage: number,
-  context: Context
-): Promise<number> => {
+  context: Context,
+): Promise<number> {
   core.info(`starting lgtm merger page: ${currentPage}`)
 
-  const token = core.getInput('github-token', {required: true})
+  const token = core.getInput('github-token', { required: true })
   const octokit = new Octokit({
-    auth: token
+    auth: token,
   })
 
   // Get next batch
   let prs: PullsListResponseDataType
   try {
     prs = await getOpenPrs(octokit, context, currentPage)
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`could not get PRs: ${e}`)
   }
 
@@ -47,7 +48,7 @@ export const cronLgtm = async (
   }
 
   const results = await Promise.all(
-    prs.map(async pr => {
+    prs.map(async (pr) => {
       core.info(`processing pr: ${pr.number}`)
       if (pr.state === 'closed') {
         return
@@ -60,15 +61,16 @@ export const cronLgtm = async (
       try {
         await tryMergePr(pr, octokit, context)
         jobsDone++
-      } catch (error) {
+      }
+      catch (error) {
         return error
       }
-    })
+    }),
   )
 
   for (const result of results) {
     if (result instanceof Error) {
-      throw new Error(`error processing pr: ${result}`)
+      throw new TypeError(`error processing pr: ${result}`)
     }
   }
 
@@ -83,17 +85,17 @@ export const cronLgtm = async (
  * @param context - the github actions workflow context
  * @param page - the page number to get from the api
  */
-const getOpenPrs = async (
+async function getOpenPrs(
   octokit: Octokit,
   context: Context = github.context,
-  page: number
-): Promise<PullsListResponseDataType> => {
+  page: number,
+): Promise<PullsListResponseDataType> {
   core.debug(`getting prs page ${page}...`)
 
   const prResults = await octokit.pulls.list({
     ...context.repo,
     state: 'open',
-    page
+    page,
   })
 
   core.debug(`got: ${prResults.data}`)
@@ -108,51 +110,46 @@ const getOpenPrs = async (
  * @param octokit - a hydrated github api client
  * @param context - the github actions event context
  */
-const tryMergePr = async (
+async function tryMergePr(
   pr: PullsListResponseItem,
   octokit: Octokit,
-  context: Context = github.context
-): Promise<void> => {
-  const method = core.getInput('merge-method', {required: false})
+  context: Context = github.context,
+): Promise<void> {
+  const method = core.getInput('merge-method', { required: false })
 
   // if pr has label 'lgtm', attempt to merge
   // but not if it has the 'hold' label
   if (
-    pr.labels.map(e => e.name).includes('lgtm') &&
-    !pr.labels.map(e => e.name).includes('hold')
+    pr.labels.map(e => e.name).includes('lgtm')
+    && !pr.labels.map(e => e.name).includes('hold')
   ) {
     try {
       switch (method) {
         case 'squash':
-          /* eslint-disable @typescript-eslint/naming-convention */
           await octokit.pulls.merge({
             ...context.repo,
             pull_number: pr.number,
-            merge_method: 'squash'
+            merge_method: 'squash',
           })
-          /* eslint-enable @typescript-eslint/naming-convention */
           break
 
         case 'rebase':
-          /* eslint-disable @typescript-eslint/naming-convention */
           await octokit.pulls.merge({
             ...context.repo,
             pull_number: pr.number,
-            merge_method: 'rebase'
+            merge_method: 'rebase',
           })
-          /* eslint-enable @typescript-eslint/naming-convention */
           break
 
         default:
-          /* eslint-disable @typescript-eslint/naming-convention */
           await octokit.pulls.merge({
             ...context.repo,
             pull_number: pr.number,
-            merge_method: 'merge'
+            merge_method: 'merge',
           })
-        /* eslint-enable @typescript-eslint/naming-convention */
       }
-    } catch (e) {
+    }
+    catch (e) {
       core.debug(`could not merge pr ${pr.number}: ${e}`)
     }
   }

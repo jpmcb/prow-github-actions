@@ -1,17 +1,17 @@
-import {setupServer} from 'msw/node'
-import {rest} from 'msw'
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 
-import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
-import * as utils from '../testUtils'
-
+import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
+
 import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
+import * as utils from '../testUtils'
 
 const server = setupServer()
 beforeAll(() =>
   server.listen({
-    onUnhandledRequest: 'warn'
-  })
+    onUnhandledRequest: 'warn',
+  }),
 )
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
@@ -23,79 +23,79 @@ describe('area', () => {
 
   it('labels the issue with the area label', async () => {
     issueCommentEvent.comment.body = '/area important'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
-        utils.mockResponse(200, labelFileContents)
-      )
+        utils.mockResponse(200, labelFileContents),
+      ),
     )
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      labels: ['area/important']
+      labels: ['area/important'],
     })
   })
 
   it('handles multiple area labels', async () => {
     issueCommentEvent.comment.body = '/area bug important'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
-        utils.mockResponse(200, labelFileContents)
-      )
+        utils.mockResponse(200, labelFileContents),
+      ),
     )
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      labels: ['area/bug', 'area/important']
+      labels: ['area/bug', 'area/important'],
     })
   })
 
   it('only adds area labels for files in .prowlabels.yaml', async () => {
     issueCommentEvent.comment.body = '/area bug bad important'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
-        utils.mockResponse(200, labelFileContents)
-      )
+        utils.mockResponse(200, labelFileContents),
+      ),
     )
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      labels: ['area/bug', 'area/important']
+      labels: ['area/bug', 'area/important'],
     })
   })
 })

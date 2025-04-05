@@ -8,8 +8,8 @@ All of the following examples can be placed simultaneously in the `.prowlabels.y
 
 ```yaml
 area:
-  - 'bug'
-  - 'important'
+  - bug
+  - important
 ```
 
 With the command `/area bug`,
@@ -19,8 +19,8 @@ the issue or PR will be labeled with `area/bug`
 
 ```yaml
 kind:
-  - 'failing-test'
-  - 'cleanup'
+  - failing-test
+  - cleanup
 ```
 
 With the command `/kind cleanup`,
@@ -30,8 +30,8 @@ the issue or PR will be labeled with `kind/cleanup`
 
 ```yaml
 priority:
-  - 'low'
-  - 'high'
+  - low
+  - high
 ```
 
 With the command `/priority low`,

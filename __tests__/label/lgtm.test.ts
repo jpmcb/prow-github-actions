@@ -1,18 +1,20 @@
-import {setupServer} from 'msw/node'
-import {rest} from 'msw'
+import { Buffer } from 'node:buffer'
+import { rest } from 'msw'
 
-import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
+import { setupServer } from 'msw/node'
 
-import * as utils from '../testUtils'
+import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
+
+import issuePayload from '../fixtures/issues/issue.json'
 
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
-import issuePayload from '../fixtures/issues/issue.json'
+import * as utils from '../testUtils'
 
 const server = setupServer()
 beforeAll(() =>
   server.listen({
-    onUnhandledRequest: 'warn'
-  })
+    onUnhandledRequest: 'warn',
+  }),
 )
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
@@ -24,41 +26,41 @@ describe('lgtm', () => {
 
   it('labels the issue with the lgtm label', async () => {
     issueCommentEvent.comment.body = '/lgtm'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     server.use(
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(204)
+        utils.mockResponse(204),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      labels: ['lgtm']
+      labels: ['lgtm'],
     })
   })
 
   it('removes the lgtm label with /lgtm cancel', async () => {
     issueCommentEvent.comment.body = '/lgtm cancel'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
     issuePayload.labels.push({
       id: 1,
@@ -67,30 +69,30 @@ describe('lgtm', () => {
       name: 'lgtm',
       description: 'looks good to me',
       color: 'f29513',
-      default: true
+      default: true,
     })
 
     server.use(
       rest.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/lgtm`,
-        utils.mockResponse(200)
+        utils.mockResponse(200),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
-        utils.mockResponse(200, issuePayload)
+        utils.mockResponse(200, issuePayload),
       ),
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(204)
+        utils.mockResponse(204),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
     await handleIssueComment(commentContext)
@@ -98,35 +100,35 @@ describe('lgtm', () => {
 
   it('adds label if commenter is collaborator', async () => {
     issueCommentEvent.comment.body = '/lgtm'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     server.use(
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(204)
+        utils.mockResponse(204),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      labels: ['lgtm']
+      labels: ['lgtm'],
     })
   })
 
@@ -135,7 +137,7 @@ describe('lgtm', () => {
       `
 approvers:
 - Codertocat
-`
+`,
     ).toString('base64')
 
     const contentResponse = {
@@ -144,29 +146,29 @@ approvers:
       size: 4096,
       name: 'OWNERS',
       path: 'OWNERS',
-      content: owners
+      content: owners,
     }
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(200, contentResponse)
-      )
+        utils.mockResponse(200, contentResponse),
+      ),
     )
 
     const wantErr = `Codertocat is not included in the reviewers role in the OWNERS file`
 
     // Mock the reply that the user is not authorized
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     issueCommentEvent.comment.body = '/lgtm'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
@@ -177,31 +179,31 @@ approvers:
     const wantErr = `Codertocat is not a org member or collaborator`
 
     // Mock the reply that the user is not authorized
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     server.use(
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
     issueCommentEvent.comment.body = '/lgtm'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
@@ -210,21 +212,21 @@ approvers:
 
   it('adds label if commenter is reviewer in OWNERS', async () => {
     issueCommentEvent.comment.body = '/lgtm'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     const owners = Buffer.from(
       `
 reviewers:
 - Codertocat
-`
+`,
     ).toString('base64')
 
     const contentResponse = {
@@ -233,20 +235,20 @@ reviewers:
       size: 4096,
       name: 'OWNERS',
       path: 'OWNERS',
-      content: owners
+      content: owners,
     }
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(200, contentResponse)
-      )
+        utils.mockResponse(200, contentResponse),
+      ),
     )
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      labels: ['lgtm']
+      labels: ['lgtm'],
     })
   })
 })

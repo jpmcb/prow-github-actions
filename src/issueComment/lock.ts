@@ -1,11 +1,11 @@
-import * as github from '@actions/github'
+import type { Context } from '@actions/github/lib/context'
 import * as core from '@actions/core'
-import {Octokit} from '@octokit/rest'
+import * as github from '@actions/github'
 
-import {Context} from '@actions/github/lib/context'
+import { Octokit } from '@octokit/rest'
 
-import {checkCollaborator} from '../utils/auth'
-import {getCommandArgs} from '../utils/command'
+import { checkCollaborator } from '../utils/auth'
+import { getCommandArgs } from '../utils/command'
 
 /**
  * /lock will lock the issue / PR.
@@ -13,12 +13,10 @@ import {getCommandArgs} from '../utils/command'
  *
  * @param context - the github actions event context
  */
-export const lock = async (
-  context: Context = github.context
-): Promise<void> => {
-  const token = core.getInput('github-token', {required: true})
+export async function lock(context: Context = github.context): Promise<void> {
+  const token = core.getInput('github-token', { required: true })
   const octokit = new Octokit({
-    auth: token
+    auth: token,
   })
 
   const issueNumber: number | undefined = context.payload.issue?.number
@@ -27,7 +25,7 @@ export const lock = async (
 
   if (issueNumber === undefined) {
     throw new Error(
-      `github context payload missing issue number: ${context.payload}`
+      `github context payload missing issue number: ${context.payload}`,
     )
   }
 
@@ -35,10 +33,11 @@ export const lock = async (
 
   // Only users who:
   // - are collaborators
-  let isAuthUser: Boolean = false
+  let isAuthUser: boolean = false
   try {
     isAuthUser = await checkCollaborator(octokit, context, commenterId)
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`could not check commenter auth: ${e}`)
   }
 
@@ -47,85 +46,81 @@ export const lock = async (
       switch (commentArgs[0]) {
         case 'resolved':
           try {
-            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
-              issue_number: issueNumber
+              issue_number: issueNumber,
             })
-            /* eslint-enable @typescript-eslint/naming-convention */
-          } catch (e) {
+          }
+          catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
           break
 
         case 'off-topic':
           try {
-            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
               issue_number: issueNumber,
-              lock_reason: 'off-topic'
+              lock_reason: 'off-topic',
             })
-            /* eslint-enable @typescript-eslint/naming-convention */
-          } catch (e) {
+          }
+          catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
           break
 
         case 'too-heated':
           try {
-            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
               issue_number: issueNumber,
-              lock_reason: 'too heated'
+              lock_reason: 'too heated',
             })
-            /* eslint-enable @typescript-eslint/naming-convention */
-          } catch (e) {
+          }
+          catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
           break
 
         case 'spam':
           try {
-            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
               issue_number: issueNumber,
-              lock_reason: 'spam'
+              lock_reason: 'spam',
             })
-            /* eslint-enable @typescript-eslint/naming-convention */
-          } catch (e) {
+          }
+          catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
           break
 
         default:
           try {
-            /* eslint-disable @typescript-eslint/naming-convention */
             await octokit.issues.lock({
               ...context.repo,
-              issue_number: issueNumber
+              issue_number: issueNumber,
             })
-            /* eslint-enable @typescript-eslint/naming-convention */
-          } catch (e) {
+          }
+          catch (e) {
             throw new Error(`could not lock issue: ${e}`)
           }
           break
       }
-    } else {
+    }
+    else {
       try {
-        /* eslint-disable @typescript-eslint/naming-convention */
         await octokit.issues.lock({
           ...context.repo,
-          issue_number: issueNumber
+          issue_number: issueNumber,
         })
-        /* eslint-enable @typescript-eslint/naming-convention */
-      } catch (e) {
+      }
+      catch (e) {
         throw new Error(`could not lock issue: ${e}`)
       }
     }
-  } else {
+  }
+  else {
     throw new Error(`commenter is not a collaborator user`)
   }
 }

@@ -1,18 +1,18 @@
-import {setupServer} from 'msw/node'
-import {rest} from 'msw'
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 
-import * as utils from '../testUtils'
+import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
 
-import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
+import issueCommentEventUnassign from '../fixtures/issues/unassign/issueCommentEventUnassign.json'
 
 import issueUnassignedResp from '../fixtures/issues/unassign/issueUnassignedResponse.json'
-import issueCommentEventUnassign from '../fixtures/issues/unassign/issueCommentEventUnassign.json'
+import * as utils from '../testUtils'
 
 const server = setupServer()
 beforeAll(() =>
   server.listen({
-    onUnhandledRequest: 'warn'
-  })
+    onUnhandledRequest: 'warn',
+  }),
 )
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
@@ -23,20 +23,20 @@ describe('/unassign', () => {
   })
 
   it('handles self unassignment with comment /unassign', async () => {
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueUnassignedResp, observeReq)
-      )
+        utils.mockResponse(201, issueUnassignedResp, observeReq),
+      ),
     )
 
-    const commentContext = new utils.mockContext(issueCommentEventUnassign)
+    const commentContext = new utils.MockContext(issueCommentEventUnassign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      assignees: ['Codertocat']
+      assignees: ['Codertocat'],
     })
   })
 
@@ -46,32 +46,32 @@ describe('/unassign', () => {
     server.use(
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(204)
+        utils.mockResponse(204),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueUnassignedResp, observeReq)
-      )
+        utils.mockResponse(201, issueUnassignedResp, observeReq),
+      ),
     )
 
-    const commentContext = new utils.mockContext(issueCommentEventUnassign)
+    const commentContext = new utils.MockContext(issueCommentEventUnassign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      assignees: ['some-user']
+      assignees: ['some-user'],
     })
   })
 
@@ -81,32 +81,32 @@ describe('/unassign', () => {
     server.use(
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(204)
+        utils.mockResponse(204),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueUnassignedResp, observeReq)
-      )
+        utils.mockResponse(201, issueUnassignedResp, observeReq),
+      ),
     )
 
-    const commentContext = new utils.mockContext(issueCommentEventUnassign)
+    const commentContext = new utils.MockContext(issueCommentEventUnassign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      assignees: ['some-user']
+      assignees: ['some-user'],
     })
   })
 
@@ -116,32 +116,32 @@ describe('/unassign', () => {
     server.use(
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(204)
+        utils.mockResponse(204),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueUnassignedResp, observeReq)
-      )
+        utils.mockResponse(201, issueUnassignedResp, observeReq),
+      ),
     )
 
-    const commentContext = new utils.mockContext(issueCommentEventUnassign)
+    const commentContext = new utils.MockContext(issueCommentEventUnassign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      assignees: ['some-user', 'other-user']
+      assignees: ['some-user', 'other-user'],
     })
   })
 
@@ -151,32 +151,32 @@ describe('/unassign', () => {
     server.use(
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(204)
+        utils.mockResponse(204),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
-        utils.mockResponse(201, issueUnassignedResp, observeReq)
-      )
+        utils.mockResponse(201, issueUnassignedResp, observeReq),
+      ),
     )
 
-    const commentContext = new utils.mockContext(issueCommentEventUnassign)
+    const commentContext = new utils.MockContext(issueCommentEventUnassign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      assignees: ['some-user']
+      assignees: ['some-user'],
     })
   })
 

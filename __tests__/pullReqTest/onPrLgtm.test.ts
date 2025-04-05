@@ -1,17 +1,17 @@
-import {setupServer} from 'msw/node'
-import {rest} from 'msw'
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 
-import {handlePullReq} from '../../src/pullReq/handlePullReq'
-import * as utils from '../testUtils'
+import { handlePullReq } from '../../src/pullReq/handlePullReq'
+import issuePayload from '../fixtures/issues/issue.json'
 
 import pullReqEvent from '../fixtures/pullReq/pullReqOpenedEvent.json'
-import issuePayload from '../fixtures/issues/issue.json'
+import * as utils from '../testUtils'
 
 const server = setupServer()
 beforeAll(() =>
   server.listen({
-    onUnhandledRequest: 'warn'
-  })
+    onUnhandledRequest: 'warn',
+  }),
 )
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
@@ -22,7 +22,7 @@ describe('onPrLgtm', () => {
   })
 
   it('removes the label lgtm', async () => {
-    const prContext = new utils.mockContext(pullReqEvent)
+    const prContext = new utils.MockContext(pullReqEvent)
 
     issuePayload.labels.push({
       id: 1999,
@@ -31,20 +31,20 @@ describe('onPrLgtm', () => {
       name: 'lgtm',
       description: 'looks good to me',
       color: 'f29513',
-      default: false
+      default: false,
     })
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
-        utils.mockResponse(200, issuePayload)
+        utils.mockResponse(200, issuePayload),
       ),
       rest.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/lgtm`,
-        utils.mockResponse(200)
-      )
+        utils.mockResponse(200),
+      ),
     )
 
-    await expect(handlePullReq(prContext)).resolves.not.toThrowError()
+    await expect(handlePullReq(prContext)).resolves.not.toThrow()
   })
 })

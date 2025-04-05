@@ -1,18 +1,19 @@
-import {setupServer} from 'msw/node'
-import {rest} from 'msw'
+import { Buffer } from 'node:buffer'
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 
-import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
+import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
 
-import * as utils from '../testUtils'
+import issueCommentEventAssign from '../fixtures/issues/assign/issueCommentEventAssign.json'
 
 import pullReqListReviews from '../fixtures/pullReq/pullReqListReviews.json'
-import issueCommentEventAssign from '../fixtures/issues/assign/issueCommentEventAssign.json'
+import * as utils from '../testUtils'
 
 const server = setupServer()
 beforeAll(() =>
   server.listen({
-    onUnhandledRequest: 'warn'
-  })
+    onUnhandledRequest: 'warn',
+  }),
 )
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
@@ -27,7 +28,7 @@ describe('/approve', () => {
       `
 reviewers:
 - Codertocat
-    `
+    `,
     ).toString('base64')
 
     const contentResponse = {
@@ -36,28 +37,28 @@ reviewers:
       size: 4096,
       name: 'OWNERS',
       path: 'OWNERS',
-      content: owners
+      content: owners,
     }
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(200, contentResponse)
-      )
+        utils.mockResponse(200, contentResponse),
+      ),
     )
     const wantErr = `Codertocat is not included in the approvers role in the OWNERS file`
 
     // Mock the reply that the user is not authorized
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     issueCommentEventAssign.comment.body = '/approve'
-    const commentContext = new utils.mockContext(issueCommentEventAssign)
+    const commentContext = new utils.MockContext(issueCommentEventAssign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
@@ -68,31 +69,31 @@ reviewers:
     const wantErr = `Codertocat is not a org member or collaborator`
 
     // Mock the reply that the user is not authorized
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
     issueCommentEventAssign.comment.body = '/approve'
-    const commentContext = new utils.mockContext(issueCommentEventAssign)
+    const commentContext = new utils.MockContext(issueCommentEventAssign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
@@ -104,7 +105,7 @@ reviewers:
       `
     approvers:
     - Codertocat
-        `
+        `,
     ).toString('base64')
 
     const contentResponse = {
@@ -113,30 +114,30 @@ reviewers:
       size: 4096,
       name: 'OWNERS',
       path: 'OWNERS',
-      content: owners
+      content: owners,
     }
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(200, contentResponse)
-      )
+        utils.mockResponse(200, contentResponse),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     issueCommentEventAssign.comment.body = '/approve'
-    const commentContext = new utils.mockContext(issueCommentEventAssign)
+    const commentContext = new utils.MockContext(issueCommentEventAssign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      event: 'APPROVE'
+      event: 'APPROVE',
     })
   })
 
@@ -144,33 +145,33 @@ reviewers:
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
-        utils.mockResponse(204)
+        utils.mockResponse(204),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     issueCommentEventAssign.comment.body = '/approve'
-    const commentContext = new utils.mockContext(issueCommentEventAssign)
+    const commentContext = new utils.MockContext(issueCommentEventAssign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      event: 'APPROVE'
+      event: 'APPROVE',
     })
   })
 
@@ -179,7 +180,7 @@ reviewers:
       `
     approvers:
     - some-user
-    `
+    `,
     ).toString('base64')
 
     const contentResponse = {
@@ -188,35 +189,35 @@ reviewers:
       size: 4096,
       name: 'OWNERS',
       path: 'OWNERS',
-      content: owners
+      content: owners,
     }
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(200, contentResponse)
+        utils.mockResponse(200, contentResponse),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews`,
-        utils.mockResponse(200, pullReqListReviews)
-      )
+        utils.mockResponse(200, pullReqListReviews),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.put(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews/80/dismissals`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     issueCommentEventAssign.comment.body = '/approve cancel'
     issueCommentEventAssign.comment.user.login = 'some-user'
-    const commentContext = new utils.mockContext(issueCommentEventAssign)
+    const commentContext = new utils.MockContext(issueCommentEventAssign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      message: `Canceled through prow-github-actions by @some-user`
+      message: `Canceled through prow-github-actions by @some-user`,
     })
   })
 
@@ -224,38 +225,38 @@ reviewers:
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/orgs/Codertocat/members/some-user`,
-        utils.mockResponse(404)
+        utils.mockResponse(404),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
-        utils.mockResponse(204)
+        utils.mockResponse(204),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews`,
-        utils.mockResponse(200, pullReqListReviews)
-      )
+        utils.mockResponse(200, pullReqListReviews),
+      ),
     )
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.put(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews/80/dismissals`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     issueCommentEventAssign.comment.body = '/approve cancel'
     issueCommentEventAssign.comment.user.login = 'some-user'
-    const commentContext = new utils.mockContext(issueCommentEventAssign)
+    const commentContext = new utils.MockContext(issueCommentEventAssign)
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      message: `Canceled through prow-github-actions by @some-user`
+      message: `Canceled through prow-github-actions by @some-user`,
     })
   })
 })

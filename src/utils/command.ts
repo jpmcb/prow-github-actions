@@ -5,7 +5,7 @@
  * @param command - the given command to get arguments for. Ex: '/assign'
  * @param body - the full body of the comment
  */
-export const getLineArgs = (command: string, body: string): string => {
+export function getLineArgs(command: string, body: string): string {
   let toReturn = ''
   const lineArray = body.split('\n')
 
@@ -25,10 +25,10 @@ export const getLineArgs = (command: string, body: string): string => {
  * @param command - the given command to get arguments for. Ex: '/assign'
  * @param body - the full body of the comment
  */
-export const getCommandArgs = (command: string, body: string): string[] => {
+export function getCommandArgs(command: string, body: string): string[] {
   const toReturn = []
   const lineArray = body.split('\n')
-  let bodyArray = undefined
+  let bodyArray
 
   for (const iterator of lineArray) {
     if (iterator.includes(command)) {
@@ -62,13 +62,14 @@ export const getCommandArgs = (command: string, body: string): string[] => {
  *
  * @param args - the array to remove at signs from
  */
-const stripAtSign = (args: string[]): string[] => {
+function stripAtSign(args: string[]): string[] {
   const toReturn: string[] = []
 
   for (const e of args) {
     if (e.startsWith('@')) {
       toReturn.push(e.replace('@', ''))
-    } else {
+    }
+    else {
       toReturn.push(e)
     }
   }

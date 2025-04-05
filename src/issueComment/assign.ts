@@ -1,12 +1,12 @@
-import * as github from '@actions/github'
+import type { Context } from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
-import {Octokit} from '@octokit/rest'
+import * as github from '@actions/github'
 
-import {Context} from '@actions/github/lib/context'
+import { Octokit } from '@octokit/rest'
 
-import {getCommandArgs} from '../utils/command'
-import {getOrgCollabCommentUsers, checkCommenterAuth} from '../utils/auth'
+import { checkCommenterAuth, getOrgCollabCommentUsers } from '../utils/auth'
+import { getCommandArgs } from '../utils/command'
 
 /**
  * /assign will self assign with no argument
@@ -14,14 +14,12 @@ import {getOrgCollabCommentUsers, checkCommenterAuth} from '../utils/auth'
  *
  * @param context - the github actions event context
  */
-export const assign = async (
-  context: Context = github.context
-): Promise<void> => {
+export async function assign(context: Context = github.context): Promise<void> {
   core.debug(`starting assign job`)
 
-  const token = core.getInput('github-token', {required: true})
+  const token = core.getInput('github-token', { required: true })
   const octokit = new Octokit({
-    auth: token
+    auth: token,
   })
 
   const issueNumber: number | undefined = context.payload.issue?.number
@@ -30,7 +28,7 @@ export const assign = async (
 
   if (issueNumber === undefined) {
     throw new Error(
-      `github context payload missing issue number: ${context.payload}`
+      `github context payload missing issue number: ${context.payload}`,
     )
   }
 
@@ -40,7 +38,8 @@ export const assign = async (
   if (commentArgs.length === 0) {
     try {
       await selfAssign(octokit, context, issueNumber, commenterId)
-    } catch (e) {
+    }
+    catch (e) {
       throw new Error(`could not self assign: ${e}`)
     }
     return
@@ -56,28 +55,28 @@ export const assign = async (
       octokit,
       context,
       issueNumber,
-      commentArgs
+      commentArgs,
     )
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`could not get authorized users: ${e}`)
   }
 
   switch (authUsers.length) {
     case 0:
       throw new Error(
-        `no authorized users found. Only users who are members of the org, are collaborators, or have previously commented on this issue may be assigned`
+        `no authorized users found. Only users who are members of the org, are collaborators, or have previously commented on this issue may be assigned`,
       )
 
     default:
       try {
-        /* eslint-disable @typescript-eslint/naming-convention */
         await octokit.issues.addAssignees({
           ...context.repo,
           issue_number: issueNumber,
-          assignees: authUsers
+          assignees: authUsers,
         })
-        /* eslint-enable @typescript-eslint/naming-convention */
-      } catch (e) {
+      }
+      catch (e) {
         throw new Error(`could not add assignees: ${e}`)
       }
       break
@@ -92,26 +91,24 @@ export const assign = async (
  * @param issueNum - the issue or pr number this runtime is associated with
  * @param user - the user to self assign
  */
-const selfAssign = async (
+async function selfAssign(
   octokit: Octokit,
   context: Context,
   issueNum: number,
-  user: string
-): Promise<void> => {
+  user: string,
+): Promise<void> {
   const isAuthorized = await checkCommenterAuth(
     octokit,
     context,
     issueNum,
-    user
+    user,
   )
 
   if (isAuthorized) {
-    /* eslint-disable @typescript-eslint/naming-convention */
     await octokit.issues.addAssignees({
       ...context.repo,
       issue_number: issueNum,
-      assignees: [user]
+      assignees: [user],
     })
-    /* eslint-enable @typescript-eslint/naming-convention */
   }
 }

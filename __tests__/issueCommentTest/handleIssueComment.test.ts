@@ -1,16 +1,16 @@
-import * as utils from '../testUtils'
 import * as assign from '../../src/issueComment/assign'
-import * as unassign from '../../src/issueComment/unassign'
 import * as cc from '../../src/issueComment/cc'
-import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
-
+import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
+import * as unassign from '../../src/issueComment/unassign'
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
+
+import * as utils from '../testUtils'
 
 it('ignores the comment if no command in comment', async () => {
   utils.setupActionsEnv('/assign')
 
   jest.spyOn(assign, 'assign')
-  const commentContext = new utils.mockContext(issueCommentEvent)
+  const commentContext = new utils.MockContext(issueCommentEvent)
 
   await handleIssueComment(commentContext)
   expect(assign.assign).toHaveBeenCalledTimes(0)
@@ -23,13 +23,13 @@ it('can handle multiple commands in prow-commands config', async () => {
   jest.spyOn(unassign, 'unassign').mockImplementation(() => Promise.resolve())
 
   issueCommentEvent.comment.body = '/assign'
-  const assignContext = new utils.mockContext(issueCommentEvent)
+  const assignContext = new utils.MockContext(issueCommentEvent)
 
   await handleIssueComment(assignContext)
   expect(assign.assign).toHaveBeenCalledTimes(1)
 
   issueCommentEvent.comment.body = '/unassign'
-  const unassignContext = new utils.mockContext(issueCommentEvent)
+  const unassignContext = new utils.MockContext(issueCommentEvent)
 
   await handleIssueComment(unassignContext)
   expect(unassign.unassign).toHaveBeenCalledTimes(1)
@@ -41,9 +41,9 @@ it('can handle comments with multiple commands', async () => {
   jest.spyOn(assign, 'assign').mockImplementation(() => Promise.resolve())
   jest.spyOn(unassign, 'unassign').mockImplementation(() => Promise.resolve())
 
-  issueCommentEvent.comment.body =
-    '/assign @some-user @other-user\n/unassign @bad-user'
-  const context = new utils.mockContext(issueCommentEvent)
+  issueCommentEvent.comment.body
+    = '/assign @some-user @other-user\n/unassign @bad-user'
+  const context = new utils.MockContext(issueCommentEvent)
 
   await handleIssueComment(context)
   expect(assign.assign).toHaveBeenCalledTimes(1)
@@ -56,9 +56,9 @@ it('handles commands on multiple lines', async () => {
   jest.spyOn(assign, 'assign').mockImplementation(() => Promise.resolve())
   jest.spyOn(unassign, 'unassign').mockImplementation(() => Promise.resolve())
 
-  issueCommentEvent.comment.body =
-    '/assign @some-user @other-user\n/unassign @bad-user'
-  const context = new utils.mockContext(issueCommentEvent)
+  issueCommentEvent.comment.body
+    = '/assign @some-user @other-user\n/unassign @bad-user'
+  const context = new utils.MockContext(issueCommentEvent)
 
   await handleIssueComment(context)
   expect(assign.assign).toHaveBeenCalledTimes(1)
@@ -72,9 +72,9 @@ it('handles commands on both newlines and spaces', async () => {
   jest.spyOn(unassign, 'unassign').mockImplementation(() => Promise.resolve())
   jest.spyOn(cc, 'cc').mockImplementation(() => Promise.resolve())
 
-  issueCommentEvent.comment.body =
-    '/assign @some-user @other-user\n/unassign @bad-user\n/cc @some-user'
-  const context = new utils.mockContext(issueCommentEvent)
+  issueCommentEvent.comment.body
+    = '/assign @some-user @other-user\n/unassign @bad-user\n/cc @some-user'
+  const context = new utils.MockContext(issueCommentEvent)
 
   await handleIssueComment(context)
   expect(assign.assign).toHaveBeenCalledTimes(1)

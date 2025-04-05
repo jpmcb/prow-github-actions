@@ -1,4 +1,4 @@
-import {getCommandArgs} from '../../src/utils/command'
+import { getCommandArgs } from '../../src/utils/command'
 
 it('handles comments with multiple lines', () => {
   const body = `Here is something
@@ -20,7 +20,7 @@ describe('strips at signs', () => {
   it('first char of argument', () => {
     const body = `/command @user@name @other@username`
 
-    let output = getCommandArgs('/command', body)
+    const output = getCommandArgs('/command', body)
 
     expect(output).toMatchObject(['user@name', 'other@username'])
   })

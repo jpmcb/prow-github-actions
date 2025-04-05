@@ -30,17 +30,17 @@ Since this is officially supported by Github, I am recommending people use that 
 I'm keeping this job as part of the API since it may have additional purposes.
 The chron job will attempt to run on _all PRs_ in a repository
 which may be useful if a repository needs to batch label all their PRs.
- 
+
 However, this has some known limitations. The chron labeler queries Github in 100 batch PRs.
 This can trigger github to rate limit the bot.
 
 This job may be run with the following workflow configuration:
 
 ```yml
-name: "Label PRs from globs"
+name: Label PRs from globs
 on:
   schedule:
-  - cron: "0 * * * *"
+    - cron: '0 * * * *'
 
 jobs:
   execute:
@@ -48,8 +48,8 @@ jobs:
     steps:
       - uses: jpmcb/prow-github-actions@v1
         with:
-          jobs: 'pr-labeler'
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          jobs: pr-labeler
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
 ```
 
 > Interesting! Where's the historical context?

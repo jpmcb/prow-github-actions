@@ -14,7 +14,6 @@ Commands | Policy | Description
 `/milestone milestone-name` | Collaborators | Adds issue / PR to an existing milestone
 `/retitle some new title` | Collaborators | Renames the issue / PR
 
-
 Label Commands | Policy | Description
 --- | --- | ---
 `/area [label1 label2 ...]` | anyone | adds an area/<> label(s) if it's defined in [the `.prowlabels.yaml` file](./labeling.md)
@@ -39,15 +38,15 @@ The OWNERS file must be in YAML format. All entries are expected to be GitHub us
 ```yaml
 # List of usernames who may use /lgtm
 reviewers:
-- user1
-- user2
-- user3
+  - user1
+  - user2
+  - user3
 
 # List of usernames who may use /approve
 approvers:
-- user1
-- user2
-- admin1
+  - user1
+  - user2
+  - admin1
 ```
 
 [owners-example]: ./examples.md#review-and-approve-pull-requests

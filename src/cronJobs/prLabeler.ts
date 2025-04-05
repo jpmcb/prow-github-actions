@@ -5,14 +5,16 @@
  * even from forks (which this feature attempted to subvert via a cron).
  */
 
-import * as github from '@actions/github'
-import {Octokit} from '@octokit/rest'
+import type { Context } from '@actions/github/lib/context'
+import type { Endpoints } from '@octokit/types'
 
-import {Context} from '@actions/github/lib/context'
+import { Buffer } from 'node:buffer'
 import * as core from '@actions/core'
-import {Endpoints} from '@octokit/types'
+import * as github from '@actions/github'
 
+import { Octokit } from '@octokit/rest'
 import * as yaml from 'js-yaml'
+
 import * as minimatch from 'minimatch'
 
 // This variable is used to track number of jobs processed
@@ -30,22 +32,23 @@ type PullsListResponseDataType =
  * @param currentPage - the page to return from the github api
  * @param context - The github actions event context
  */
-export const cronLabelPr = async (
+export async function cronLabelPr(
   currentPage: number,
-  context: Context
-): Promise<number> => {
+  context: Context,
+): Promise<number> {
   core.info(`starting PR labeler page ${currentPage}`)
 
-  const token = core.getInput('github-token', {required: true})
+  const token = core.getInput('github-token', { required: true })
   const octokit = new Octokit({
-    auth: token
+    auth: token,
   })
 
   // Get next batch
   let prs: PullsListResponseDataType
   try {
     prs = await getPrs(octokit, context, currentPage)
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`could not get PRs: ${e}`)
   }
 
@@ -55,7 +58,7 @@ export const cronLabelPr = async (
   }
 
   await Promise.all(
-    prs.map(async pr => {
+    prs.map(async (pr) => {
       core.info(`processing pr: ${pr.number}`)
       if (pr.state === 'closed') {
         return
@@ -67,7 +70,7 @@ export const cronLabelPr = async (
 
       await labelPr(pr.number, context, octokit)
       jobsDone++
-    })
+    }),
   )
 
   // Recurse, continue to next page
@@ -81,15 +84,15 @@ export const cronLabelPr = async (
  * @param context - the github actions workflow context
  * @param page - the page number to get from the api
  */
-const getPrs = async (
+async function getPrs(
   octokit: Octokit,
   context: Context = github.context,
-  page: number
-): Promise<PullsListResponseDataType> => {
+  page: number,
+): Promise<PullsListResponseDataType> {
   core.debug(`getting prs page ${page}...`)
   const prResults = await octokit.pulls.list({
     ...context.repo,
-    page
+    page,
   })
 
   core.debug(`got: ${prResults.data}`)
@@ -105,11 +108,11 @@ const getPrs = async (
  * @param prNum - the PR to label
  * @param octokit - a hydrated github client
  */
-const labelPr = async (
+async function labelPr(
   prNum: number,
   context: Context = github.context,
-  octokit: Octokit
-): Promise<void> => {
+  octokit: Octokit,
+): Promise<void> {
   const changedFiles = await getChangedFiles(octokit, context, prNum)
   const labels = await getLabelsFromFileGlobs(octokit, context, changedFiles)
 
@@ -128,18 +131,16 @@ const labelPr = async (
  * @param context - the github workflows event context
  * @param prNum - the PR to check
  */
-const getChangedFiles = async (
+async function getChangedFiles(
   octokit: Octokit,
   context: Context,
-  prNum: number
-): Promise<string[]> => {
+  prNum: number,
+): Promise<string[]> {
   core.debug(`getting changed files for pr ${prNum}`)
-  /* eslint-disable @typescript-eslint/naming-convention */
   const listFilesResponse = await octokit.pulls.listFiles({
     ...context.repo,
-    pull_number: prNum
+    pull_number: prNum,
   })
-  /* eslint-enable @typescript-eslint/naming-convention */
 
   const changedFiles = listFilesResponse.data.map(f => f.filename)
   core.debug(`files changed: ${changedFiles}`)
@@ -155,47 +156,47 @@ const getChangedFiles = async (
  * @param context - the github workflows event context
  * @param files - the list of files that have changed in the PR
  */
-const getLabelsFromFileGlobs = async (
+async function getLabelsFromFileGlobs(
   octokit: Octokit,
   context: Context,
-  files: string[]
-): Promise<string[]> => {
+  files: string[],
+): Promise<string[]> {
   const toReturn: string[] = []
 
   core.debug(`getting labels.yaml file and matching file globs`)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let response: any = undefined
+  let response: any
   try {
     response = await octokit.rest.repos.getContent({
       ...context.repo,
-      path: '.github/labels.yaml'
+      path: '.github/labels.yaml',
     })
-  } catch (e) {
+  }
+  catch (e) {
     try {
       response = await octokit.rest.repos.getContent({
         ...context.repo,
-        path: '.github/labels.yml'
+        path: '.github/labels.yml',
       })
-    } catch (e2) {
+    }
+    catch (e2) {
       throw new Error(
-        `could not get .github/labels.yaml or .github/labels.yml: ${e} ${e2}`
+        `could not get .github/labels.yaml or .github/labels.yml: ${e} ${e2}`,
       )
     }
   }
 
   if (!response.data.content || !response.data.encoding) {
     throw new Error(
-      `area: error parsing data from content response: ${response.data}`
+      `area: error parsing data from content response: ${response.data}`,
     )
   }
 
   const decoded = Buffer.from(
     response.data.content,
-    response.data.encoding
+    response.data.encoding,
   ).toString()
 
   core.debug(`label file contents: ${decoded}`)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const content: any = yaml.load(decoded)
 
   const labelMap: Map<string, string[]> = new Map()
@@ -203,11 +204,13 @@ const getLabelsFromFileGlobs = async (
   for (const label in content) {
     if (typeof content[label] === 'string') {
       labelMap.set(label, [content[label]])
-    } else if (content[label] instanceof Array) {
+    }
+    else if (Array.isArray(content[label])) {
       labelMap.set(label, content[label])
-    } else {
-      throw Error(
-        `pr-labeler: found unexpected type for label ${label} (should be string or array of globs)`
+    }
+    else {
+      throw new TypeError(
+        `pr-labeler: found unexpected type for label ${label} (should be string or array of globs)`,
       )
     }
   }
@@ -228,7 +231,7 @@ const getLabelsFromFileGlobs = async (
  * @param files - list of files that have changed
  * @param globs - list of globs to match against files
  */
-const checkGlobs = (files: string[], globs: string[]): boolean => {
+function checkGlobs(files: string[], globs: string[]): boolean {
   for (const glob of globs) {
     const matcher = new minimatch.Minimatch(glob)
     for (const file of files) {
@@ -250,22 +253,21 @@ const checkGlobs = (files: string[], globs: string[]): boolean => {
  * @param prNum - the PR to label
  * @param labels - the labels for the PR
  */
-export const sendLabels = async (
+export async function sendLabels(
   octokit: Octokit,
   context: Context,
   prNum: number,
-  labels: string[]
-): Promise<void> => {
+  labels: string[],
+): Promise<void> {
   try {
     core.debug(`sending labels ${labels} for PR ${prNum}`)
-    /* eslint-disable @typescript-eslint/naming-convention */
     await octokit.issues.addLabels({
       ...context.repo,
       issue_number: prNum,
-      labels
+      labels,
     })
-    /* eslint-enable @typescript-eslint/naming-convention */
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`sending labels: ${e}`)
   }
 }

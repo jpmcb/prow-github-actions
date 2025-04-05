@@ -1,20 +1,20 @@
-import {setupServer} from 'msw/node'
-import {rest} from 'msw'
-
 import * as core from '@actions/core'
+import { rest } from 'msw'
 
-import {handleIssueComment} from '../../src/issueComment/handleIssueComment'
-import * as utils from '../testUtils'
+import { setupServer } from 'msw/node'
 
+import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
+
 import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
 import malformedFileContents from '../fixtures/labels/labelFileMalformedResponse.json'
+import * as utils from '../testUtils'
 
 const server = setupServer()
 beforeAll(() =>
   server.listen({
-    onUnhandledRequest: 'warn'
-  })
+    onUnhandledRequest: 'warn',
+  }),
 )
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
@@ -26,31 +26,31 @@ describe('utils labeling', () => {
 
   it('can read from both .yaml and .yml label files', async () => {
     issueCommentEvent.comment.body = '/area important'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
-        utils.mockResponse(200, null, observeReq)
-      )
+        utils.mockResponse(200, null, observeReq),
+      ),
     )
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yml`,
-        utils.mockResponse(200, labelFileContents)
+        utils.mockResponse(200, labelFileContents),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
     await handleIssueComment(commentContext)
     await observeReq.called()
     expect(observeReq.body()).toMatchObject({
-      labels: ['area/important']
+      labels: ['area/important'],
     })
   })
 
@@ -58,17 +58,17 @@ describe('utils labeling', () => {
     const spy = jest.spyOn(core, 'setFailed')
 
     issueCommentEvent.comment.body = '/area important'
-    const commentContext = new utils.mockContext(issueCommentEvent)
+    const commentContext = new utils.MockContext(issueCommentEvent)
 
     server.use(
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yml`,
-        utils.mockResponse(200, malformedFileContents)
+        utils.mockResponse(200, malformedFileContents),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
-        utils.mockResponse(404)
-      )
+        utils.mockResponse(404),
+      ),
     )
 
     await handleIssueComment(commentContext)

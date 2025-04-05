@@ -1,14 +1,14 @@
-import {setupServer} from 'msw/node'
-import {rest} from 'msw'
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 
-import {handleCronJobs} from '../../src/cronJobs/handleCronJob'
-import * as utils from '../testUtils'
-
-import pullReqOpenedEvent from '../fixtures/pullReq/pullReqOpenedEvent.json'
-import listPullReqs from '../fixtures/pullReq/pullReqListPulls.json'
+import { handleCronJobs } from '../../src/cronJobs/handleCronJob'
 import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
+
 import prListFiles from '../fixtures/pullReq/pullReqListFiles.json'
+import listPullReqs from '../fixtures/pullReq/pullReqListPulls.json'
 import prListTestFiles from '../fixtures/pullReq/pullReqListTestFiles.json'
+import pullReqOpenedEvent from '../fixtures/pullReq/pullReqOpenedEvent.json'
+import * as utils from '../testUtils'
 
 const server = setupServer(
   // /repos/Codertocat/Hello-World/pulls?page={1,2}
@@ -17,22 +17,23 @@ const server = setupServer(
     (req, res, ctx) => {
       const page = req.url.searchParams.get('page')
 
-      if (page == '1') {
+      if (page === '1') {
         return res(ctx.status(200), ctx.json(listPullReqs))
-      } else {
+      }
+      else {
         return res(ctx.status(200), ctx.json([]))
       }
-    }
+    },
   ),
   rest.get(
     `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
-    utils.mockResponse(200, labelFileContents)
-  )
+    utils.mockResponse(200, labelFileContents),
+  ),
 )
 beforeAll(() =>
   server.listen({
-    onUnhandledRequest: 'warn'
-  })
+    onUnhandledRequest: 'warn',
+  }),
 )
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
@@ -47,23 +48,23 @@ describe('cronLabelPr', () => {
 
     // We can use any context here as "schedule" sends no webhook payload
     // Instead, we use it to gain the repo owner and url
-    const context = new utils.mockContext(pullReqOpenedEvent)
+    const context = new utils.MockContext(pullReqOpenedEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/2/labels`,
-        utils.mockResponse(200, null, observeReq)
+        utils.mockResponse(200, null, observeReq),
       ),
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/2/files`,
-        utils.mockResponse(200, prListFiles)
-      )
+        utils.mockResponse(200, prListFiles),
+      ),
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
     expect(observeReq.body()).toEqual({
-      labels: ['source']
+      labels: ['source'],
     })
   })
 
@@ -72,24 +73,24 @@ describe('cronLabelPr', () => {
 
     // We can use any context here as "schedule" sends no webhook payload
     // Instead, we use it to gain the repo owner and url
-    const context = new utils.mockContext(pullReqOpenedEvent)
+    const context = new utils.MockContext(pullReqOpenedEvent)
 
-    const observeReq = new utils.observeRequest()
+    const observeReq = new utils.ObserveRequest()
     server.use(
       rest.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/2/labels`,
-        utils.mockResponse(200, null, observeReq)
+        utils.mockResponse(200, null, observeReq),
       ),
 
       rest.get(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/2/files`,
-        utils.mockResponse(200, prListTestFiles)
-      )
+        utils.mockResponse(200, prListTestFiles),
+      ),
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
     expect(observeReq.body()).toEqual({
-      labels: ['tests']
+      labels: ['tests'],
     })
   })
 })

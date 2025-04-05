@@ -1,24 +1,22 @@
-import * as github from '@actions/github'
-import {Octokit} from '@octokit/rest'
-
-import {Context} from '@actions/github/lib/context'
+import type { Context } from '@actions/github/lib/context'
 import * as core from '@actions/core'
 
-import {getCommandArgs} from '../utils/command'
-import {getCurrentLabels, removeLabels} from '../utils/labeling'
-import {checkCollaborator} from '../utils/auth'
+import * as github from '@actions/github'
+import { Octokit } from '@octokit/rest'
+
+import { checkCollaborator } from '../utils/auth'
+import { getCommandArgs } from '../utils/command'
+import { getCurrentLabels, removeLabels } from '../utils/labeling'
 
 /**
  * /remove will remove a label based on the command argument
  *
  * @param context - the github actions event context
  */
-export const remove = async (
-  context: Context = github.context
-): Promise<void> => {
-  const token = core.getInput('github-token', {required: true})
+export async function remove(context: Context = github.context): Promise<void> {
+  const token = core.getInput('github-token', { required: true })
   const octokit = new Octokit({
-    auth: token
+    auth: token,
   })
 
   const issueNumber: number | undefined = context.payload.issue?.number
@@ -27,22 +25,23 @@ export const remove = async (
 
   if (issueNumber === undefined) {
     throw new Error(
-      `github context payload missing issue number: ${context.payload}`
+      `github context payload missing issue number: ${context.payload}`,
     )
   }
 
   // Only users who:
   // - are collaborators
-  let isAuthUser: Boolean = false
+  let isAuthUser: boolean = false
   try {
     isAuthUser = await checkCollaborator(octokit, context, commenterId)
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`could not check commenter auth: ${e}`)
   }
 
   if (!isAuthUser) {
     throw new Error(
-      `commenter is not authorized to remove a label. Must be repo collaborator`
+      `commenter is not authorized to remove a label. Must be repo collaborator`,
     )
   }
 
@@ -52,11 +51,12 @@ export const remove = async (
   try {
     currentLabels = await getCurrentLabels(octokit, context, issueNumber)
     core.debug(`remove: found labels for issue ${currentLabels}`)
-  } catch (e) {
+  }
+  catch (e) {
     throw new Error(`could not get labels from issue: ${e}`)
   }
 
-  toRemove = toRemove.filter(e => {
+  toRemove = toRemove.filter((e) => {
     return currentLabels.includes(e)
   })
 
