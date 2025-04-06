@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
@@ -25,7 +25,7 @@ describe('/lock', () => {
     issueCommentEvent.comment.body = '/lock'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
@@ -33,7 +33,7 @@ describe('/lock', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.put(
+      http.put(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -49,7 +49,7 @@ describe('/lock', () => {
     issueCommentEvent.comment.body = '/lock off-topic'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
@@ -57,7 +57,7 @@ describe('/lock', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.put(
+      http.put(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -67,7 +67,7 @@ describe('/lock', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       lock_reason: 'off-topic',
     })
   })
@@ -76,7 +76,7 @@ describe('/lock', () => {
     issueCommentEvent.comment.body = '/lock too-heated'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
@@ -84,7 +84,7 @@ describe('/lock', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.put(
+      http.put(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -94,7 +94,7 @@ describe('/lock', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       lock_reason: 'too heated',
     })
   })
@@ -103,7 +103,7 @@ describe('/lock', () => {
     issueCommentEvent.comment.body = '/lock spam'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
@@ -111,7 +111,7 @@ describe('/lock', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.put(
+      http.put(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/lock`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -121,7 +121,7 @@ describe('/lock', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       lock_reason: 'spam',
     })
   })

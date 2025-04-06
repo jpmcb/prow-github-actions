@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { rest } from 'msw'
+import { http } from 'msw'
 
 import { setupServer } from 'msw/node'
 
@@ -30,18 +30,18 @@ describe('utils labeling', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yml`,
         utils.mockResponse(200, labelFileContents),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(404),
       ),
@@ -49,7 +49,7 @@ describe('utils labeling', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       labels: ['area/important'],
     })
   })
@@ -61,11 +61,11 @@ describe('utils labeling', () => {
     const commentContext = new utils.MockContext(issueCommentEvent)
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yml`,
         utils.mockResponse(200, malformedFileContents),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(404),
       ),

@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handleCronJobs } from '../../src/cronJobs/handleCronJob'
@@ -12,20 +12,31 @@ import * as utils from '../testUtils'
 
 const server = setupServer(
   // /repos/Codertocat/Hello-World/pulls?page={1,2}
-  rest.get(
+  http.get(
     `${utils.api}/repos/Codertocat/Hello-World/pulls`,
-    (req, res, ctx) => {
-      const page = req.url.searchParams.get('page')
+    ({ request }) => {
+      const url = new URL(request.url)
+      const page = url.searchParams.get('page')
 
       if (page === '1') {
-        return res(ctx.status(200), ctx.json(listPullReqs))
+        return new Response(JSON.stringify(listPullReqs), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
       }
       else {
-        return res(ctx.status(200), ctx.json([]))
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
       }
     },
   ),
-  rest.get(
+  http.get(
     `${utils.api}/repos/Codertocat/Hello-World/contents/.github%2Flabels.yaml`,
     utils.mockResponse(200, labelFileContents),
   ),
@@ -52,18 +63,18 @@ describe('cronLabelPr', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/2/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/2/files`,
         utils.mockResponse(200, prListFiles),
       ),
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
-    expect(observeReq.body()).toEqual({
+    expect(await observeReq.body()).toEqual({
       labels: ['source'],
     })
   })
@@ -77,19 +88,19 @@ describe('cronLabelPr', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/2/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
 
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/2/files`,
         utils.mockResponse(200, prListTestFiles),
       ),
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
-    expect(observeReq.body()).toEqual({
+    expect(await observeReq.body()).toEqual({
       labels: ['tests'],
     })
   })

@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { rest } from 'msw'
+import { http } from 'msw'
 
 import { setupServer } from 'msw/node'
 import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
@@ -27,15 +27,15 @@ describe('remove', () => {
     const commentContext = new utils.MockContext(issueCommentEvent)
 
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-label`,
         utils.mockResponse(200),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
         utils.mockResponse(200, issuePayload),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
@@ -49,19 +49,19 @@ describe('remove', () => {
     const commentContext = new utils.MockContext(issueCommentEvent)
 
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-label`,
         utils.mockResponse(200),
       ),
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-other-label`,
         utils.mockResponse(200),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
         utils.mockResponse(200, issuePayload),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
@@ -75,15 +75,15 @@ describe('remove', () => {
     const commentContext = new utils.MockContext(issueCommentEvent)
 
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/some-label`,
         utils.mockResponse(200),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
         utils.mockResponse(200, issuePayload),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),

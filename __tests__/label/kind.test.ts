@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
@@ -27,14 +27,14 @@ describe('kind', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(200, labelFileContents),
       ),
@@ -42,7 +42,7 @@ describe('kind', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       labels: ['kind/cleanup'],
     })
   })
@@ -53,14 +53,14 @@ describe('kind', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(200, labelFileContents),
       ),
@@ -68,7 +68,7 @@ describe('kind', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       labels: ['kind/cleanup', 'kind/failing-test'],
     })
   })
@@ -79,14 +79,14 @@ describe('kind', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/.prowlabels.yaml`,
         utils.mockResponse(200, labelFileContents),
       ),
@@ -94,7 +94,7 @@ describe('kind', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       labels: ['kind/cleanup', 'kind/failing-test'],
     })
   })

@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer'
-import { rest } from 'msw'
+import { http } from 'msw'
 
 import { setupServer } from 'msw/node'
 
@@ -30,22 +30,22 @@ describe('lgtm', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(404),
       ),
@@ -53,7 +53,7 @@ describe('lgtm', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       labels: ['lgtm'],
     })
   })
@@ -73,23 +73,23 @@ describe('lgtm', () => {
     })
 
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/lgtm`,
         utils.mockResponse(200),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
         utils.mockResponse(200, issuePayload),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(404),
       ),
@@ -104,22 +104,22 @@ describe('lgtm', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(404),
       ),
@@ -127,7 +127,7 @@ describe('lgtm', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       labels: ['lgtm'],
     })
   })
@@ -150,7 +150,7 @@ approvers:
     }
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(200, contentResponse),
       ),
@@ -161,7 +161,7 @@ approvers:
     // Mock the reply that the user is not authorized
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -172,7 +172,7 @@ approvers:
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body().body).toContain(wantErr)
+    expect(await observeReq.body().then(body => body.body)).toContain(wantErr)
   })
 
   it('fails if commenter is not org member or collaborator', async () => {
@@ -181,22 +181,22 @@ approvers:
     // Mock the reply that the user is not authorized
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(404),
       ),
@@ -207,7 +207,7 @@ approvers:
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body().body).toContain(wantErr)
+    expect(await observeReq.body().then(body => body.body)).toContain(wantErr)
   })
 
   it('adds label if commenter is reviewer in OWNERS', async () => {
@@ -216,7 +216,7 @@ approvers:
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -239,7 +239,7 @@ reviewers:
     }
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(200, contentResponse),
       ),
@@ -247,7 +247,7 @@ reviewers:
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       labels: ['lgtm'],
     })
   })

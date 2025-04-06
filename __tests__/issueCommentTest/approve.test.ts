@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer'
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
@@ -41,7 +41,7 @@ reviewers:
     }
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(200, contentResponse),
       ),
@@ -51,7 +51,7 @@ reviewers:
     // Mock the reply that the user is not authorized
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -62,7 +62,7 @@ reviewers:
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body().body).toContain(wantErr)
+    expect(await observeReq.body().then(body => body.body)).toContain(wantErr)
   })
 
   it('fails if commenter is not an org member or collaborator', async () => {
@@ -71,22 +71,22 @@ reviewers:
     // Mock the reply that the user is not authorized
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
@@ -97,7 +97,7 @@ reviewers:
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body().body).toContain(wantErr)
+    expect(await observeReq.body().then(body => body.body)).toContain(wantErr)
   })
 
   it('approves if commenter is an approver in OWNERS', async () => {
@@ -117,7 +117,7 @@ reviewers:
       content: owners,
     }
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(200, contentResponse),
       ),
@@ -125,7 +125,7 @@ reviewers:
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -136,22 +136,22 @@ reviewers:
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       event: 'APPROVE',
     })
   })
 
   it('approves if commenter is an org member', async () => {
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
@@ -159,7 +159,7 @@ reviewers:
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -170,7 +170,7 @@ reviewers:
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       event: 'APPROVE',
     })
   })
@@ -192,11 +192,11 @@ reviewers:
       content: owners,
     }
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(200, contentResponse),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews`,
         utils.mockResponse(200, pullReqListReviews),
       ),
@@ -204,7 +204,7 @@ reviewers:
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.put(
+      http.put(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews/80/dismissals`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -216,26 +216,26 @@ reviewers:
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       message: `Canceled through prow-github-actions by @some-user`,
     })
   })
 
   it('removes approval with the /approve cancel command if commenter is collaborator', async () => {
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/contents/OWNERS`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/some-user`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews`,
         utils.mockResponse(200, pullReqListReviews),
       ),
@@ -243,7 +243,7 @@ reviewers:
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.put(
+      http.put(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/reviews/80/dismissals`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -255,7 +255,7 @@ reviewers:
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       message: `Canceled through prow-github-actions by @some-user`,
     })
   })

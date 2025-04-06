@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
@@ -25,11 +25,11 @@ describe('/uncc', () => {
     issueCommentEvent.comment.body = '/uncc'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
@@ -37,7 +37,7 @@ describe('/uncc', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -47,7 +47,7 @@ describe('/uncc', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       reviewers: ['Codertocat'],
     })
   })
@@ -56,15 +56,15 @@ describe('/uncc', () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -72,7 +72,7 @@ describe('/uncc', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -82,7 +82,7 @@ describe('/uncc', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       reviewers: ['some-user'],
     })
   })
@@ -91,15 +91,15 @@ describe('/uncc', () => {
     issueCommentEvent.comment.body = '/uncc some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -107,7 +107,7 @@ describe('/uncc', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -117,7 +117,7 @@ describe('/uncc', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       reviewers: ['some-user'],
     })
   })
@@ -126,15 +126,15 @@ describe('/uncc', () => {
     issueCommentEvent.comment.body = '/uncc @some-user @other-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -142,7 +142,7 @@ describe('/uncc', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -152,7 +152,7 @@ describe('/uncc', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       reviewers: ['some-user', 'other-user'],
     })
   })
@@ -161,15 +161,15 @@ describe('/uncc', () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -177,7 +177,7 @@ describe('/uncc', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -187,7 +187,7 @@ describe('/uncc', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       reviewers: ['some-user'],
     })
   })
@@ -196,15 +196,15 @@ describe('/uncc', () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -212,7 +212,7 @@ describe('/uncc', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -222,7 +222,7 @@ describe('/uncc', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       reviewers: ['some-user'],
     })
   })
@@ -231,15 +231,15 @@ describe('/uncc', () => {
     issueCommentEvent.comment.body = '/uncc @some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(200, issueListComments),
       ),
@@ -247,7 +247,7 @@ describe('/uncc', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/1/requested_reviewers`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -257,7 +257,7 @@ describe('/uncc', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       reviewers: ['some-user'],
     })
   })

@@ -30,26 +30,38 @@ export function setupJobsEnv(arg: string = '') {
 }
 
 export class ObserveRequest {
-  private _ref: any = {}
+  private _ref: Request | null = null
 
-  public set ref(req: any) {
+  public set ref(req: Request) {
     this._ref = req
   }
 
-  public get ref() {
+  public get ref(): Request | null {
     return this._ref
   }
 
-  public body() {
-    const decoder = new TextDecoder('utf-8')
+  public async body() {
+    if (!this._ref) {
+      return null
+    }
 
-    return JSON.parse(decoder.decode(this._ref?._body))
+    // Clone the request before reading the body to avoid consuming the stream
+    const clonedRequest = this._ref.clone()
+
+    try {
+      // Parse the body as JSON
+      return await clonedRequest.json()
+    }
+    catch (error) {
+      console.error('Error parsing request body:', error)
+      return null
+    }
   }
 
   public called() {
-    return new Promise((resolve) => {
+    return new Promise<string>((resolve) => {
       const interval = setInterval(() => {
-        if ('method' in this.ref) {
+        if (this._ref) {
           resolve('called')
           clearInterval(interval)
         }
@@ -63,16 +75,21 @@ export function mockResponse(
   replyBody?: any,
   observeReq?: ObserveRequest,
 ) {
-  return (req: any, res: any, ctx: any) => {
+  return async ({ request }: { request: Request }) => {
     if (observeReq instanceof ObserveRequest) {
-      observeReq.ref = req
+      observeReq.ref = request
     }
 
     if (replyBody) {
-      return res(ctx.status(replyCode), ctx.json(replyBody))
+      return new Response(JSON.stringify(replyBody), {
+        status: replyCode,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
     }
     else {
-      return res(ctx.status(replyCode))
+      return new Response(null, { status: replyCode })
     }
   }
 }

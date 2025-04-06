@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
@@ -27,7 +27,7 @@ describe('hold', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -35,7 +35,7 @@ describe('hold', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       labels: ['hold'],
     })
   })
@@ -57,11 +57,11 @@ describe('hold', () => {
     const observeReqDelete = new utils.ObserveRequest()
     const observeReqGet = new utils.ObserveRequest()
     server.use(
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/hold`,
         utils.mockResponse(200, null, observeReqDelete),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
         utils.mockResponse(200, issuePayload, observeReqGet),
       ),

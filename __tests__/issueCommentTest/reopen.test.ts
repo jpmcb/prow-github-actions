@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
@@ -25,7 +25,7 @@ describe('/reopen', () => {
     issueCommentEvent.comment.body = '/reopen much better title'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
@@ -33,7 +33,7 @@ describe('/reopen', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.patch(
+      http.patch(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
         utils.mockResponse(200, null, observeReq),
       ),
@@ -43,7 +43,7 @@ describe('/reopen', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       state: 'open',
     })
   })

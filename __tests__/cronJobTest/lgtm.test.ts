@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handleCronJobs } from '../../src/cronJobs/handleCronJob'
@@ -9,16 +9,27 @@ import * as utils from '../testUtils'
 
 const server = setupServer(
   // /repos/Codertocat/Hello-World/pulls?state=open&page={1,2}
-  rest.get(
+  http.get(
     `${utils.api}/repos/Codertocat/Hello-World/pulls`,
-    (req, res, ctx) => {
-      const page = req.url.searchParams.get('page')
+    ({ request }) => {
+      const url = new URL(request.url)
+      const page = url.searchParams.get('page')
 
       if (page === '1') {
-        return res(ctx.status(200), ctx.json(listPullReqs))
+        return new Response(JSON.stringify(listPullReqs), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
       }
       else {
-        return res(ctx.status(200), ctx.json([]))
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
       }
     },
   ),
@@ -43,14 +54,14 @@ describe('cronLgtm', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.put(
+      http.put(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/2/merge`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
-    expect(observeReq.body()).toEqual({
+    expect(await observeReq.body()).toEqual({
       merge_method: 'merge',
     })
   })
@@ -67,14 +78,14 @@ describe('cronLgtm', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.put(
+      http.put(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/2/merge`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
-    expect(observeReq.body()).toEqual({
+    expect(await observeReq.body()).toEqual({
       merge_method: 'squash',
     })
   })
@@ -91,14 +102,14 @@ describe('cronLgtm', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.put(
+      http.put(
         `${utils.api}/repos/Codertocat/Hello-World/pulls/2/merge`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     await expect(handleCronJobs(context)).resolves.not.toThrow()
-    expect(observeReq.body()).toEqual({
+    expect(await observeReq.body()).toEqual({
       merge_method: 'rebase',
     })
   })

@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { rest } from 'msw'
+import { http } from 'msw'
 
 import { setupServer } from 'msw/node'
 import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
@@ -27,7 +27,7 @@ describe('/milestone', () => {
     issueCommentEvent.comment.body = '/milestone some milestone'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/milestones`,
         utils.mockResponse(200, repoMilestones),
       ),
@@ -35,14 +35,14 @@ describe('/milestone', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.patch(
+      http.patch(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
         utils.mockResponse(200, null, observeReq),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(204),
       ),
@@ -52,7 +52,7 @@ describe('/milestone', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       milestone: 1,
     })
   })
@@ -61,14 +61,14 @@ describe('/milestone', () => {
     issueCommentEvent.comment.body = '/milestone some milestone'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/milestones`,
         utils.mockResponse(200, repoMilestones),
       ),
     )
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),

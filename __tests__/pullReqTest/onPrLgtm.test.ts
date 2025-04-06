@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handlePullReq } from '../../src/pullReq/handlePullReq'
@@ -35,11 +35,11 @@ describe('onPrLgtm', () => {
     })
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1`,
         utils.mockResponse(200, issuePayload),
       ),
-      rest.delete(
+      http.delete(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/labels/lgtm`,
         utils.mockResponse(200),
       ),

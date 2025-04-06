@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { handleIssueComment } from '../../src/issueComment/handleIssueComment'
@@ -24,15 +24,15 @@ describe('/assign', () => {
 
   it('handles self assigning with comment /assign', async () => {
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/Codertocat`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/Codertocat`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -40,7 +40,7 @@ describe('/assign', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
         utils.mockResponse(201, issueAssignedResp, observeReq),
       ),
@@ -50,7 +50,7 @@ describe('/assign', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       assignees: ['Codertocat'],
     })
   })
@@ -59,15 +59,15 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/some-user`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -75,7 +75,7 @@ describe('/assign', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
         utils.mockResponse(201, issueAssignedResp, observeReq),
       ),
@@ -85,7 +85,7 @@ describe('/assign', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       assignees: ['some-user'],
     })
   })
@@ -94,15 +94,15 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/some-user`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -110,7 +110,7 @@ describe('/assign', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
         utils.mockResponse(201, issueAssignedResp, observeReq),
       ),
@@ -120,7 +120,7 @@ describe('/assign', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       assignees: ['some-user'],
     })
   })
@@ -129,23 +129,23 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user @other-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/some-user`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/other-user`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/other-user`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -153,7 +153,7 @@ describe('/assign', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
         utils.mockResponse(201, issueAssignedResp, observeReq),
       ),
@@ -163,7 +163,7 @@ describe('/assign', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       assignees: ['some-user', 'other-user'],
     })
   })
@@ -172,15 +172,15 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/some-user`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -188,7 +188,7 @@ describe('/assign', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
         utils.mockResponse(201, issueAssignedResp, observeReq),
       ),
@@ -198,7 +198,7 @@ describe('/assign', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       assignees: ['some-user'],
     })
   })
@@ -207,15 +207,15 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/some-user`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
         utils.mockResponse(204),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(404),
       ),
@@ -223,7 +223,7 @@ describe('/assign', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
         utils.mockResponse(201, issueAssignedResp, observeReq),
       ),
@@ -233,7 +233,7 @@ describe('/assign', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       assignees: ['some-user'],
     })
   })
@@ -242,15 +242,15 @@ describe('/assign', () => {
     issueCommentEventAssign.comment.body = '/assign @some-user'
 
     server.use(
-      rest.get(
+      http.get(
         `${utils.api}/orgs/Codertocat/members/some-user`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/collaborators/some-user`,
         utils.mockResponse(404),
       ),
-      rest.get(
+      http.get(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/comments`,
         utils.mockResponse(200, issueListComments),
       ),
@@ -258,7 +258,7 @@ describe('/assign', () => {
 
     const observeReq = new utils.ObserveRequest()
     server.use(
-      rest.post(
+      http.post(
         `${utils.api}/repos/Codertocat/Hello-World/issues/1/assignees`,
         utils.mockResponse(201, issueAssignedResp, observeReq),
       ),
@@ -268,7 +268,7 @@ describe('/assign', () => {
 
     await handleIssueComment(commentContext)
     await observeReq.called()
-    expect(observeReq.body()).toMatchObject({
+    expect(await observeReq.body()).toMatchObject({
       assignees: ['some-user'],
     })
   })
