@@ -77,6 +77,6 @@ jobs:
 
 ---
 
-_open water breeze
-the ocean seas are endless
-forward to the prow_
+_open water breeze  
+the ocean seas are endless  
+forward to the prow_  
