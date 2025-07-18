@@ -28,7 +28,7 @@
     "@octokit/rest": "^20.0.1",
     "@octokit/types": "^11.1.0",
     "@octokit/webhooks": "^12.0.3",
-    "eslint": "^9.24.0",
+    "eslint": "^9.31.0",
     "minimatch": "^9.0.3"
   },
   "engine": {
