@@ -21,7 +21,7 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions@v1
+      - uses: jpmcb/prow-github-actions@v2.0.0
         with:
           prow-commands: /assign /unassign /approve /retitle /area /kind /priority /remove /lgtm /close /reopen /lock /milestone /hold /cc /uncc
           github-token: '${{ secrets.GITHUB_TOKEN }}'
@@ -39,7 +39,7 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions@v1
+      - uses: jpmcb/prow-github-actions@v2.0.0
         with:
           jobs: lgtm
           github-token: '${{ secrets.GITHUB_TOKEN }}'
@@ -58,7 +58,7 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions@v1
+      - uses: jpmcb/prow-github-actions@v2.0.0
         with:
           jobs: lgtm
           github-token: '${{ secrets.GITHUB_TOKEN }}'
