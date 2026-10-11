@@ -17,9 +17,7 @@ The [`require_matching_label`](./configuration.md#require_matching_label) rules,
 [`tide`](./automatic-merging.md#event-driven-merging) run on the
 same events before the jobs and need no input. `tide` does not evaluate `synchronize`, so
 the label removal below is never raced by a merge. A workflow may therefore subscribe to
-`pull_request` with no `jobs` at all; the run only fails with
-`please provide a list of space delimited commands / jobs to run. None found` when `jobs`
-is empty **and** nothing else handles the event.
+`pull_request` with no `jobs` at all: those handlers still run and the run does not fail.
 
 ```yaml
 name: Run Jobs on PR

@@ -21,7 +21,7 @@ export const pullRequestHandlers: EventHandler[] = [requireMatchingLabel, owners
  * This method handles any pull-request configuration for configured workflows:
  * the registered handlers and the `jobs` input. The `lgtm` job only acts on
  * `synchronize` (new commits); every other activity type is logged and skipped.
- * An empty `jobs` input is only an error when no handler is registered either.
+ * An empty `jobs` input is not an error: the registered handlers still run.
  * A `pull_request` run for a fork pull request has a read-only token and
  * returns before any handler; the `sweep` job covers it.
  *
@@ -42,9 +42,6 @@ export async function handlePullReq(context: Context = github.context): Promise<
   await runEventHandlers('pull_request', pullRequestHandlers, context)
 
   if (runConfig.length === 0) {
-    if (pullRequestHandlers.length === 0) {
-      core.setFailed('please provide a list of space delimited commands / jobs to run. None found')
-    }
     return
   }
 

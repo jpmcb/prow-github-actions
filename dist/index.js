@@ -46797,7 +46797,7 @@ const pullRequestHandlers = [requireMatchingLabel, ownersLabel, blunderbuss, lgt
  * This method handles any pull-request configuration for configured workflows:
  * the registered handlers and the `jobs` input. The `lgtm` job only acts on
  * `synchronize` (new commits); every other activity type is logged and skipped.
- * An empty `jobs` input is only an error when no handler is registered either.
+ * An empty `jobs` input is not an error: the registered handlers still run.
  * A `pull_request` run for a fork pull request has a read-only token and
  * returns before any handler; the `sweep` job covers it.
  *
@@ -46814,9 +46814,6 @@ async function handlePullReq(context = github_context) {
         .map(command => command.toLowerCase());
     await runEventHandlers('pull_request', pullRequestHandlers, context);
     if (runConfig.length === 0) {
-        if (pullRequestHandlers.length === 0) {
-            setFailed('please provide a list of space delimited commands / jobs to run. None found');
-        }
         return;
     }
     await Promise.all(runConfig.map(async (command) => {
