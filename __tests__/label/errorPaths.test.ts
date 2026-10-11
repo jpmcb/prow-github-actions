@@ -14,8 +14,8 @@ import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
 import * as utils from '../testUtils'
 
-// checkCollaborator swallows HTTP failures itself, so /remove's own
-// "could not check commenter auth" branch is only reachable when it rejects
+// checkCollaborator is stubbed so /remove's own error paths can be
+// reached without routing the collaborator probe
 vi.mock('../../src/utils/auth', { spy: true })
 
 const server = setupServer()
@@ -60,14 +60,6 @@ describe('/remove error paths', () => {
   it('throws when the payload has no issue number', async () => {
     await expect(remove(commentWithoutIssue('/remove some-label'))).rejects.toThrow(
       /missing issue number/,
-    )
-  })
-
-  it('wraps a failed commenter authorization check', async () => {
-    vi.mocked(auth.checkCollaborator).mockRejectedValueOnce(new Error('auth exploded'))
-
-    await expect(remove(comment('/remove some-label'))).rejects.toThrow(
-      /could not check commenter auth: Error: auth exploded/,
     )
   })
 

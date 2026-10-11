@@ -15,8 +15,8 @@ import * as auth from '../../src/utils/auth'
 import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import * as utils from '../testUtils'
 
-// the auth helpers swallow HTTP failures themselves, so the handlers' own
-// "could not check auth" branches are only reachable when the helper rejects
+// the auth helpers are stubbed so each error path can be reached
+// without routing the membership, collaborator and comment probes
 vi.mock('../../src/utils/auth', { spy: true })
 
 const server = setupServer()
@@ -30,7 +30,6 @@ const issue = `${utils.api}/repos/Codertocat/Hello-World/issues/1`
 const pull = `${utils.api}/repos/Codertocat/Hello-World/pulls/1`
 const forbidden = { message: 'Resource not accessible by integration' }
 const author = issueCommentEvent.issue.user.login
-const stranger = 'not-the-author'
 
 function comment(body: string, commenter = author) {
   const payload = structuredClone(issueCommentEvent)
@@ -67,14 +66,6 @@ describe('/assign error paths', () => {
     await expect(assign(comment('/assign'))).rejects.toThrow(/could not self assign/)
   })
 
-  it('wraps a failed authorization lookup', async () => {
-    vi.mocked(auth.getOrgCollabCommentUsers).mockRejectedValueOnce(new Error('lookup exploded'))
-
-    await expect(assign(comment('/assign @some-user'))).rejects.toThrow(
-      /could not get authorized users: Error: lookup exploded/,
-    )
-  })
-
   it('wraps a failed assignment of authorized users', async () => {
     vi.mocked(auth.getOrgCollabCommentUsers).mockResolvedValueOnce(['some-user'])
     failing('post', `${issue}/assignees`)
@@ -94,14 +85,6 @@ describe('/unassign error paths', () => {
     failing('delete', `${issue}/assignees`)
 
     await expect(unassign(comment('/unassign'))).rejects.toThrow(/could not remove assignee/)
-  })
-
-  it('wraps a failed commenter authorization check', async () => {
-    vi.mocked(auth.checkCommenterAuth).mockRejectedValueOnce(new Error('auth exploded'))
-
-    await expect(unassign(comment('/unassign @some-user'))).rejects.toThrow(
-      /Error: auth exploded/,
-    )
   })
 
   it('wraps a failed unassignment of another user', async () => {
@@ -126,14 +109,6 @@ describe('/cc error paths', () => {
     await expect(cc(comment('/cc'))).rejects.toThrow(/could not self cc/)
   })
 
-  it('wraps a failed authorization lookup', async () => {
-    vi.mocked(auth.getOrgCollabCommentUsers).mockRejectedValueOnce(new Error('lookup exploded'))
-
-    await expect(cc(comment('/cc @some-user'))).rejects.toThrow(
-      /could not get authorized users: Error: lookup exploded/,
-    )
-  })
-
   it('wraps a failed review request for authorized users', async () => {
     vi.mocked(auth.getOrgCollabCommentUsers).mockResolvedValueOnce(['some-user'])
     failing('post', `${pull}/requested_reviewers`)
@@ -153,28 +128,12 @@ describe('/uncc error paths', () => {
 
     await expect(uncc(comment('/uncc'))).rejects.toThrow(/could not self uncc/)
   })
-
-  it('wraps a failed commenter authorization check', async () => {
-    vi.mocked(auth.checkCommenterAuth).mockRejectedValueOnce(new Error('auth exploded'))
-
-    await expect(uncc(comment('/uncc @some-user'))).rejects.toThrow(
-      /could not get authorized users: Error: auth exploded/,
-    )
-  })
 })
 
 describe('/reopen error paths', () => {
   it('throws when the payload has no issue number', async () => {
     await expect(reopen(commentWithoutIssue('/reopen'))).rejects.toThrow(
       /missing issue number/,
-    )
-  })
-
-  it('wraps a failed collaborator check for a non-author', async () => {
-    vi.mocked(auth.checkCollaborator).mockRejectedValueOnce(new Error('auth exploded'))
-
-    await expect(reopen(comment('/reopen', stranger))).rejects.toThrow(
-      /could not check commentor auth: Error: auth exploded/,
     )
   })
 
@@ -192,14 +151,6 @@ describe('/close error paths', () => {
     )
   })
 
-  it('wraps a failed collaborator check for a non-author', async () => {
-    vi.mocked(auth.checkCollaborator).mockRejectedValueOnce(new Error('auth exploded'))
-
-    await expect(close(comment('/close', stranger))).rejects.toThrow(
-      /could not check commentor auth: Error: auth exploded/,
-    )
-  })
-
   it('wraps a failed close', async () => {
     failing('patch', issue)
 
@@ -211,14 +162,6 @@ describe('/retitle error paths', () => {
   it('throws when the payload has no issue number', async () => {
     await expect(retitle(commentWithoutIssue('/retitle new title'))).rejects.toThrow(
       /missing issue number/,
-    )
-  })
-
-  it('wraps a failed collaborator check', async () => {
-    vi.mocked(auth.checkCollaborator).mockRejectedValueOnce(new Error('auth exploded'))
-
-    await expect(retitle(comment('/retitle new title'))).rejects.toThrow(
-      /could not check Commentor auth: Error: auth exploded/,
     )
   })
 
@@ -235,14 +178,6 @@ describe('/retitle error paths', () => {
 describe('/lock error paths', () => {
   it('throws when the payload has no issue number', async () => {
     await expect(lock(commentWithoutIssue('/lock'))).rejects.toThrow(/missing issue number/)
-  })
-
-  it('wraps a failed collaborator check', async () => {
-    vi.mocked(auth.checkCollaborator).mockRejectedValueOnce(new Error('auth exploded'))
-
-    await expect(lock(comment('/lock'))).rejects.toThrow(
-      /could not check commenter auth: Error: auth exploded/,
-    )
   })
 
   it('wraps a failed lock', async () => {

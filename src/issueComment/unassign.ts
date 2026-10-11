@@ -45,18 +45,12 @@ export async function unassign(
     return
   }
 
-  let isAuthUser: boolean = false
-  try {
-    isAuthUser = await checkCommenterAuth(
-      octokit,
-      context,
-      issueNumber,
-      commenterId,
-    )
-  }
-  catch (e) {
-    throw new Error(`couldn ot check commentor Auth: ${e}`)
-  }
+  const isAuthUser = await checkCommenterAuth(
+    octokit,
+    context,
+    issueNumber,
+    commenterId,
+  )
 
   if (isAuthUser) {
     try {

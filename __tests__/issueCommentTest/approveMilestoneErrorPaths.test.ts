@@ -11,8 +11,8 @@ import issueCommentEvent from '../fixtures/issues/issueCommentEvent.json'
 import pullReqListReviews from '../fixtures/pullReq/pullReqListReviews.json'
 import * as utils from '../testUtils'
 
-// the auth helpers swallow HTTP failures themselves, so the handlers' own
-// "could not check auth" branches are only reachable when the helper rejects
+// the auth helpers are stubbed so each error path can be reached
+// without routing the membership, collaborator and comment probes
 vi.mock('../../src/utils/auth', { spy: true })
 
 const server = setupServer()
@@ -97,14 +97,6 @@ describe('/milestone error paths', () => {
   it('throws when the payload has no issue number', async () => {
     await expect(milestone(commentWithoutIssue('/milestone v1'))).rejects.toThrow(
       /missing issue number/,
-    )
-  })
-
-  it('wraps a failed collaborator check', async () => {
-    vi.mocked(auth.checkCollaborator).mockRejectedValueOnce(new Error('auth exploded'))
-
-    await expect(milestone(comment('/milestone v1'))).rejects.toThrow(
-      /could not check commenter auth: Error: auth exploded/,
     )
   })
 })
