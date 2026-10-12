@@ -31,18 +31,10 @@ export async function close(context: Context = github.context): Promise<void> {
   // - are collaborators
   // - pass `authorization.close`, which is read only when the first two refuse
   const isAuthor = commenterId === context.payload.issue?.user?.login
-  let isAuthUser: boolean = isAuthor
-  if (!isAuthor) {
-    try {
-      isAuthUser = await checkCollaborator(octokit, context, commenterId)
-    }
-    catch (e) {
-      throw new Error(`could not check commentor auth: ${e}`)
-    }
-  }
-  if (!isAuthUser) {
-    isAuthUser = await closePolicyAllows(octokit, context, commenterId)
-  }
+  const isAuthUser
+    = isAuthor
+      || (await checkCollaborator(octokit, context, commenterId))
+      || (await closePolicyAllows(octokit, context, commenterId))
 
   if (isAuthUser) {
     const notPlanned = hasKeyword(getCommandArgs('/close', commentBody), 'not-planned')

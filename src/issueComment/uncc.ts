@@ -44,18 +44,12 @@ export async function uncc(context: Context = github.context): Promise<void> {
   // - are members of the org
   // - are collaborators
   // - have previously commented on this issue
-  let authUser: boolean = false
-  try {
-    authUser = await checkCommenterAuth(
-      octokit,
-      context,
-      pullNumber,
-      commenterId,
-    )
-  }
-  catch (e) {
-    throw new Error(`could not get authorized users: ${e}`)
-  }
+  const authUser = await checkCommenterAuth(
+    octokit,
+    context,
+    pullNumber,
+    commenterId,
+  )
 
   if (authUser) {
     await octokit.pulls.removeRequestedReviewers({

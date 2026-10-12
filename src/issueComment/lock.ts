@@ -39,13 +39,7 @@ export async function lock(context: Context = github.context): Promise<void> {
 
   // Only users who:
   // - are collaborators
-  let isAuthUser: boolean = false
-  try {
-    isAuthUser = await checkCollaborator(octokit, context, commenterId)
-  }
-  catch (e) {
-    throw new Error(`could not check commenter auth: ${e}`)
-  }
+  const isAuthUser = await checkCollaborator(octokit, context, commenterId)
 
   if (isAuthUser) {
     let lockReason: LockReason | undefined
