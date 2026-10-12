@@ -159,27 +159,13 @@ export async function getOrgCollabCommentUsers(
 ): Promise<string[]> {
   const toReturn: string[] = []
 
-  try {
-    await Promise.all(
-      args.map(async (arg) => {
-        const isOrgMember = await checkOrgMember(octokit, context, arg)
-        const isCollaborator = await checkCollaborator(octokit, context, arg)
-        const hasCommented = await checkIssueComments(
-          octokit,
-          context,
-          issueNum,
-          arg,
-        )
-
-        if (isOrgMember || isCollaborator || hasCommented) {
-          toReturn.push(arg)
-        }
-      }),
-    )
-  }
-  catch (e) {
-    throw new Error(`could not get authorized user: ${e}`)
-  }
+  await Promise.all(
+    args.map(async (arg) => {
+      if (await checkCommenterAuth(octokit, context, issueNum, arg)) {
+        toReturn.push(arg)
+      }
+    }),
+  )
 
   return toReturn
 }
@@ -191,7 +177,7 @@ export async function getOrgCollabCommentUsers(
  * @param octokit - a hydrated github client
  * @param context - the github actions event context
  * @param issueNum - the issue or pr number this runtime is associated with
- * @param args - the users to check auth on
+ * @param user - the user to check auth on
  */
 export async function checkCommenterAuth(
   octokit: Octokit,
@@ -199,36 +185,11 @@ export async function checkCommenterAuth(
   issueNum: number,
   user: string,
 ): Promise<boolean> {
-  let isOrgMember: boolean = false
-  let isCollaborator: boolean = false
-  let hasCommented: boolean = false
+  const isOrgMember = await checkOrgMember(octokit, context, user)
+  const isCollaborator = await checkCollaborator(octokit, context, user)
+  const hasCommented = await checkIssueComments(octokit, context, issueNum, user)
 
-  try {
-    isOrgMember = await checkOrgMember(octokit, context, user)
-  }
-  catch (e) {
-    throw new Error(`error in checking org member: ${e}`)
-  }
-
-  try {
-    isCollaborator = await checkCollaborator(octokit, context, user)
-  }
-  catch (e) {
-    throw new Error(`could not check collaborator: ${e}`)
-  }
-
-  try {
-    hasCommented = await checkIssueComments(octokit, context, issueNum, user)
-  }
-  catch (e) {
-    throw new Error(`could not check issue comments: ${e}`)
-  }
-
-  if (isOrgMember || isCollaborator || hasCommented) {
-    return true
-  }
-
-  return false
+  return isOrgMember || isCollaborator || hasCommented
 }
 
 /**

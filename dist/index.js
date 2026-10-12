@@ -42275,19 +42275,11 @@ async function checkIssueComments(octokit, context, issueNum, user) {
  */
 async function getOrgCollabCommentUsers(octokit, context, issueNum, args) {
     const toReturn = [];
-    try {
-        await Promise.all(args.map(async (arg) => {
-            const isOrgMember = await checkOrgMember(octokit, context, arg);
-            const isCollaborator = await checkCollaborator(octokit, context, arg);
-            const hasCommented = await checkIssueComments(octokit, context, issueNum, arg);
-            if (isOrgMember || isCollaborator || hasCommented) {
-                toReturn.push(arg);
-            }
-        }));
-    }
-    catch (e) {
-        throw new Error(`could not get authorized user: ${e}`);
-    }
+    await Promise.all(args.map(async (arg) => {
+        if (await checkCommenterAuth(octokit, context, issueNum, arg)) {
+            toReturn.push(arg);
+        }
+    }));
     return toReturn;
 }
 /**
@@ -42297,34 +42289,13 @@ async function getOrgCollabCommentUsers(octokit, context, issueNum, args) {
  * @param octokit - a hydrated github client
  * @param context - the github actions event context
  * @param issueNum - the issue or pr number this runtime is associated with
- * @param args - the users to check auth on
+ * @param user - the user to check auth on
  */
 async function checkCommenterAuth(octokit, context, issueNum, user) {
-    let isOrgMember = false;
-    let isCollaborator = false;
-    let hasCommented = false;
-    try {
-        isOrgMember = await checkOrgMember(octokit, context, user);
-    }
-    catch (e) {
-        throw new Error(`error in checking org member: ${e}`);
-    }
-    try {
-        isCollaborator = await checkCollaborator(octokit, context, user);
-    }
-    catch (e) {
-        throw new Error(`could not check collaborator: ${e}`);
-    }
-    try {
-        hasCommented = await checkIssueComments(octokit, context, issueNum, user);
-    }
-    catch (e) {
-        throw new Error(`could not check issue comments: ${e}`);
-    }
-    if (isOrgMember || isCollaborator || hasCommented) {
-        return true;
-    }
-    return false;
+    const isOrgMember = await checkOrgMember(octokit, context, user);
+    const isCollaborator = await checkCollaborator(octokit, context, user);
+    const hasCommented = await checkIssueComments(octokit, context, issueNum, user);
+    return isOrgMember || isCollaborator || hasCommented;
 }
 /**
  * When the repository has OWNERS files, use them to authorize the action,
@@ -45619,13 +45590,7 @@ async function remove(context = github_context) {
     }
     // Only users who:
     // - are collaborators
-    let isAuthUser = false;
-    try {
-        isAuthUser = await checkCollaborator(octokit, context, commenterId);
-    }
-    catch (e) {
-        throw new Error(`could not check commenter auth: ${e}`);
-    }
+    const isAuthUser = await checkCollaborator(octokit, context, commenterId);
     if (!isAuthUser) {
         throw new Error(`commenter is not authorized to remove a label. Must be repo collaborator`);
     }
@@ -45823,13 +45788,7 @@ async function assign_assign(context = github_context) {
     // - are members of the org
     // - are collaborators
     // - have previously commented on this issue
-    let authUsers = [];
-    try {
-        authUsers = await getOrgCollabCommentUsers(octokit, context, issueNumber, commentArgs);
-    }
-    catch (e) {
-        throw new Error(`could not get authorized users: ${e}`);
-    }
+    const authUsers = await getOrgCollabCommentUsers(octokit, context, issueNumber, commentArgs);
     switch (authUsers.length) {
         case 0:
             throw new Error(`no authorized users found. Only users who are members of the org, are collaborators, or have previously commented on this issue may be assigned`);
@@ -45902,13 +45861,7 @@ async function cc(context = github_context) {
     // - are members of the org
     // - are collaborators
     // - have previously commented on this issue
-    let authUsers = [];
-    try {
-        authUsers = await getOrgCollabCommentUsers(octokit, context, pullNumber, commentArgs);
-    }
-    catch (e) {
-        throw new Error(`could not get authorized users: ${e}`);
-    }
+    const authUsers = await getOrgCollabCommentUsers(octokit, context, pullNumber, commentArgs);
     switch (authUsers.length) {
         case 0:
             throw new Error(`no authorized users found. Only users who are members of the org, are collaborators, or have previously commented on this issue may be cc'd`);
@@ -45971,18 +45924,9 @@ async function close_close(context = github_context) {
     // - are collaborators
     // - pass `authorization.close`, which is read only when the first two refuse
     const isAuthor = commenterId === context.payload.issue?.user?.login;
-    let isAuthUser = isAuthor;
-    if (!isAuthor) {
-        try {
-            isAuthUser = await checkCollaborator(octokit, context, commenterId);
-        }
-        catch (e) {
-            throw new Error(`could not check commentor auth: ${e}`);
-        }
-    }
-    if (!isAuthUser) {
-        isAuthUser = await closePolicyAllows(octokit, context, commenterId);
-    }
+    const isAuthUser = isAuthor
+        || (await checkCollaborator(octokit, context, commenterId))
+        || (await closePolicyAllows(octokit, context, commenterId));
     if (isAuthUser) {
         const notPlanned = hasKeyword(getCommandArgs('/close', commentBody), 'not-planned');
         try {
@@ -46038,13 +45982,7 @@ async function lock(context = github_context) {
     const commentArgs = getCommandArgs('/lock', commentBody);
     // Only users who:
     // - are collaborators
-    let isAuthUser = false;
-    try {
-        isAuthUser = await checkCollaborator(octokit, context, commenterId);
-    }
-    catch (e) {
-        throw new Error(`could not check commenter auth: ${e}`);
-    }
+    const isAuthUser = await checkCollaborator(octokit, context, commenterId);
     if (isAuthUser) {
         let lockReason;
         if (commentArgs.length > 0) {
@@ -46226,13 +46164,7 @@ async function milestone(context = github_context) {
     }
     // Only users who:
     // - are collaborators
-    let isAuthUser = false;
-    try {
-        isAuthUser = await checkCollaborator(octokit, context, commenterId);
-    }
-    catch (e) {
-        throw new Error(`could not check commenter auth: ${e}`);
-    }
+    const isAuthUser = await checkCollaborator(octokit, context, commenterId);
     if (!isAuthUser) {
         throw new Error(`commenter is not authorized to set a milestone. Must be repo collaborator`);
     }
@@ -46287,18 +46219,9 @@ async function reopen(context = github_context) {
     // - are collaborators
     // - pass `authorization.close`, which is read only when the first two refuse
     const isAuthor = commenterId === context.payload.issue?.user?.login;
-    let isAuthUser = isAuthor;
-    if (!isAuthor) {
-        try {
-            isAuthUser = await checkCollaborator(octokit, context, commenterId);
-        }
-        catch (e) {
-            throw new Error(`could not check commentor auth: ${e}`);
-        }
-    }
-    if (!isAuthUser) {
-        isAuthUser = await closePolicyAllows(octokit, context, commenterId);
-    }
+    const isAuthUser = isAuthor
+        || (await checkCollaborator(octokit, context, commenterId))
+        || (await closePolicyAllows(octokit, context, commenterId));
     if (isAuthUser) {
         try {
             await octokit.issues.update({
@@ -46341,13 +46264,7 @@ async function retitle(context = github_context) {
     }
     // Only users who:
     // - are collaborators
-    let isAuthUser = false;
-    try {
-        isAuthUser = await checkCollaborator(octokit, context, commenterId);
-    }
-    catch (e) {
-        throw new Error(`could not check Commentor auth: ${e}`);
-    }
+    const isAuthUser = await checkCollaborator(octokit, context, commenterId);
     if (isAuthUser) {
         try {
             await octokit.issues.update({
@@ -46397,13 +46314,7 @@ async function unassign(context = github_context) {
         }
         return;
     }
-    let isAuthUser = false;
-    try {
-        isAuthUser = await checkCommenterAuth(octokit, context, issueNumber, commenterId);
-    }
-    catch (e) {
-        throw new Error(`couldn ot check commentor Auth: ${e}`);
-    }
+    const isAuthUser = await checkCommenterAuth(octokit, context, issueNumber, commenterId);
     if (isAuthUser) {
         try {
             await octokit.issues.removeAssignees({
@@ -46453,13 +46364,7 @@ async function uncc(context = github_context) {
     // - are members of the org
     // - are collaborators
     // - have previously commented on this issue
-    let authUser = false;
-    try {
-        authUser = await checkCommenterAuth(octokit, context, pullNumber, commenterId);
-    }
-    catch (e) {
-        throw new Error(`could not get authorized users: ${e}`);
-    }
+    const authUser = await checkCommenterAuth(octokit, context, pullNumber, commenterId);
     if (authUser) {
         await octokit.pulls.removeRequestedReviewers({
             ...context.repo,
