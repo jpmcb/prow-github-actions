@@ -45,18 +45,12 @@ export async function cc(context: Context = github.context): Promise<void> {
   // - are members of the org
   // - are collaborators
   // - have previously commented on this issue
-  let authUsers: string[] = []
-  try {
-    authUsers = await getOrgCollabCommentUsers(
-      octokit,
-      context,
-      pullNumber,
-      commentArgs,
-    )
-  }
-  catch (e) {
-    throw new Error(`could not get authorized users: ${e}`)
-  }
+  const authUsers = await getOrgCollabCommentUsers(
+    octokit,
+    context,
+    pullNumber,
+    commentArgs,
+  )
 
   switch (authUsers.length) {
     case 0:
