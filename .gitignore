@@ -97,5 +97,6 @@ Thumbs.db
 # Ignore built ts files
 __tests__/runner/*
 lib/**/*
-# Source-mapped bundle built by `npm run test:coverage:e2e`
+# Source-mapped bundle and report written by `npm run test:coverage:e2e`
 .coverage-bundle
+coverage-e2e
