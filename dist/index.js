@@ -42522,18 +42522,16 @@ function getLineArgs(command, body) {
 }
 /**
  * getCommandArgs will return an array of the arguments associated with a command,
- * collected in order from every line that carries it and de-duplicated
+ * collected in order from every line that carries it and de-duplicated;
+ * empty when the command is absent
  * Ex return: [`some-user', 'some-other-user']
  *
  * @param command - the given command to get arguments for. Ex: '/assign'
  * @param body - the full body of the comment
  */
 function getCommandArgs(command, body) {
-    const rests = findCommandArgs(command, body);
-    if (rests.length === 0) {
-        throw new Error(`command ${command} missing from body`);
-    }
-    const args = rests.flatMap(rest => rest.split(/\s+/).filter(Boolean));
+    const args = findCommandArgs(command, body)
+        .flatMap(rest => rest.split(/\s+/).filter(Boolean));
     return [...new Set(stripAtSign(args))];
 }
 /**
@@ -43639,8 +43637,8 @@ const evaluatedThisRun = new Set();
  * @param number - the pull request number
  * @param options - see FetchMergeabilityOptions
  */
-async function fetchMergeability(octokit, context, number, options = {}) {
-    const retryIf = options.retryIf ?? (() => true);
+async function fetchMergeability(octokit, context, number, options) {
+    const { retryIf } = options;
     let pr = options.initial ?? await getPull(octokit, context, number);
     for (const delay of unknownRetryDelaysMs) {
         if (!isUnknown(pr) || !retryIf(pr)) {
@@ -44532,8 +44530,6 @@ function effectiveKind(kind, settings) {
             return settings.lgtm_acts_as_approve ? 'add' : 'ignore';
         case 'lgtm-cancel':
             return settings.lgtm_acts_as_approve ? 'remove' : 'ignore';
-        default:
-            return 'ignore';
     }
 }
 // greedy set cover: repeatedly take the approver who covers the most still-uncovered files, ties alphabetically
@@ -46600,19 +46596,13 @@ function skipReadOnlyForkRun(context) {
  * Runs every registered handler for an event, one after the other in
  * registration order, and fails the run once with the collected rejections.
  * The order matters: a handler that applies a label (approve) must finish
- * before the one that reads the labels (tide). An empty registry is a
- * debug-logged no-op.
+ * before the one that reads the labels (tide).
  *
  * @param event - the github event name
  * @param handlers - the registry to run
  * @param context - the github context of the current action event
  */
 async function runEventHandlers(event, handlers, context) {
-    const action = context.payload.action;
-    if (handlers.length === 0) {
-        core_debug(`${event} event ${action} received; no handlers registered yet`);
-        return;
-    }
     const errors = [];
     for (const handler of handlers) {
         try {
