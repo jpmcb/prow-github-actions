@@ -8,8 +8,8 @@ import { newOctokit } from '../utils/octokit'
 
 const catApi = 'https://api.thecatapi.com/v1/images/search?limit=1&size=med'
 
-// a line of exactly /meow, not /meowvie or a mention
-const meowCommand = /^[\t ]*\/meow[\t ]*$/
+// a line of exactly /meow, not /meowvie or a mention; case-insensitive like every other command
+const meowCommand = /^[\t ]*\/meow[\t ]*$/i
 
 // bounded so a slow provider cannot stall the runner; exported so tests can shrink the waits
 export const meowConfig = {

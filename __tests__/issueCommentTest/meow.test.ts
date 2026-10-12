@@ -80,6 +80,23 @@ describe('/meow', () => {
     )
   })
 
+  it.each(['/MEOW', '/Meow'])('comments with a cat image for %s, since commands are case-insensitive', async (body) => {
+    server.use(
+      http.get(catApi, () =>
+        HttpResponse.json([{ url: 'https://cdn2.thecatapi.com/images/cat.jpg' }])),
+    )
+
+    await handleIssueComment(contextFor(body))
+
+    expect(createComment).toHaveBeenCalledTimes(1)
+    expect(createComment).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      1,
+      '![cat](<https://cdn2.thecatapi.com/images/cat.jpg>)',
+    )
+  })
+
   it('safely renders a url that contains parentheses', async () => {
     const url = 'https://cdn2.thecatapi.com/images/a_(b).jpg'
     server.use(http.get(catApi, () => HttpResponse.json([{ url }])))
