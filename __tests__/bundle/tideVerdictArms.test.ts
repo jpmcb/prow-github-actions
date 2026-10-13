@@ -97,6 +97,27 @@ describe('dist/index.js tide verdicts', () => {
     expectRequests(configReads(), [pullRead, ownersProbe, bindingRead, queueRead, pullRead, pullRead, pullRead])
   })
 
+  it('a pull request that stops passing the gate while mergeability is computed stops retrying', async () => {
+    gh.commitStatuses(repo, head, bound)
+    // the first read passes the gate but is `unknown`; the re-read is still `unknown` and has lost lgtm
+    gh.routeSequence('GET', `${repo}/pulls/1`, [
+      { status: 200, body: pr('unknown') },
+      { status: 200, body: pr('unknown', { labels: [] }) },
+    ])
+
+    const result = await checkSuite()
+
+    expect(result.status, result.stdout).toBe(0)
+    expect(result.errors).toEqual([])
+    expect(result.stdout).toContain('mergeability of pr #1 is not computed yet, retrying in 1000ms')
+    expect(result.stdout).not.toContain('retrying in 2000ms')
+    expect(result.stdout).not.toContain('still unknown after')
+    expect(result.stdout).toContain('skipping pr #1: missing lgtm')
+    expect(gh.requestsMatching('PUT', /./)).toEqual([])
+    // the first read, then the single re-read that found the gate failed: the remaining retries are spared
+    expectRequests(configReads(), [pullRead, ownersProbe, bindingRead, queueRead, pullRead])
+  })
+
   it('a head that moves while mergeability is computed is skipped, not merged', async () => {
     gh.commitStatuses(repo, head, bound)
     gh.routeSequence('GET', `${repo}/pulls/1`, [
