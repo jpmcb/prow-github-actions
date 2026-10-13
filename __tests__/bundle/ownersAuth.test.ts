@@ -5,7 +5,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import pullReqOpenedEvent from '../fixtures/pullReq/pullReqOpenedEvent.json'
 import { blobSha, prCommentEvent } from '../utils/ownersData'
 import { start } from './fakeGithub'
-import { comment, helpersFor, ownersProbe, ownersReads, queueRead, repo, token } from './helpers'
+import { comment, configReads, helpersFor, ownersProbe, ownersReads, queueRead, repo, token } from './helpers'
 import { runBundle } from './runBundle'
 
 vi.setConfig({ testTimeout: 30_000 })
@@ -22,7 +22,7 @@ describe('dist/index.js /lgtm authorized by OWNERS files', () => {
   const labelsRead = `GET ${repo}/labels?per_page=100`
   const labelsPost = `POST ${repo}/issues/1/labels`
   let gh: FakeGithub
-  const { expectCommandThenConfig, routeOwners } = helpersFor(() => gh)
+  const { calls, expectCommandThenConfig, routeOwners } = helpersFor(() => gh)
 
   beforeAll(async () => {
     gh = await start()
@@ -70,6 +70,29 @@ describe('dist/index.js /lgtm authorized by OWNERS files', () => {
     expect(comments().some(c => c.includes('Codertocat is not included in the reviewers role in the OWNERS file'))).toBe(true)
     expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/)).toEqual([])
     expectCommandThenConfig([rootOwnersRead, commentPost])
+  })
+
+  it('on a pull request, a reviewer the covering OWNERS file lists is authorized by that file alone: labels and binds, no membership read', async () => {
+    routeOwners({ 'OWNERS': 'reviewers:\n- bob\n', 'sdk/OWNERS': 'reviewers:\n- alice\n' }, ['sdk/file.go'], { user: { login: 'some-author' } })
+    gh.route('POST', `${repo}/statuses/headsha`, { status: 201, body: {} })
+    gh.route('GET', `${repo}/labels`, { status: 200, body: [{ name: 'lgtm' }] })
+    gh.route('POST', `${repo}/issues/1/labels`, { status: 200, body: [] })
+
+    const result = await lgtm(prCommentEvent('/lgtm', 'alice'))
+
+    expect(result.status, result.stdout).toBe(0)
+    expect(result.errors).toEqual([])
+    expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/).map(r => r.body)).toEqual([{ labels: ['lgtm'] }])
+    expect(gh.requestsMatching('POST', /\/statuses\/headsha$/)[0].body).toMatchObject({ state: 'success', context: 'prow/lgtm', description: 'lgtm by alice at headsha' })
+    expect(comments()).toEqual([])
+    expect(gh.requestsMatching('GET', /\/contents\/OWNERS$/)).toEqual([])
+    expect(gh.requestsMatching('GET', /\/orgs\/|\/collaborators\//)).toEqual([])
+    // the owners reads and both OWNERS blobs authorize alice; the configuration is then read once (lgtm.bind_to_commit, memoized
+    // for the sweep), the head is bound and labelled, and tide's gate reads the pull request it has yet to see labelled
+    const recorded = calls()
+    const statusPost = recorded.indexOf(`POST ${repo}/statuses/headsha`)
+    expect(recorded.slice(0, statusPost).sort()).toEqual([...ownersReads, blobOWNERS, blobSdkOWNERS, ...configReads()].sort())
+    expect(recorded.slice(statusPost)).toEqual([`POST ${repo}/statuses/headsha`, labelsRead, labelsPost, `GET ${repo}/pulls/1`, ownersProbe, queueRead])
   })
 
   it('on a pull request, a commenter no covering OWNERS file lists is refused: the root file is never read', async () => {
