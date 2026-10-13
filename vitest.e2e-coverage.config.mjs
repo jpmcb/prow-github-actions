@@ -39,6 +39,8 @@ export default mergeConfig(base, defineConfig({
       PROW_BUNDLE_PATH: '.coverage-bundle/index.js',
     },
     coverage: {
+      // Own directory so a local or CI e2e run never overwrites the unit run's coverage/.
+      reportsDirectory: 'coverage-e2e',
       include: ['src/**/*.ts', '.coverage-bundle/index.js'],
       autoAttachSubprocess: true,
       excludeAfterRemap: true,
