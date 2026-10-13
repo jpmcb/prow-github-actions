@@ -25,20 +25,16 @@ export function getLineArgs(command: string, body: string): string {
 
 /**
  * getCommandArgs will return an array of the arguments associated with a command,
- * collected in order from every line that carries it and de-duplicated
+ * collected in order from every line that carries it and de-duplicated;
+ * empty when the command is absent
  * Ex return: [`some-user', 'some-other-user']
  *
  * @param command - the given command to get arguments for. Ex: '/assign'
  * @param body - the full body of the comment
  */
 export function getCommandArgs(command: string, body: string): string[] {
-  const rests = findCommandArgs(command, body)
-
-  if (rests.length === 0) {
-    throw new Error(`command ${command} missing from body`)
-  }
-
-  const args = rests.flatMap(rest => rest.split(/\s+/).filter(Boolean))
+  const args = findCommandArgs(command, body)
+    .flatMap(rest => rest.split(/\s+/).filter(Boolean))
 
   return [...new Set(stripAtSign(args))]
 }

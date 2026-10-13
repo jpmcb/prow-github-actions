@@ -79,7 +79,7 @@ describe('hasCommand', () => {
     const body = 'try this:\n```\n/kind bug\n```\n'
 
     expect(hasCommand('/kind', body)).toBe(false)
-    expect(() => getCommandArgs('/kind', body)).toThrow('command /kind missing from body')
+    expect(getCommandArgs('/kind', body)).toEqual([])
   })
 })
 
@@ -282,16 +282,12 @@ describe('code blocks', () => {
 })
 
 describe('anchored argument parsing', () => {
-  it('throws when only a longer command sharing the prefix is present', () => {
-    expect(() => getCommandArgs('/lgtm', '/remove-lgtm')).toThrow(
-      'command /lgtm missing from body',
-    )
+  it('is empty when only a longer command sharing the prefix is present', () => {
+    expect(getCommandArgs('/lgtm', '/remove-lgtm')).toEqual([])
   })
 
-  it('throws when the command is only mentioned mid-sentence', () => {
-    expect(() => getCommandArgs('/hold', 'please /hold this')).toThrow(
-      'command /hold missing from body',
-    )
+  it('is empty when the command is only mentioned mid-sentence', () => {
+    expect(getCommandArgs('/hold', 'please /hold this')).toEqual([])
   })
 
   it('accepts leading whitespace before the command', () => {
@@ -417,7 +413,7 @@ describe('case-insensitive matching', () => {
 
   it('still refuses a longer command sharing the prefix', () => {
     expect(hasCommand('/lgtm', '/REMOVE-LGTM')).toBe(false)
-    expect(() => getCommandArgs('/lgtm', '/REMOVE-LGTM')).toThrow('command /lgtm missing from body')
+    expect(getCommandArgs('/lgtm', '/REMOVE-LGTM')).toEqual([])
   })
 })
 

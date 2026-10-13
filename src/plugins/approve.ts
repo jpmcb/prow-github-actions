@@ -232,8 +232,6 @@ function effectiveKind(kind: ApprovalEventKind, settings: ApproveSettings): 'add
       return settings.lgtm_acts_as_approve ? 'add' : 'ignore'
     case 'lgtm-cancel':
       return settings.lgtm_acts_as_approve ? 'remove' : 'ignore'
-    default:
-      return 'ignore'
   }
 }
 

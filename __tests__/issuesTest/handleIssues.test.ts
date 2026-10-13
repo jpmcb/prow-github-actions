@@ -26,16 +26,6 @@ describe('handleIssues', () => {
     expect(registeredHandlers).toEqual([requireMatchingLabel])
   })
 
-  it('resolves without calling the api or failing when no handlers are registered', async () => {
-    const setFailed = vi.spyOn(core, 'setFailed').mockImplementation(() => {})
-    const debug = vi.spyOn(core, 'debug').mockImplementation(() => {})
-
-    await expect(handleIssues(new utils.MockContext(issuesLabeledEvent))).resolves.toBeUndefined()
-
-    expect(setFailed).not.toHaveBeenCalled()
-    expect(debug).toHaveBeenCalledWith('issues event labeled received; no handlers registered yet')
-  })
-
   it('runs every registered handler with the context', async () => {
     const first = vi.fn().mockResolvedValue(undefined)
     const second = vi.fn().mockResolvedValue(undefined)

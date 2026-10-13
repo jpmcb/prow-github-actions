@@ -54,8 +54,8 @@ export type MergeVerdict
 export const successfulResults: ReadonlySet<MergeResult> = new Set<MergeResult>(['merged', 'enqueued'])
 
 export interface FetchMergeabilityOptions {
-  /** called before each wait; returning false stops retrying an unknown state (default: always retry) */
-  retryIf?: (pr: Mergeability) => boolean
+  /** called before each wait; returning false stops retrying an unknown state  */
+  retryIf: (pr: Mergeability) => boolean
   /** a read of the pull request made moments ago, spared a re-read when its state is known */
   initial?: Mergeability
 }
@@ -91,9 +91,9 @@ export async function fetchMergeability(
   octokit: Octokit,
   context: Context,
   number: number,
-  options: FetchMergeabilityOptions = {},
+  options: FetchMergeabilityOptions,
 ): Promise<Mergeability> {
-  const retryIf = options.retryIf ?? (() => true)
+  const { retryIf } = options
 
   let pr = options.initial ?? await getPull(octokit, context, number)
   for (const delay of unknownRetryDelaysMs) {

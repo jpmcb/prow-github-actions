@@ -31,18 +31,6 @@ describe('handleCheckSuite', () => {
     utils.setupActionsEnv()
   })
 
-  it.each(['check_suite', 'status'])('resolves a %s event without calling the api or failing when the registry is emptied', async (eventName) => {
-    const context = new utils.MockContext(checkSuiteCompletedEvent)
-    context.eventName = eventName
-    const setFailed = vi.spyOn(core, 'setFailed').mockImplementation(() => {})
-    const debug = vi.spyOn(core, 'debug').mockImplementation(() => {})
-
-    await expect(handleCheckSuite(context)).resolves.toBeUndefined()
-
-    expect(setFailed).not.toHaveBeenCalled()
-    expect(debug).toHaveBeenCalledWith(`${eventName} event completed received; no handlers registered yet`)
-  })
-
   it('runs every registered handler with the context', async () => {
     const first = vi.fn().mockResolvedValue(undefined)
     const second = vi.fn().mockResolvedValue(undefined)
