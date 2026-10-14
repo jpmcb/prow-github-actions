@@ -12,7 +12,8 @@ vi.setConfig({ testTimeout: 30_000 })
 
 // the mirrored review (`approve.github_review`) as src/plugins/approveReview.ts syncs it, driven through
 // dist/index.js: the happy path and the `/approve cancel` dismissal live in bundle.test.ts; this file covers
-// the refusals GitHub can answer the review with, the short-circuits, and the failures that end the run
+// the refusals GitHub can answer the review with, the short-circuits, the failures that end the run, and
+// isOwnReview's user-token arm (the review is the action's own only when its author is the token's login)
 describe('dist/index.js approve.github_review', () => {
   let gh: FakeGithub
   const { routeOwners } = helpersFor(() => gh)
@@ -161,6 +162,30 @@ describe('dist/index.js approve.github_review', () => {
     expect(result.errors.some(e => e.includes('could not dismiss the approval review 71'))).toBe(true)
     expect(gh.requestsMatching('DELETE', /\/issues\/1\/labels\/approved$/)).toHaveLength(1)
     expect(submittedReviews()).toEqual([])
+  })
+
+  it('under a user token, /approve cancel dismisses only the marker review written by the token login, matched case-insensitively', async () => {
+    // GET /user answers `Reviewer-Bot`; review 71 is authored as `reviewer-bot`, so a case-sensitive comparison
+    // would miss it, and the bot's marker review 72 is no longer the action's own once the token has a login
+    const tokenReview = { ...ownReview, user: { login: 'reviewer-bot', type: 'User' } }
+    const botReview = { ...ownReview, id: 72 }
+    routeApprove({
+      labels: ['approved'],
+      comments: [approveComment, { id: 2, body: '/approve cancel', user: { login: 'bob', type: 'User' }, created_at: '2024-01-01T00:00:02Z' }],
+      reviews: [botReview, tokenReview],
+      user: { status: 200, body: { login: 'Reviewer-Bot' } },
+    })
+    gh.route('PUT', `${repo}/pulls/1/reviews/71/dismissals`, { status: 200, body: {} })
+    gh.route('PUT', `${repo}/pulls/1/reviews/72/dismissals`, { status: 200, body: {} })
+
+    const result = await runApprove('/approve cancel')
+
+    expect(result.status, result.stdout).toBe(0)
+    expect(result.errors).toEqual([])
+    expect(gh.requestsMatching('PUT', /\/dismissals$/).map(r => r.path)).toEqual([`${repo}/pulls/1/reviews/71/dismissals`])
+    expect(submittedReviews()).toEqual([])
+    expect(result.stdout).toContain('approve: dismissed the approval review 71 on #1')
+    expect(result.stdout).not.toContain('approval review 72')
   })
 
   it('fails the run when the token cannot be identified', async () => {
