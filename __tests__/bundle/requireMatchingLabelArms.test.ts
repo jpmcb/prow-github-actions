@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import issuesLabeledEvent from '../fixtures/issues/issuesLabeledEvent.json'
 import labelFileContents from '../fixtures/labels/labelFileContentsResp.json'
+import pullReqOpenedEvent from '../fixtures/pullReq/pullReqOpenedEvent.json'
 import { start } from './fakeGithub'
 import { comment, configReads, helpersFor, repo, token } from './helpers'
 import { runBundle } from './runBundle'
@@ -32,12 +33,12 @@ function issuesEvent(action: string, labels: string[], label?: string) {
   return payload
 }
 
-// the require_matching_label arms bundle.test.ts does not reach: rules that do not apply, the
-// already-correct verdict, the grace period, the closed-issue /check-required-labels, an already
+// the require_matching_label arms bundle.test.ts does not reach: rules that do not apply (to an
+// issue, and to a pull request), the already-correct verdict, the grace period, the closed-issue /check-required-labels, an already
 // posted missing_comment, and the comment-read and comment-delete failures
 describe('dist/index.js require-matching-label arms', () => {
   let gh: FakeGithub
-  const { calls, expectRequests } = helpersFor(() => gh)
+  const { calls, expectRequests, routeOwners } = helpersFor(() => gh)
 
   beforeAll(async () => {
     gh = await start()
@@ -78,6 +79,21 @@ describe('dist/index.js require-matching-label arms', () => {
     expect(result.status, result.stdout).toBe(0)
     expect(result.errors).toEqual([])
     expectRequests(configReads({ org: '.project' }), [])
+  })
+
+  it('opened on a pull request when the only rule is for issues leaves the pull request alone', async () => {
+    routeRule('    issues: true\n')
+    routeOwners({}, ['x.go'])
+
+    const result = await runBundle({ eventName: 'pull_request', payload: pullReqOpenedEvent, inputs: token, apiUrl: gh.url })
+
+    expect(result.status, result.stdout).toBe(0)
+    expect(result.errors).toEqual([])
+    expect(result.stdout).toContain('::debug::require-matching-label: no rule applies to pull request #1')
+    // the other pull_request handlers probe OWNERS; require-matching-label itself reads no labels and writes nothing
+    expect(gh.requestsMatching('GET', /\/issues\/1$/)).toEqual([])
+    expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/)).toEqual([])
+    expect(gh.requestsMatching('POST', /\/issues\/1\/comments$/)).toEqual([])
   })
 
   it('labeled kind/bug with no needs-kind present reads the labels and writes nothing', async () => {
