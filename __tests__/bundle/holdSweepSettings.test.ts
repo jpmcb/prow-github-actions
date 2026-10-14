@@ -97,6 +97,22 @@ describe('dist/index.js configured hold and sweep sections', () => {
       expectRequests(reads, [listPage])
     })
 
+    it('a sweep section without lookback keeps the default 1h window', async () => {
+      routeConfig('sweep: {}\n')
+
+      await expectWindow(60 * 60_000)
+
+      expectRequests(reads, [listPage])
+    })
+
+    it('caps a configured lookback at 24h', async () => {
+      routeConfig('sweep:\n  lookback: 48h\n')
+
+      await expectWindow(24 * 60 * 60_000)
+
+      expectRequests(reads, [listPage])
+    })
+
     it.each([
       ['sweep: 5\n', 'sweep must be a mapping'],
       ['sweep:\n  lookback: 30\n', 'sweep.lookback must be a duration string such as 1h or 30m'],
