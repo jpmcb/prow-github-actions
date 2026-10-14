@@ -76,6 +76,32 @@ describe('dist/index.js collaboration commands', () => {
       expect(gh.requestsMatching('POST', /requested_reviewers$/)[0].body).toEqual({ reviewers: ['octocat'] })
     })
 
+    it('scans the comment thread past other people\'s comments: a commenter behind them is granted, a stranger the thread lacks is not', async () => {
+      // every other scenario answers the comments read with `[]` or the target's own comment alone, so
+      // checkIssueComments never meets a comment it has to skip (auth.ts:129's non-matching arm)
+      for (const user of ['octocat', 'stranger']) {
+        gh.route('GET', `/orgs/Codertocat/members/${user}`, { status: 404, body: { message: 'Not Found' } })
+        gh.route('GET', `${repo}/collaborators/${user}`, { status: 404, body: { message: 'Not Found' } })
+      }
+      gh.route('GET', `${repo}/issues/1/comments`, {
+        status: 200,
+        body: [
+          { id: 1, body: 'looks fine', user: { login: 'Codertocat', type: 'User' } },
+          { id: 2, body: 'ci green', user: { login: 'github-actions[bot]', type: 'Bot' } },
+          { id: 3, body: 'I can take this', user: { login: 'octocat', type: 'User' } },
+        ],
+      })
+      gh.route('POST', `${repo}/pulls/1/requested_reviewers`, { status: 201, body: {} })
+
+      const result = await run('/cc @octocat @stranger', '/cc')
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(calls().slice(0, 6).sort()).toEqual([...membershipOrCommentReads('octocat'), ...membershipOrCommentReads('stranger')].sort())
+      expect(calls().slice(6)).toEqual([`POST ${repo}/pulls/1/requested_reviewers`])
+      expect(gh.requestsMatching('POST', /requested_reviewers$/)[0].body).toEqual({ reviewers: ['octocat'] })
+    })
+
     it('fails the action when none of the argument users is authorized', async () => {
       gh.route('GET', '/orgs/Codertocat/members/stranger', { status: 404, body: { message: 'Not Found' } })
       gh.route('GET', `${repo}/collaborators/stranger`, { status: 404, body: { message: 'Not Found' } })
