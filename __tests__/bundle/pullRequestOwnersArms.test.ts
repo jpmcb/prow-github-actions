@@ -11,8 +11,9 @@ import { runBundle } from './runBundle'
 vi.setConfig({ testTimeout: 30_000 })
 
 // the arms of src/utils/pullRequestOwners.ts (a renamed file, a base tip that cannot be read) and of tide's
-// fork-workflows 403 diagnosis (an unreadable diff, no workflow files, a comment already posted or refused)
-// that bundle.test.ts never reaches, driven through dist/index.js like the cases there
+// fork-workflows 403 diagnosis (an unreadable diff, no workflow files, a comment already posted or refused,
+// a file list cut after five entries) that bundle.test.ts never reaches, driven through dist/index.js like the
+// cases there
 describe('dist/index.js pull request owners and fork-workflows arms', () => {
   let gh: FakeGithub
   const { expectRequests, routeOwners } = helpersFor(() => gh)
@@ -184,6 +185,44 @@ describe('dist/index.js pull request owners and fork-workflows arms', () => {
       expect(result.stdout).toContain('::warning::could not comment on pr #2 about the workflow files: Error: could not add comment: ')
       expect(result.stdout).toContain('skipping pr #2: fork pull request with workflow changes: the token may not merge it')
       expect(gh.requestsMatching('POST', /\/issues\/2\/comments$/)).toHaveLength(1)
+    })
+
+    it('the branch lacks seven workflow files: the comment and warning list the first five, sorted, and count the rest', async () => {
+      routeForkPr()
+      // unsorted, with a duplicate entry and a non-workflow file: the list is deduplicated and sorted before fileList cuts it
+      const behind = ['g.yml', 'c.yml', 'a.yml', 'f.yml', 'b.yml', 'e.yml', 'd.yml', 'c.yml']
+        .map(name => ({ filename: `.github/workflows/${name}`, status: 'added' }))
+      gh.route('GET', `${repo}/compare/${head}...master`, { status: 200, body: { files: [...behind, { filename: 'README.md', status: 'modified' }] } })
+      gh.route('GET', `${repo}/pulls/2/files`, { status: 200, body: [{ filename: 'README.md', status: 'modified' }] })
+      gh.route('GET', `${repo}/issues/2/comments`, { status: 200, body: [] })
+      gh.route('POST', `${repo}/issues/2/comments`, { status: 201, body: {} })
+
+      const result = await runCron()
+
+      const shown = ['a', 'b', 'c', 'd', 'e'].map(name => `\`.github/workflows/${name}.yml\``).join(', ')
+      const what = `workflow files (${shown} and 2 more) that the branch does not contain`
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(result.stdout).toContain(`::warning::pr #2 is a fork pull request whose merge involves ${what}; the token may not merge it`)
+      expect(result.stdout).toContain('skipping pr #2: fork pull request with workflow changes: the token may not merge it')
+      const comments = gh.requestsMatching('POST', /\/issues\/2\/comments$/)
+      expect(comments).toHaveLength(1)
+      const body = (comments[0].body as { body: string }).body
+      expect(body).toContain(`it comes from a fork and the merge involves ${what}.`)
+      expect(body).not.toContain('f.yml')
+      expect(body).not.toContain('g.yml')
+      expect(body).toContain(marker)
+      expectRequests(configReads(), [
+        ...gateReads,
+        ...evaluation,
+        `PUT ${repo}/pulls/2/merge`,
+        `GET ${repo}/pulls/2`,
+        `GET ${repo}/compare/${head}...master`,
+        `GET ${repo}/pulls/2/files?per_page=100`,
+        `GET ${repo}/issues/2/comments?per_page=100`,
+        `POST ${repo}/issues/2/comments`,
+        `GET ${repo}/pulls?state=open&page=2`,
+      ])
     })
 
     it('when neither the base nor the pull request involves workflow files, the 403 is a plain merge failure', async () => {
