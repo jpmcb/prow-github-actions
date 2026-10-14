@@ -14,7 +14,7 @@ vi.setConfig({ testTimeout: 30_000 })
 
 // the arms of src/plugins/approve.ts that bundle.test.ts' happy paths never reach — the handlers' early
 // returns, evaluateApproval's read and write failures, the notifier's no-files / uncoverable-file /
-// up-to-date renderings and the lgtm_acts_as_approve and require_self_approval settings — driven through
+// up-to-date renderings and the lgtm_acts_as_approve, require_self_approval and ignore_review_state settings — driven through
 // dist/index.js against the fake api
 describe('dist/index.js approve plugin arms', () => {
   let gh: FakeGithub
@@ -275,6 +275,47 @@ describe('dist/index.js approve plugin arms', () => {
       expect(postedNotifier()).toBe(wantErr)
       expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/)).toEqual([])
       expect(calls()).not.toContain(commentsRead)
+    })
+
+    // approve.ignore_review_state (approve.ts:380-381): reviews neither add (APPROVED) nor remove
+    // (CHANGES_REQUESTED) approvers, and without github_review they are not even read
+    const bob = { login: 'bob', type: 'User' }
+    const approvedReview = { id: 1, state: 'APPROVED', user: bob, submitted_at: '2024-01-01T00:00:01Z' }
+    const changesReview = { id: 2, state: 'CHANGES_REQUESTED', user: bob, submitted_at: '2024-01-01T00:00:02Z' }
+
+    it('with ignore_review_state an APPROVED review by an approver adds nobody, and the reviews are never read', async () => {
+      prowConfig('approve:\n  ignore_review_state: true\n')
+      routeEvaluation(['sdk/x.go'], { reviews: [approvedReview, changesReview] })
+
+      const result = await runReview()
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(result.stdout).toContain('approve: #1 is not approved; nobody approves sdk/x.go')
+      expect(calls()).toContain(commentsRead)
+      expect(calls()).not.toContain(reviewsRead)
+      expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/)).toEqual([])
+      const body = postedNotifier()
+      expect(body).toContain('This PR is **NOT APPROVED**')
+      expect(body).toContain('please assign **alice**')
+    })
+
+    it('with ignore_review_state and github_review the reviews are read for the mirrored review, but still count for nobody', async () => {
+      prowConfig('approve:\n  ignore_review_state: true\n  github_review: true\n')
+      gh.route('GET', '/user', { status: 403, body: { message: 'Resource not accessible by integration' } })
+      routeEvaluation(['sdk/x.go'], { reviews: [approvedReview] })
+
+      const result = await runReview()
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(result.stdout).toContain('approve: #1 is not approved; nobody approves sdk/x.go')
+      expect(calls()).toContain('GET /user')
+      expect(calls()).toContain(reviewsRead)
+      expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/)).toEqual([])
+      expect(gh.requestsMatching('POST', /\/pulls\/1\/reviews$/)).toEqual([])
+      expect(gh.requestsMatching('PUT', /./)).toEqual([])
+      expect(postedNotifier()).toContain('This PR is **NOT APPROVED**')
     })
   })
 })
