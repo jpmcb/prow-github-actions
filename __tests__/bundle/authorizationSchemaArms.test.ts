@@ -75,4 +75,21 @@ describe('dist/index.js authorization section schema', () => {
       expectRequests(configReads({ org: '.project', repo: '.github/prow.yaml' }), [`GET ${repo}/labels?per_page=100`, `POST ${repo}/issues/1/labels`])
     })
   })
+
+  // the organization tier supplies the `users` list and the repository's authorization section lists none of
+  // its own (mergeAuthorization's `over.users ?? []` arm): the organization's logins must still be admitted
+  describe('users listed only by the organization tier', () => {
+    it('a repository authorization section without users keeps the organization\'s: admit the login with no membership call', async () => {
+      gh.route('GET', orgPath, { status: 200, body: yamlFile('authorization:\n  labels: trusted\n  users: [Friend]\n') })
+      gh.route('GET', repoPath, { status: 200, body: yamlFile('labels:\n  triage:\n    values: [accepted]\nauthorization:\n  labels: trusted\n') })
+
+      const result = await triage('friend')
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/)[0].body).toEqual({ labels: ['triage/accepted'] })
+      expect(gh.requestsMatching('GET', /\/(members|collaborators)\//)).toEqual([])
+      expectRequests(configReads({ org: '.project', repo: '.github/prow.yaml' }), [`GET ${repo}/labels?per_page=100`, `POST ${repo}/issues/1/labels`])
+    })
+  })
 })
