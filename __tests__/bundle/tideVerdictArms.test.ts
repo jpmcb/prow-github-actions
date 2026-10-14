@@ -17,7 +17,7 @@ const shortBackoff = { NODE_OPTIONS: `--require "${preload}"`, SHORT_BACKOFF_MS:
 
 // the verdicts of tide's evaluateMerge that bundle.test.ts and mergeQueueArms.test.ts never reach — a pull
 // request GitHub reports as merged or locked, a mergeability that stays `unknown` through every
-// retry, a head that moves while it is computed, a merge refused because a sibling event landed first or
+// retry or is computed only on the last one, a head that moves while it is computed, a merge refused because a sibling event landed first or
 // because the base moved under it, and a refused merge whose re-read fails too — plus tideOnComment's
 // closed pull request and tideOnCheckSuite's missing-sha and nothing-to-evaluate arms, all driven through
 // dist/index.js. `check_suite` is the vehicle: tide is its only handler, so the recorded traffic is tide's
@@ -95,6 +95,32 @@ describe('dist/index.js tide verdicts', () => {
     expect(gh.requestsMatching('PUT', /./)).toEqual([])
     // the first read, then one re-read per retry
     expectRequests(configReads(), [pullRead, ownersProbe, bindingRead, queueRead, pullRead, pullRead, pullRead])
+  })
+
+  it('a mergeability GitHub computes only on the last retry is merged, not reported as still unknown', async () => {
+    gh.commitStatuses(repo, head, bound)
+    gh.routeSequence('GET', `${repo}/pulls/1`, [
+      { status: 200, body: pr('unknown') },
+      { status: 200, body: pr('unknown') },
+      { status: 200, body: pr('unknown') },
+      { status: 200, body: pr('clean') },
+    ])
+    gh.route('PUT', `${repo}/pulls/1/merge`, { status: 200, body: { merged: true } })
+
+    const result = await checkSuite()
+
+    expect(result.status, result.stdout).toBe(0)
+    expect(result.errors).toEqual([])
+    for (const delay of [1000, 2000, 4000]) {
+      expect(result.stdout).toContain(`mergeability of pr #1 is not computed yet, retrying in ${delay}ms`)
+    }
+    expect(result.stdout).not.toContain('still unknown after')
+    expect(result.stdout).toContain('merged pr #1')
+    const merges = gh.requestsMatching('PUT', /\/pulls\/1\/merge$/)
+    expect(merges).toHaveLength(1)
+    expect(merges[0].body).toEqual({ merge_method: 'merge', sha: head })
+    // the first read, one re-read per retry, and the merge once the last re-read answers clean
+    expectRequests(configReads(), [pullRead, ownersProbe, bindingRead, queueRead, pullRead, pullRead, pullRead, merge])
   })
 
   it('a head that moves while mergeability is computed is skipped, not merged', async () => {
