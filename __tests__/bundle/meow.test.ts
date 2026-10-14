@@ -180,6 +180,21 @@ describe('dist/index.js issue_comment /meow', () => {
     expect(postedComments()).toEqual([fallback])
   })
 
+  // the s3 arm of isTrustedImageSource: the provider's bucket is rendered only under its own prefix
+  it('renders an image served from the provider s3 bucket', async () => {
+    const bucketImage = 'https://s3.us-west-2.amazonaws.com/cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg'
+    cat.answer({ status: 200, body: [{ url: bucketImage }] })
+    gh.route('POST', `${repo}/issues/1/comments`, { status: 201, body: {} })
+
+    const result = await meow('/meow')
+
+    expect(result.status, result.stdout).toBe(0)
+    expect(result.errors).toEqual([])
+    expect(result.stdout).not.toMatch(/::warning::/)
+    expect(cat.requests).toHaveLength(1)
+    expect(postedComments()).toEqual([`![cat](<${bucketImage}>)`])
+  })
+
   // the other parseCatImage refusals: each is a 2xx the bundle must not render, so none is retried
   it.each([
     ['an empty list', [], 'cat api returned no images'],
@@ -187,6 +202,7 @@ describe('dist/index.js issue_comment /meow', () => {
     ['an excessively long url', [{ url: `https://cdn2.thecatapi.com/images/${'a'.repeat(4096)}.jpg` }], 'cat api returned an excessively long image url'],
     ['an unparsable url', [{ url: 'not a url' }], 'cat api returned an invalid image url'],
     ['an http: url', [{ url: 'http://cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg' }], 'cat api returned an unusable image url'],
+    ['a url in another bucket on the s3 host', [{ url: 'https://s3.us-west-2.amazonaws.com/other-bucket/cat.jpg' }], 'cat api returned an image from an unexpected host'],
   ])('falls back to the note without retrying when the cat api returns %s', async (_, body, message) => {
     cat.answer({ status: 200, body })
     gh.route('POST', `${repo}/issues/1/comments`, { status: 201, body: {} })
