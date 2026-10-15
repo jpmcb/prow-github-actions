@@ -185,7 +185,7 @@ Input | Default | Meaning
 
 Secret | Default | Meaning
 --- | --- | ---
-`token` | the caller's `github.token` | A token that can read a private `<org>/.project`, a bot user's token so merges trigger `push` workflows ([events](./events.md#check_suite-and-status)), or one with the `workflows` scope so fork pull requests whose merge involves workflow files can be merged ([automatic merging](./automatic-merging.md#fork-pull-requests-and-workflow-files)).
+`token` | the caller's `github.token` | A token that can read a private `<org>/.project`, a bot user's token so merges trigger `push` workflows ([events](./events.md#check_suite-and-status)), one with the `workflows` scope so fork pull requests whose merge involves workflow files can be merged ([automatic merging](./automatic-merging.md#fork-pull-requests-and-workflow-files)), or one with the organization's *Members: read* permission so OWNERS files may list teams ([commands](./commands.md#github-groups)).
 `cat-api-key` | — | The [thecatapi.com](https://thecatapi.com) key for [`/meow`](./commands.md#enabling-meow).
 
 ```yaml

@@ -191,7 +191,9 @@ approvers:
   - '@myorg/maintainers'
 ```
 
-The team's members (child teams included, as the teams API returns them) are looked up once per team per run and treated as if listed individually. A team of another organization is ignored with a warning, and so is a team the token cannot read: it needs `members: read` (a token that can read org teams). Groups are matched when OWNERS are resolved, so changes to the team apply on the next event.
+The team's members (child teams included, as the teams API returns them) are looked up once per team per run and treated as if listed individually. A team of another organization is ignored, and so is an `@…` entry that is not `@<org>/<team-slug>`; both are warned about once per run. Groups are matched when OWNERS are resolved, so changes to the team apply on the next event.
+
+Reading a team's members needs a token with the organization's *Members: read* permission (classic PAT: `read:org`; GitHub App: *Organization permissions → Members: read*). **The workflow's default `GITHUB_TOKEN` does not have it**: with that token every group warns `could not read the members of @org/team` and contributes nobody, so a user listed only through a group is refused. Pass such a token via the `token` secret ([installing](./installing.md#inputs-and-secrets)). A login listed directly is matched without reading any team.
 
 ### Which files decide the outcome
 

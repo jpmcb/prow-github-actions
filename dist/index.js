@@ -37192,7 +37192,7 @@ function getOctokit(token, options, ...additionalPlugins) {
 // EXTERNAL MODULE: external "node:buffer"
 var external_node_buffer_ = __nccwpck_require__(4573);
 ;// CONCATENATED MODULE: ./node_modules/js-yaml/dist/js-yaml.mjs
-/*! js-yaml 5.4.3 https://github.com/nodeca/js-yaml @license MIT */
+/*! js-yaml 5.4.2 https://github.com/nodeca/js-yaml @license MIT */
 //#region src/tag.ts
 /**
 * Returned by a scalar resolver when the source does not match its tag.
@@ -39327,7 +39327,7 @@ function readBlockScalar(state, parentIndent, props) {
 				state.position = linePosition + column;
 				throwError(state, "tab characters must not be used in indentation");
 			}
-			if (column >= parentIndent && column < maxLeadingIndent) {
+			if (column < maxLeadingIndent) {
 				state.position = linePosition + column;
 				throwError(state, "bad indentation of a mapping entry");
 			}
@@ -39537,16 +39537,13 @@ function readBlockMapping(state, nodeIndent, flowIndent, props) {
 					ch = state.input.charCodeAt(++state.position);
 					if (!isWsOrEolOrEnd(ch)) throwError(state, "a whitespace character is expected after the key-value separator within a block mapping");
 					if (!mappingOpened) {
-						state.events.splice(beforeKey.eventsLength, 0, {
-							type: EVENT_ID.MAPPING,
-							start: beforeKey.position,
-							anchorStart: props.anchorStart,
-							anchorEnd: props.anchorEnd,
-							tagStart: props.tagStart,
-							tagEnd: props.tagEnd,
-							style: COLLECTION_STYLE.BLOCK
-						});
+						restoreState(state, beforeKey);
+						addMappingEvent(state, beforeKey.position, props.anchorStart, props.anchorEnd, props.tagStart, props.tagEnd, COLLECTION_STYLE.BLOCK);
 						mappingOpened = true;
+						parseNode(state, flowIndent, CONTEXT_FLOW_OUT, false, true);
+						ch = state.input.charCodeAt(state.position);
+						while (isWhiteSpace(ch)) ch = state.input.charCodeAt(++state.position);
+						state.position++;
 					}
 					detected = true;
 					atExplicitKey = false;
@@ -41881,10 +41878,19 @@ function parseGroup(entry) {
     return match === null ? undefined : { org: match[1], slug: match[2] };
 }
 const groupCache = new Map();
+// entries already warned about: the same OWNERS entry is expanded once per changed file per role
+const warnedEntries = new Set();
+function warnOnce(entry, message) {
+    if (!warnedEntries.has(entry)) {
+        warnedEntries.add(entry);
+        warning(message);
+    }
+}
 /**
  * Replace the `@org/team` entries of a list of OWNERS entries with the logins of
  * the team's members (transitive, as the teams API returns them). A group of
- * another organization, or one that cannot be read, contributes nobody.
+ * another organization, one that cannot be read, or a malformed `@…` entry
+ * contributes nobody and is warned about once per run.
  *
  * @param octokit - a hydrated github client
  * @param context - the github actions event context
@@ -41896,14 +41902,19 @@ async function expandGroups(octokit, context, entries) {
     const groups = new Set();
     for (const entry of entries) {
         const group = parseGroup(entry);
-        if (group === undefined) {
-            result.add(entry);
+        if (group !== undefined) {
+            if (group.org === owner) {
+                groups.add(group.slug);
+            }
+            else {
+                warnOnce(entry, `OWNERS: ignoring group ${entry}: only groups of ${owner} are supported`);
+            }
         }
-        else if (group.org !== owner) {
-            warning(`OWNERS: ignoring group ${entry}: only groups of ${owner} are supported`);
+        else if (entry.startsWith('@')) {
+            warnOnce(entry, `OWNERS: ignoring ${entry}: a group is written @<org>/<team-slug>`);
         }
         else {
-            groups.add(group.slug);
+            result.add(entry);
         }
     }
     const members = await Promise.all([...groups].map(slug => memoized(groupCache, `${owner}/${slug}`, async () => {
@@ -41922,6 +41933,22 @@ async function expandGroups(octokit, context, entries) {
     })));
     members.flat().forEach(login => result.add(login));
     return result;
+}
+/**
+ * Whether a list of OWNERS entries names a login, directly or through one of
+ * its groups. A direct listing answers without reading any team.
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param entries - lowercased OWNERS entries
+ * @param login - a lowercased login
+ */
+async function ownersInclude(octokit, context, entries, login) {
+    const list = [...entries];
+    if (list.includes(login)) {
+        return true;
+    }
+    return (await expandGroups(octokit, context, list)).has(login);
 }
 /** an OwnersSet whose approvers and reviewers hold logins only */
 async function expandOwnersSet(octokit, context, set) {
@@ -42100,6 +42127,7 @@ function resetOwnersCaches() {
     hasOwnersCache.clear();
     treeCache.clear();
     groupCache.clear();
+    warnedEntries.clear();
 }
 function memoized(cache, key, compute) {
     let pending = cache.get(key);
@@ -42485,7 +42513,7 @@ async function assertRootOwner(octokit, context, role, username) {
         return false;
     }
     const owners = parseOwners('OWNERS', contents);
-    if (!(await expandGroups(octokit, context, owners[role])).has(username.toLowerCase())) {
+    if (!(await ownersInclude(octokit, context, owners[role], username.toLowerCase()))) {
         throw new Error(`${username} is not included in the ${role} role in the OWNERS file`);
     }
     return true;
@@ -42530,7 +42558,7 @@ async function rootOwnersIncludes(octokit, context, user) {
     }
     const owners = parseOwners('OWNERS', contents);
     const login = user.toLowerCase();
-    return (await expandGroups(octokit, context, [...owners.reviewers, ...owners.approvers])).has(login);
+    return ownersInclude(octokit, context, [...owners.reviewers, ...owners.approvers], login);
 }
 /**
  * Retrieve the contents of the OWNERS file at the root of the repository.
