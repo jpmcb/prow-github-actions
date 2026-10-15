@@ -51,10 +51,12 @@ export function loadPullRequestOwners(
   return pending
 }
 
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 export function resetPullRequestOwnersCache(): void {
   cache.clear()
   tipCache.clear()
 }
+/* v8 ignore stop */
 
 async function load(
   octokit: Octokit,

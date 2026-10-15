@@ -216,9 +216,11 @@ export function loadProwConfig(octokit: Octokit, context: Context): Promise<Prow
   return pending
 }
 
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 export function resetProwConfigCache(): void {
   cache.clear()
 }
+/* v8 ignore stop */
 
 async function load(octokit: Octokit, context: Context): Promise<ProwConfig> {
   const explicit = core.getInput('config', { required: false }).trim()

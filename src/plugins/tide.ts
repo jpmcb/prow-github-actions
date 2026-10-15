@@ -232,10 +232,12 @@ export async function evaluateMerge(
 
 let warnedMergeMethodIgnored = false
 
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 export function resetTideWarnings(): void {
   warnedMergeMethodIgnored = false
   evaluatedThisRun.clear()
 }
+/* v8 ignore stop */
 
 const workflowsDir = '.github/workflows/'
 

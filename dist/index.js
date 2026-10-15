@@ -40886,9 +40886,11 @@ function loadProwConfig(octokit, context) {
     }
     return pending;
 }
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 function resetProwConfigCache() {
     cache.clear();
 }
+/* v8 ignore stop */
 async function config_load(octokit, context) {
     const explicit = getInput('config', { required: false }).trim();
     // the org and repo tiers do not depend on each other, so probe both at once
@@ -41510,9 +41512,11 @@ function repoLabelNames(octokit, context) {
     }
     return pending;
 }
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 function resetLabelCache() {
     repoLabelCache.clear();
 }
+/* v8 ignore stop */
 /**
  * assertLabelsExist throws, naming every offender, when one of the labels is
  * not defined in the repository. Names compare case-insensitively.
@@ -42126,12 +42130,14 @@ function repoHasOwners(octokit, context) {
 function branchHasOwners(octokit, context, branch) {
     return memoized(hasOwnersCache, `${context.repo.owner}/${context.repo.repo}@${branch}`, () => probeBranchOwners(octokit, context, branch));
 }
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 function resetOwnersCaches() {
     hasOwnersCache.clear();
     treeCache.clear();
     groupCache.clear();
     warnedEntries.clear();
 }
+/* v8 ignore stop */
 function memoized(cache, key, compute) {
     let pending = cache.get(key);
     if (pending === undefined) {
@@ -42210,10 +42216,12 @@ function loadPullRequestOwners(octokit, context, pullNumber) {
     }
     return pending;
 }
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 function resetPullRequestOwnersCache() {
     pullRequestOwners_cache.clear();
     tipCache.clear();
 }
+/* v8 ignore stop */
 async function pullRequestOwners_load(octokit, context, pullNumber) {
     const { data: pull } = await octokit.pulls.get({
         ...context.repo,
@@ -43541,9 +43549,11 @@ const dequeueMutation = `mutation DequeuePullRequest($id: ID!) {
   }
 }`;
 let warnedUnavailable = false;
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 function resetMergeQueueWarnings() {
     warnedUnavailable = false;
 }
+/* v8 ignore stop */
 /**
  * queueState reads, in one GraphQL query, whether the pull request's base
  * branch requires a merge queue and whether the pull request is in it. Any
@@ -43852,10 +43862,12 @@ async function evaluateMerge(octokit, context, number, source, lgtm = defaultLgt
     return outcome;
 }
 let warnedMergeMethodIgnored = false;
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 function resetTideWarnings() {
     warnedMergeMethodIgnored = false;
     evaluatedThisRun.clear();
 }
+/* v8 ignore stop */
 const workflowsDir = '.github/workflows/';
 /**
  * explainForkWorkflows diagnoses a 403 on a fork pull request: a GitHub App
