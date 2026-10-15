@@ -44,11 +44,14 @@ export default mergeConfig(base, defineConfig({
       include: ['src/**/*.ts', '.coverage-bundle/index.js'],
       autoAttachSubprocess: true,
       excludeAfterRemap: true,
+      // Regression floor for the bundle-only run, set just under what main reaches
+      // (99.54 / 96.25 / 98.79 / 99.56 at d93ecb8) so a scenario that stops
+      // exercising a src/ path fails this run instead of silently lowering the figure.
       thresholds: {
-        lines: 0,
-        branches: 0,
-        functions: 0,
-        statements: 0,
+        lines: 99,
+        branches: 95,
+        functions: 98,
+        statements: 99,
       },
     },
   },
