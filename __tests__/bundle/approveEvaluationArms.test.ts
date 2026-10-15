@@ -174,6 +174,41 @@ describe('dist/index.js approve plugin arms', () => {
     })
   })
 
+  // approvalEvents turns a human's APPROVED review into an approval and a CHANGES_REQUESTED review into a
+  // withdrawal (bundle.test.ts drives both); every other state falls through its state switch and counts for
+  // nobody. The other scenarios only list such reviews from the bot, or without `submitted_at`, so they are
+  // dropped before the switch; this one drives a human's COMMENTED and DISMISSED reviews, with `submitted_at`
+  describe('review states that count for nobody', () => {
+    it('a COMMENTED and a DISMISSED review after /approve remove nobody: approved stays, where a CHANGES_REQUESTED review would withdraw it', async () => {
+      const bob = { login: 'bob', type: 'User' }
+      routeEvaluation(['sdk/x.go'], {
+        labels: ['approved'],
+        comments: [
+          { id: 900, body: `stale\n${marker}`, user: bot, created_at: '2024-01-01T00:00:00Z' },
+          { id: 901, body: '/approve', user: bob, created_at: '2024-01-01T00:00:01Z' },
+        ],
+        reviews: [
+          { id: 1, state: 'COMMENTED', user: bob, body: 'one more nit', submitted_at: '2024-01-01T00:00:02Z' },
+          { id: 2, state: 'DISMISSED', user: bob, body: 'please fix', submitted_at: '2024-01-01T00:00:03Z' },
+        ],
+      })
+
+      const result = await runReview()
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(result.stdout).toContain('approve: #1 is approved by bob')
+      expect(result.stdout).toContain('approve: the approved label on #1 is already correct')
+      expect(calls()).toContain(reviewsRead)
+      expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/)).toEqual([])
+      expect(gh.requestsMatching('DELETE', /./)).toEqual([])
+      expect(gh.requestsMatching('POST', /\/issues\/1\/comments$/)).toEqual([])
+      const patches = gh.requestsMatching('PATCH', /\/issues\/comments\/900$/)
+      expect(patches).toHaveLength(1)
+      expect((patches[0].body as { body: string }).body).toContain('This PR is **APPROVED**')
+    })
+  })
+
   describe('read and write failures fail the run after the label is synced', () => {
     // the first matching route wins in the fake, so each failure goes in before routeEvaluation's success
     it('a refused notifier edit', async () => {
