@@ -90,6 +90,121 @@ function stringList(
 }
 
 /**
+ * Parse an `@org/team-slug` entry of an approvers or reviewers list.
+ *
+ * @param entry - a lowercased OWNERS entry
+ * @returns undefined when the entry is a plain login
+ */
+export function parseGroup(entry: string): { org: string, slug: string } | undefined {
+  const match = /^@([^/\s]+)\/([^/\s]+)$/.exec(entry)
+  return match === null ? undefined : { org: match[1]!, slug: match[2]! }
+}
+
+const groupCache = new Map<string, Promise<string[]>>()
+// entries already warned about: the same OWNERS entry is expanded once per changed file per role
+const warnedEntries = new Set<string>()
+
+function warnOnce(entry: string, message: string): void {
+  if (!warnedEntries.has(entry)) {
+    warnedEntries.add(entry)
+    core.warning(message)
+  }
+}
+
+/**
+ * Replace the `@org/team` entries of a list of OWNERS entries with the logins of
+ * the team's members (transitive, as the teams API returns them). A group of
+ * another organization, one that cannot be read, or a malformed `@…` entry
+ * contributes nobody and is warned about once per run.
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param entries - lowercased OWNERS entries
+ */
+export async function expandGroups(
+  octokit: Octokit,
+  context: Context,
+  entries: Iterable<string>,
+): Promise<Set<string>> {
+  const result = new Set<string>()
+  const owner = context.repo.owner.toLowerCase()
+  const groups = new Set<string>()
+  for (const entry of entries) {
+    const group = parseGroup(entry)
+    if (group !== undefined) {
+      if (group.org === owner) {
+        groups.add(group.slug)
+      }
+      else {
+        warnOnce(entry, `OWNERS: ignoring group ${entry}: only groups of ${owner} are supported`)
+      }
+    }
+    else if (entry.startsWith('@')) {
+      warnOnce(entry, `OWNERS: ignoring ${entry}: a group is written @<org>/<team-slug>`)
+    }
+    else {
+      result.add(entry)
+    }
+  }
+
+  const members = await Promise.all([...groups].map(slug =>
+    memoized(groupCache, `${owner}/${slug}`, async () => {
+      try {
+        const listed = await octokit.paginate(octokit.teams.listMembersInOrg, {
+          org: context.repo.owner,
+          team_slug: slug,
+          per_page: 100,
+        })
+        return listed.map(member => member.login.toLowerCase())
+      }
+      catch (e) {
+        core.warning(`OWNERS: could not read the members of @${owner}/${slug}: ${e}`)
+        return []
+      }
+    })))
+  members.flat().forEach(login => result.add(login))
+  return result
+}
+
+/**
+ * Whether a list of OWNERS entries names a login, directly or through one of
+ * its groups. A direct listing answers without reading any team.
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param entries - lowercased OWNERS entries
+ * @param login - a lowercased login
+ */
+export async function ownersInclude(
+  octokit: Octokit,
+  context: Context,
+  entries: Iterable<string>,
+  login: string,
+): Promise<boolean> {
+  const list = [...entries]
+  if (list.includes(login)) {
+    return true
+  }
+  return (await expandGroups(octokit, context, list)).has(login)
+}
+
+/** an OwnersSet whose approvers and reviewers hold logins only */
+export async function expandOwnersSet(
+  octokit: Octokit,
+  context: Context,
+  set: OwnersSet | undefined,
+): Promise<OwnersSet | undefined> {
+  if (set === undefined) {
+    return undefined
+  }
+  const [approvers, reviewers] = await Promise.all([
+    expandGroups(octokit, context, set.approvers),
+    expandGroups(octokit, context, set.reviewers),
+  ])
+  return { ...set, approvers, reviewers }
+}
+
+/**
  * The directory that contains a path: 'sdk/OWNERS' is 'sdk', 'OWNERS' is ''
  *
  * @param path - a repository relative path
@@ -301,6 +416,8 @@ export function branchHasOwners(octokit: Octokit, context: Context, branch: stri
 export function resetOwnersCaches(): void {
   hasOwnersCache.clear()
   treeCache.clear()
+  groupCache.clear()
+  warnedEntries.clear()
 }
 
 function memoized<T>(cache: Map<string, Promise<T>>, key: string, compute: () => Promise<T>): Promise<T> {

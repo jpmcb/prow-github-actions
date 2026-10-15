@@ -1,10 +1,14 @@
 import * as core from '@actions/core'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   effectiveOwners,
+  expandGroups,
+  expandOwnersSet,
   ownersDir,
+  ownersInclude,
   parseOwners,
+  resetOwnersCaches,
 } from '../../src/utils/owners'
 
 describe('parseOwners', () => {
@@ -184,5 +188,121 @@ describe('effectiveOwners', () => {
 
   it('is undefined for an empty map', () => {
     expect(effectiveOwners('README.md', new Map())).toBeUndefined()
+  })
+})
+
+describe('expandGroups', () => {
+  const context = { repo: { owner: 'MyOrg', repo: 'r' } } as never
+
+  function client(listed: Record<string, string[]>) {
+    const paginate = vi.fn(async (_fn: unknown, params: { team_slug: string }) => {
+      const members = listed[params.team_slug]
+      if (members === undefined) {
+        throw new Error('404')
+      }
+      return members.map(login => ({ login }))
+    })
+    return { paginate, teams: { listMembersInOrg: vi.fn() } } as never
+  }
+
+  it('replaces same-org groups with their members and keeps plain logins', async () => {
+    const result = await expandGroups(client({ maintainers: ['Bob', 'carol'] }), context, ['alice', '@myorg/maintainers'])
+
+    expect([...result].sort()).toEqual(['alice', 'bob', 'carol'])
+  })
+
+  beforeEach(() => resetOwnersCaches())
+
+  it('ignores groups of another org and groups it cannot read', async () => {
+    const result = await expandGroups(client({}), context, ['alice', '@other/team', '@myorg/missing'])
+
+    expect([...result]).toEqual(['alice'])
+    expect(core.warning).toHaveBeenCalledTimes(2)
+  })
+
+  it('drops an @ entry that is not @org/team-slug, with a warning', async () => {
+    const result = await expandGroups(client({}), context, ['alice', '@bob', '@myorg/a/b'])
+
+    expect([...result]).toEqual(['alice'])
+    expect(core.warning).toHaveBeenCalledTimes(2)
+    expect(core.warning).toHaveBeenCalledWith('OWNERS: ignoring @bob: a group is written @<org>/<team-slug>')
+  })
+
+  it('warns once per entry per run, however many files list it', async () => {
+    const octokit = client({})
+    await expandGroups(octokit, context, ['@other/team', '@myorg/missing'])
+    await expandGroups(octokit, context, ['@other/team', '@myorg/missing'])
+    await expandGroups(octokit, context, ['@other/team'])
+
+    expect(core.warning).toHaveBeenCalledTimes(2)
+    expect((octokit as { paginate: ReturnType<typeof vi.fn> }).paginate).toHaveBeenCalledTimes(1)
+  })
+
+  it('reads each team once per run', async () => {
+    const octokit = client({ maintainers: ['bob'] })
+    const [a, b] = await Promise.all([
+      expandGroups(octokit, context, ['@myorg/maintainers']),
+      expandGroups(octokit, context, ['@myorg/maintainers', 'alice']),
+    ])
+
+    expect([...a]).toEqual(['bob'])
+    expect([...b].sort()).toEqual(['alice', 'bob'])
+    expect((octokit as { paginate: ReturnType<typeof vi.fn> }).paginate).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('expandOwnersSet', () => {
+  const context = { repo: { owner: 'myorg', repo: 'r' } } as never
+  const octokit = {
+    paginate: vi.fn(async () => [{ login: 'Bob' }]),
+    teams: { listMembersInOrg: vi.fn() },
+  } as never
+
+  it('expands both roles and keeps labels and sources', async () => {
+    const set = await expandOwnersSet(octokit, context, {
+      approvers: new Set(['@myorg/maintainers']),
+      reviewers: new Set(['alice', '@myorg/maintainers']),
+      labels: new Set(['area/sdk']),
+      sources: ['sdk/OWNERS'],
+    })
+
+    expect(set).toEqual({
+      approvers: new Set(['bob']),
+      reviewers: new Set(['alice', 'bob']),
+      labels: new Set(['area/sdk']),
+      sources: ['sdk/OWNERS'],
+    })
+  })
+
+  it('passes undefined through', async () => {
+    expect(await expandOwnersSet(octokit, context, undefined)).toBeUndefined()
+  })
+})
+
+describe('ownersInclude', () => {
+  const context = { repo: { owner: 'myorg', repo: 'r' } } as never
+
+  function client(members: string[]) {
+    return {
+      paginate: vi.fn(async () => members.map(login => ({ login }))),
+      teams: { listMembersInOrg: vi.fn() },
+    }
+  }
+
+  beforeEach(() => resetOwnersCaches())
+
+  it('answers a direct listing without reading any team', async () => {
+    const octokit = client(['bob'])
+
+    expect(await ownersInclude(octokit as never, context, ['alice', '@myorg/maintainers'], 'alice')).toBe(true)
+    expect(octokit.paginate).not.toHaveBeenCalled()
+  })
+
+  it('reads the teams when the login is not listed directly', async () => {
+    const octokit = client(['bob'])
+
+    expect(await ownersInclude(octokit as never, context, ['alice', '@myorg/maintainers'], 'bob')).toBe(true)
+    expect(await ownersInclude(octokit as never, context, ['alice', '@myorg/maintainers'], 'carol')).toBe(false)
+    expect(octokit.paginate).toHaveBeenCalledTimes(1)
   })
 })

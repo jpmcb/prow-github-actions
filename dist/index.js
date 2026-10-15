@@ -41871,6 +41871,100 @@ function stringList(path, doc, key, what) {
     return value;
 }
 /**
+ * Parse an `@org/team-slug` entry of an approvers or reviewers list.
+ *
+ * @param entry - a lowercased OWNERS entry
+ * @returns undefined when the entry is a plain login
+ */
+function parseGroup(entry) {
+    const match = /^@([^/\s]+)\/([^/\s]+)$/.exec(entry);
+    return match === null ? undefined : { org: match[1], slug: match[2] };
+}
+const groupCache = new Map();
+// entries already warned about: the same OWNERS entry is expanded once per changed file per role
+const warnedEntries = new Set();
+function warnOnce(entry, message) {
+    if (!warnedEntries.has(entry)) {
+        warnedEntries.add(entry);
+        warning(message);
+    }
+}
+/**
+ * Replace the `@org/team` entries of a list of OWNERS entries with the logins of
+ * the team's members (transitive, as the teams API returns them). A group of
+ * another organization, one that cannot be read, or a malformed `@…` entry
+ * contributes nobody and is warned about once per run.
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param entries - lowercased OWNERS entries
+ */
+async function expandGroups(octokit, context, entries) {
+    const result = new Set();
+    const owner = context.repo.owner.toLowerCase();
+    const groups = new Set();
+    for (const entry of entries) {
+        const group = parseGroup(entry);
+        if (group !== undefined) {
+            if (group.org === owner) {
+                groups.add(group.slug);
+            }
+            else {
+                warnOnce(entry, `OWNERS: ignoring group ${entry}: only groups of ${owner} are supported`);
+            }
+        }
+        else if (entry.startsWith('@')) {
+            warnOnce(entry, `OWNERS: ignoring ${entry}: a group is written @<org>/<team-slug>`);
+        }
+        else {
+            result.add(entry);
+        }
+    }
+    const members = await Promise.all([...groups].map(slug => memoized(groupCache, `${owner}/${slug}`, async () => {
+        try {
+            const listed = await octokit.paginate(octokit.teams.listMembersInOrg, {
+                org: context.repo.owner,
+                team_slug: slug,
+                per_page: 100,
+            });
+            return listed.map(member => member.login.toLowerCase());
+        }
+        catch (e) {
+            warning(`OWNERS: could not read the members of @${owner}/${slug}: ${e}`);
+            return [];
+        }
+    })));
+    members.flat().forEach(login => result.add(login));
+    return result;
+}
+/**
+ * Whether a list of OWNERS entries names a login, directly or through one of
+ * its groups. A direct listing answers without reading any team.
+ *
+ * @param octokit - a hydrated github client
+ * @param context - the github actions event context
+ * @param entries - lowercased OWNERS entries
+ * @param login - a lowercased login
+ */
+async function ownersInclude(octokit, context, entries, login) {
+    const list = [...entries];
+    if (list.includes(login)) {
+        return true;
+    }
+    return (await expandGroups(octokit, context, list)).has(login);
+}
+/** an OwnersSet whose approvers and reviewers hold logins only */
+async function expandOwnersSet(octokit, context, set) {
+    if (set === undefined) {
+        return undefined;
+    }
+    const [approvers, reviewers] = await Promise.all([
+        expandGroups(octokit, context, set.approvers),
+        expandGroups(octokit, context, set.reviewers),
+    ]);
+    return { ...set, approvers, reviewers };
+}
+/**
  * The directory that contains a path: 'sdk/OWNERS' is 'sdk', 'OWNERS' is ''
  *
  * @param path - a repository relative path
@@ -42035,6 +42129,8 @@ function branchHasOwners(octokit, context, branch) {
 function resetOwnersCaches() {
     hasOwnersCache.clear();
     treeCache.clear();
+    groupCache.clear();
+    warnedEntries.clear();
 }
 function memoized(cache, key, compute) {
     let pending = cache.get(key);
@@ -42138,7 +42234,7 @@ async function pullRequestOwners_load(octokit, context, pullNumber) {
         return pull.base.sha;
     });
     const tree = await loadOwnersTree(octokit, context, baseSha, files);
-    const perFile = new Map(files.map(file => [file, effectiveOwners(file, tree.owners)]));
+    const perFile = new Map(await Promise.all(files.map(async (file) => [file, await expandOwnersSet(octokit, context, effectiveOwners(file, tree.owners))])));
     return {
         number: pullNumber,
         baseSha,
@@ -42420,7 +42516,7 @@ async function assertRootOwner(octokit, context, role, username) {
         return false;
     }
     const owners = parseOwners('OWNERS', contents);
-    if (!owners[role].includes(username.toLowerCase())) {
+    if (!(await ownersInclude(octokit, context, owners[role], username.toLowerCase()))) {
         throw new Error(`${username} is not included in the ${role} role in the OWNERS file`);
     }
     return true;
@@ -42465,7 +42561,7 @@ async function rootOwnersIncludes(octokit, context, user) {
     }
     const owners = parseOwners('OWNERS', contents);
     const login = user.toLowerCase();
-    return owners.reviewers.includes(login) || owners.approvers.includes(login);
+    return ownersInclude(octokit, context, [...owners.reviewers, ...owners.approvers], login);
 }
 /**
  * Retrieve the contents of the OWNERS file at the root of the repository.

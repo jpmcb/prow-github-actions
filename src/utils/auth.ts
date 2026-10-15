@@ -7,7 +7,7 @@ import { Buffer } from 'node:buffer'
 import * as core from '@actions/core'
 
 import { defaultAuthorization, loadProwConfig, resolveAuthorization } from './config'
-import { parseOwners } from './owners'
+import { ownersInclude, parseOwners } from './owners'
 import { loadPullRequestOwners } from './pullRequestOwners'
 
 function getErrorDetails(error: unknown): { status: unknown, message: string } {
@@ -356,7 +356,7 @@ async function assertRootOwner(
   }
 
   const owners = parseOwners('OWNERS', contents)
-  if (!owners[role].includes(username.toLowerCase())) {
+  if (!(await ownersInclude(octokit, context, owners[role], username.toLowerCase()))) {
     throw new Error(
       `${username} is not included in the ${role} role in the OWNERS file`,
     )
@@ -420,7 +420,7 @@ async function rootOwnersIncludes(
 
   const owners = parseOwners('OWNERS', contents)
   const login = user.toLowerCase()
-  return owners.reviewers.includes(login) || owners.approvers.includes(login)
+  return ownersInclude(octokit, context, [...owners.reviewers, ...owners.approvers], login)
 }
 
 /**

@@ -4,7 +4,7 @@ import type { OwnersSet, OwnersTree } from './owners'
 
 import * as core from '@actions/core'
 
-import { effectiveOwners, loadOwnersTree } from './owners'
+import { effectiveOwners, expandOwnersSet, loadOwnersTree } from './owners'
 
 /** a pull request and the OWNERS covering its changed files; every login is lowercased */
 export interface PullRequestOwners {
@@ -83,7 +83,8 @@ async function load(
     return pull.base.sha
   })
   const tree = await loadOwnersTree(octokit, context, baseSha, files)
-  const perFile = new Map(files.map(file => [file, effectiveOwners(file, tree.owners)]))
+  const perFile = new Map(await Promise.all(files.map(async file =>
+    [file, await expandOwnersSet(octokit, context, effectiveOwners(file, tree.owners))] as const)))
 
   return {
     number: pullNumber,

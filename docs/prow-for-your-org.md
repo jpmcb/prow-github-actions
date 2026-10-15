@@ -188,7 +188,10 @@ options:
 
 Those are all the keys supported: `approvers`, `reviewers`, `labels`,
 `options.no_parent_owners`. `OWNERS_ALIASES`, `filters` and `emeritus_approvers` are not
-supported. [commands](./commands.md#owners) has the full format and the failure modes.
+supported; in place of aliases, `approvers` and `reviewers` may list a GitHub team of your own
+organization as `'@<org>/<team-slug>'`, which needs a `token` that can read the organization's
+members ([commands](./commands.md#github-groups)). [commands](./commands.md#owners) has the full
+format and the failure modes.
 
 What changes the moment a pull request's base branch (your default branch, for most) carries any
 OWNERS file, open pull requests included:
@@ -231,6 +234,7 @@ lines.
 | Branch protection or rulesets require reviews/checks the `GITHUB_TOKEN` cannot satisfy | `mergeable_state` is `blocked`; the event path skips the merge and logs the state | Lower the requirement, or let a human's review satisfy it ([automatic merging](./automatic-merging.md#event-driven-merging)) |
 | A merge made with `GITHUB_TOKEN` fires no `push` workflows | post-merge automation does not run | pass a PAT or GitHub App token via the `token` secret ([installing](./installing.md#inputs-and-secrets)) |
 | `<org>/.project` is private | a consumer's `GITHUB_TOKEN` cannot read it; the org tier silently falls through to `<org>/.github` | keep the org config in `.github`, or pass a `token` that can read `.project` ([installing](./installing.md#the-project-tier)) |
+| An OWNERS file lists a team (`'@org/team'`) and its members are refused | `GITHUB_TOKEN` has no organization permissions, so the team cannot be read: one `could not read the members of @org/team` warning, and the group contributes nobody ([commands](./commands.md#github-groups)) | pass a `token` with the organization's *Members: read* permission (PAT `read:org`), or list the logins directly |
 | Fork PRs | the template uses `pull_request_target`, so forks get labels and merges; safe because nothing checks out PR code ([events](./events.md#pull_request_target-and-the-reusable-workflow)) | nothing |
 | A fork PR passes the gate but will not merge: `403 Resource not accessible by integration` | the merge involves workflow files the fork's branch lacks (or changes); `GITHUB_TOKEN` cannot get the `workflows` permission. The bot comments once and skips the PR ([fork pull requests and workflow files](./automatic-merging.md#fork-pull-requests-and-workflow-files)) | the author rebases onto the base branch; or pass a `token` with the `workflows` scope |
 | zizmor (`dangerous-triggers`) or a hash-pin org policy rejects `pull_request_target` | `pull_request` gives fork PRs a read-only token | use the [`pull_request` template](./installing.md#without-pull_request_target): fork PRs are handled by the scheduled `sweep` within minutes, comments stay instant |

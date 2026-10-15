@@ -181,6 +181,20 @@ An `OWNERS` file may be placed in any directory. It applies to the files in that
 
 Setting `options.no_parent_owners: true` in an `OWNERS` file stops the walk there, so only that file (and any below it) applies and the parents' approvers and reviewers are not inherited.
 
+### GitHub groups
+
+`approvers` and `reviewers` may list a GitHub team of the repository's own organization as `@<org>/<team-slug>` (quote it in YAML, since a plain `@` cannot start a scalar):
+
+```yaml
+approvers:
+  - user1
+  - '@myorg/maintainers'
+```
+
+The team's members (child teams included, as the teams API returns them) are looked up once per team per run and treated as if listed individually. A team of another organization is ignored, and so is an `@…` entry that is not `@<org>/<team-slug>`; both are warned about once per run. Groups are matched when OWNERS are resolved, so changes to the team apply on the next event.
+
+Reading a team's members needs a token with the organization's *Members: read* permission (classic PAT: `read:org`; GitHub App: *Organization permissions → Members: read*). **The workflow's default `GITHUB_TOKEN` does not have it**: with that token every group warns `could not read the members of @org/team` and contributes nobody, so a user listed only through a group is refused. Pass such a token via the `token` secret ([installing](./installing.md#inputs-and-secrets)). A login listed directly is matched without reading any team.
+
 ### Which files decide the outcome
 
 On a pull request the changed files are listed (for renames both the old and the new path count) and their OWNERS are read from the **current tip of the pull request's base branch**, never from the pull request itself: the head branch is never consulted, so a pull request cannot grant itself approvers by editing an `OWNERS` file, and a pull request opened before the OWNERS files existed picks them up without a rebase (GitHub's `base.sha` is a snapshot from the PR's last update; the bot reads the branch instead, one `GET /branches/{base}` per branch per run). The `[APPROVALNOTIFIER]` links point at that tip.
