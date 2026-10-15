@@ -151,6 +151,30 @@ describe('dist/index.js approve plugin arms', () => {
       expect(body).toContain(`${sdk}\n- **docs/a.md** (no OWNERS file covers this file)\n- **docs/b.md** (no OWNERS file covers this file)\n`)
     })
 
+    it('the greedy rounds pick the approver covering most remaining files, ties alphabetically, until every file is covered', async () => {
+      // every other scenario is covered by a single approver, so this is the only one that reaches
+      // suggestApprovers' second round
+      routeEvaluation(['a/1', 'b/1', 'c/1'], {
+        owners: {
+          'a/OWNERS': 'options:\n  no_parent_owners: true\napprovers: [x, y]\n',
+          'b/OWNERS': 'options:\n  no_parent_owners: true\napprovers: [y, z]\n',
+          'c/OWNERS': 'options:\n  no_parent_owners: true\napprovers: [z]\n',
+        },
+      })
+
+      const result = await runReview()
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(result.stdout).toContain('approve: #1 is not approved; nobody approves a/1, b/1, c/1')
+      const body = postedNotifier()
+      // y and z each cover two files; y wins the tie, then only z covers c/1, and x is never needed
+      expect(body).toContain('please assign **y**, **z** after the PR has been reviewed.')
+      expect(body).toContain('`/assign @y @z`')
+      expect(body).not.toContain('**x**')
+      expect(body).not.toContain('@x')
+    })
+
     it('a notifier already saying what the evaluation would say is neither re-posted nor edited', async () => {
       const comments = [{ id: 1, body: '/approve', user: { login: 'bob', type: 'User' }, created_at: '2024-01-01T00:00:01Z' }]
       routeEvaluation(['sdk/x.go'], { comments })
