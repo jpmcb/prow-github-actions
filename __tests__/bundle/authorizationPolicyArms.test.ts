@@ -97,6 +97,41 @@ describe('dist/index.js authorization policy arms', () => {
       expectRequests(configReads({ repo: '.github/prow.yaml' }), [...membershipReads('rita'), rootOwnersRead, labelsRead, labelPost])
     })
 
+    it('under labels: trusted, by a root OWNERS approver who is not a reviewer: admitted by the approvers list', async () => {
+      routeConfig(triageConfig('trusted'))
+      gh.route('GET', '/orgs/Codertocat/members/alice', notFound)
+      gh.route('GET', `${repo}/collaborators/alice`, notFound)
+      gh.route('GET', `${repo}/contents/OWNERS`, {
+        status: 200,
+        body: { type: 'file', encoding: 'base64', content: Buffer.from('reviewers:\n- rita\napprovers:\n- Alice\n').toString('base64') },
+      })
+      routeLabelWrite()
+
+      const result = await triage('alice')
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/)[0].body).toEqual({ labels: ['triage/accepted'] })
+      expectRequests(configReads({ repo: '.github/prow.yaml' }), [...membershipReads('alice'), rootOwnersRead, labelsRead, labelPost])
+    })
+
+    it('under labels: trusted, by a user the root OWNERS file lists in neither reviewers nor approvers: refused naming the policy', async () => {
+      routeConfig(triageConfig('trusted'))
+      gh.route('GET', '/orgs/Codertocat/members/stranger', notFound)
+      gh.route('GET', `${repo}/collaborators/stranger`, notFound)
+      gh.route('GET', `${repo}/contents/OWNERS`, {
+        status: 200,
+        body: { type: 'file', encoding: 'base64', content: Buffer.from('reviewers:\n- rita\napprovers:\n- alice\n').toString('base64') },
+      })
+
+      const result = await triage('stranger')
+
+      expect(result.status, result.stdout).toBe(1)
+      expect(result.errors.some(e => e.includes('stranger is not authorized to run /triage: authorization.labels is trusted'))).toBe(true)
+      expect(gh.requestsMatching('POST', /./)).toEqual([])
+      expectRequests(configReads({ repo: '.github/prow.yaml' }), [...membershipReads('stranger'), rootOwnersRead])
+    })
+
     it('under labels: collaborators, with no commenter login in the payload: refused before any read', async () => {
       routeConfig(triageConfig('collaborators'))
       const payload = comment('/triage accepted') as Record<string, any>
