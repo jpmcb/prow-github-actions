@@ -10,6 +10,9 @@ labels:
     - name: cleanup
       color: c5def5
       description: Categorizes issue or PR as related to cleaning up code, process, or technical debt.
+    - name: feature
+      color: c7def8
+      description: Categorizes issue or PR as related to a new feature.
 
   priority:
     - name: low
@@ -35,7 +38,7 @@ require_matching_label:
     missing_label: needs-kind
     issues: true
     prs: true
-    missing_comment: Please add a kind label with `/kind failing-test` or `/kind cleanup`.
+    missing_comment: Please add a kind label with `/kind feature`, `/kind failing-test` or `/kind cleanup`.
 
 # the lgtm merger's gate; labels and missing_labels take the defaults
 tide:
