@@ -62,6 +62,40 @@ jobs:
             exit 1
           fi
 
+  # End-to-end coverage: the bundle acceptance suite run against a
+  # source-mapped bundle (npm run test:coverage:e2e). Reported separately from
+  # the unit figure on purpose (see docs/contributing.md); it is a record, not
+  # a gate, so it is not a required check. Runs alongside build-test rather
+  # than inside it because the suite takes several minutes on its own.
+  e2e-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          cache: npm
+      - run: npm ci
+      - run: npm run test:coverage:e2e
+      - name: E2E coverage summary
+        if: always()
+        run: |
+          [ -f coverage-e2e/coverage-summary.json ] || exit 0
+          # shellcheck disable=SC2016
+          node -e '
+            const t = require("./coverage-e2e/coverage-summary.json").total;
+            const row = k => `| ${k} | ${t[k].pct}% | ${t[k].covered}/${t[k].total} |`;
+            console.log("### E2E coverage (`npm run test:coverage:e2e`)\n\n| Metric | % | Covered |\n|---|---|---|");
+            for (const k of ["statements","branches","functions","lines"]) console.log(row(k));
+          ' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: coverage-e2e-${{ github.sha }}
+          path: coverage-e2e/
+          retention-days: 14
+          if-no-files-found: ignore
+
   # Dependabot cannot run `npm run pack`, so bundled-dependency bumps always
   # fail the dist/ drift gate. The rebuild is split across two jobs so the
   # write token never coexists with dependency code (the bumped packages run
