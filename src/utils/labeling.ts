@@ -88,9 +88,11 @@ export function repoLabelNames(octokit: Octokit, context: Context): Promise<stri
   return pending
 }
 
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 export function resetLabelCache(): void {
   repoLabelCache.clear()
 }
+/* v8 ignore stop */
 
 /**
  * assertLabelsExist throws, naming every offender, when one of the labels is

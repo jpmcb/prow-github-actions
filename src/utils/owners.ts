@@ -298,10 +298,12 @@ export function branchHasOwners(octokit: Octokit, context: Context, branch: stri
     probeBranchOwners(octokit, context, branch))
 }
 
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 export function resetOwnersCaches(): void {
   hasOwnersCache.clear()
   treeCache.clear()
 }
+/* v8 ignore stop */
 
 function memoized<T>(cache: Map<string, Promise<T>>, key: string, compute: () => Promise<T>): Promise<T> {
   let pending = cache.get(key)

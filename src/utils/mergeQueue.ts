@@ -63,9 +63,11 @@ interface EnqueueResponse {
 
 let warnedUnavailable = false
 
+/* v8 ignore start -- test-only hook, never reached from dist/index.js */
 export function resetMergeQueueWarnings(): void {
   warnedUnavailable = false
 }
+/* v8 ignore stop */
 
 /**
  * queueState reads, in one GraphQL query, whether the pull request's base
