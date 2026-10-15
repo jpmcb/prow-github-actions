@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   effectiveOwners,
+  expandGroups,
   ownersDir,
   parseOwners,
 } from '../../src/utils/owners'
@@ -184,5 +185,33 @@ describe('effectiveOwners', () => {
 
   it('is undefined for an empty map', () => {
     expect(effectiveOwners('README.md', new Map())).toBeUndefined()
+  })
+})
+
+describe('expandGroups', () => {
+  const context = { repo: { owner: 'MyOrg', repo: 'r' } } as never
+
+  function client(listed: Record<string, string[]>) {
+    const paginate = vi.fn(async (_fn: unknown, params: { team_slug: string }) => {
+      const members = listed[params.team_slug]
+      if (members === undefined) {
+        throw new Error('404')
+      }
+      return members.map(login => ({ login }))
+    })
+    return { paginate, teams: { listMembersInOrg: vi.fn() } } as never
+  }
+
+  it('replaces same-org groups with their members and keeps plain logins', async () => {
+    const result = await expandGroups(client({ maintainers: ['Bob', 'carol'] }), context, ['alice', '@myorg/maintainers'])
+
+    expect([...result].sort()).toEqual(['alice', 'bob', 'carol'])
+  })
+
+  it('ignores groups of another org and groups it cannot read', async () => {
+    const result = await expandGroups(client({}), context, ['alice', '@other/team', '@myorg/missing'])
+
+    expect([...result]).toEqual(['alice'])
+    expect(core.warning).toHaveBeenCalledTimes(2)
   })
 })
