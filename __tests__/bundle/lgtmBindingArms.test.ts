@@ -12,7 +12,8 @@ vi.setConfig({ testTimeout: 30_000 })
 // the failure arms of the lgtm-to-commit binding (src/plugins/lgtmBinding.ts) and of the /lgtm command
 // (src/labels/lgtm.ts), driven through dist/index.js: a status write that fails for a reason other than a
 // missing permission, a status read that fails, a stale-lgtm comment that fails, a labeled payload without
-// a head, and the /lgtm cancel reads and writes that fail
+// a head, the /lgtm cancel reads and writes that fail, and the labeled payload fallbacks (no label object,
+// no sender, no pull request html_url)
 describe('dist/index.js lgtm binding failure arms', () => {
   const head = pullReqOpenedEvent.pull_request.head.sha
   const short = head.slice(0, 7)
@@ -199,6 +200,64 @@ describe('dist/index.js lgtm binding failure arms', () => {
       expect(result.errors.some(e => e.includes('github context payload missing pull request head'))).toBe(true)
       expect(gh.requestsMatching('POST', /\/statuses\//)).toEqual([])
       expect(gh.requestsMatching('PUT', /./)).toEqual([])
+    })
+
+    // the payload fallbacks of lgtmOnPullRequest and bindLgtm: a `labeled` event without a label object
+    // (`label?.name ?? ''`), a payload without a sender (`sender?.login ?? 'unknown'`) and a pull request
+    // without an html_url (no target_url on the status). GitHub always sends all three; the handler
+    // reads them defensively because the payload is untyped, and these arms are what that costs.
+    it('without a label object: nothing is bound, and tide stops at the missing lgtm', async () => {
+      gh.commitStatuses(repo, head, [])
+      gh.route('GET', `${repo}/pulls/1`, { status: 200, body: openPr([]) })
+      const { label: _label, ...unlabeled } = labeledLgtm()
+
+      const result = await runPullRequest(unlabeled)
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(result.stdout).not.toContain('lgtm: bound')
+      expect(result.stdout).toContain('skipping pr #1: missing lgtm')
+      expect(gh.requestsMatching('POST', /\/statuses\//)).toEqual([])
+      expect(gh.requestsMatching('PUT', /./)).toEqual([])
+      expectRequests(configReads(), [pullRead, ownersProbe, queueRead])
+    })
+
+    it('by a payload without a sender: bound as `unknown`, not treated as a bot', async () => {
+      gh.commitStatuses(repo, head, [{ context: 'prow/lgtm', state: 'success' }])
+      gh.route('POST', `${repo}/statuses/${head}`, { status: 201, body: {} })
+      gh.route('GET', `${repo}/pulls/1`, { status: 200, body: { ...openPr(['lgtm']), mergeable_state: 'behind' } })
+      const { sender: _sender, ...senderless } = labeledLgtm()
+
+      const result = await runPullRequest(senderless)
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(result.stdout).toContain(`lgtm: bound the hand-applied label on #1 to ${short}`)
+      expect(gh.requestsMatching('POST', /\/statuses\//).map(r => r.body)).toEqual([
+        { state: 'success', context: 'prow/lgtm', description: `lgtm by unknown at ${short}`, target_url: pullReqOpenedEvent.pull_request.html_url },
+      ])
+      expect(gh.requestsMatching('DELETE', /./)).toEqual([])
+      expect(gh.requestsMatching('PUT', /./)).toEqual([])
+      expectRequests(configReads(), [`POST ${repo}/statuses/${head}`, pullRead, ownersProbe, bindingRead, queueRead])
+    })
+
+    it('by a human on a pull request without an html_url: the status is written without a target_url', async () => {
+      gh.commitStatuses(repo, head, [{ context: 'prow/lgtm', state: 'success' }])
+      gh.route('POST', `${repo}/statuses/${head}`, { status: 201, body: {} })
+      gh.route('GET', `${repo}/pulls/1`, { status: 200, body: { ...openPr(['lgtm']), mergeable_state: 'behind' } })
+      const { pull_request, ...rest } = labeledLgtm()
+      const { html_url: _url, ...unlinked } = pull_request
+
+      const result = await runPullRequest({ ...rest, pull_request: unlinked })
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(result.stdout).toContain(`lgtm: bound the hand-applied label on #1 to ${short}`)
+      expect(gh.requestsMatching('POST', /\/statuses\//).map(r => r.body)).toEqual([
+        { state: 'success', context: 'prow/lgtm', description: `lgtm by Codertocat at ${short}` },
+      ])
+      expect(gh.requestsMatching('PUT', /./)).toEqual([])
+      expectRequests(configReads(), [`POST ${repo}/statuses/${head}`, pullRead, ownersProbe, bindingRead, queueRead])
     })
   })
 })
