@@ -10,9 +10,10 @@ import { runBundle } from './runBundle'
 vi.setConfig({ testTimeout: 30_000 })
 
 // the arms of src/issueComment/trigger.ts that bundle.test.ts' happy paths and
-// triggerTestAndLgtmCancel.test.ts' /test cases leave out: /retest with nothing failed, with every
-// re-run already running or refused outright, /ok-to-test by the author, on an already trusted pull
-// request and against a refused approval, plus the shared run-list, reaction and refusal failures
+// triggerTestAndLgtmCancel.test.ts' /test cases leave out: /retest with nothing failed (including a
+// completed run whose conclusion is null), with every re-run already running or refused outright,
+// /ok-to-test by the author, on an already trusted pull request and against a refused approval,
+// plus the shared run-list, reaction and refusal failures
 describe('dist/index.js /retest and /ok-to-test arms', () => {
   const commentPost = `POST ${repo}/issues/1/comments`
   const rocket = `POST ${repo}/issues/comments/492700400/reactions`
@@ -59,6 +60,8 @@ describe('dist/index.js /retest and /ok-to-test arms', () => {
   const passedLint = { id: 2, name: 'Lint', path: '.github/workflows/lint.yml', head_sha: 'headsha', status: 'completed', conclusion: 'success' }
   const runningE2e = { id: 4, name: 'E2E', path: '.github/workflows/e2e.yml', head_sha: 'headsha', status: 'in_progress', conclusion: null }
   const pendingE2e = { ...runningE2e, status: 'action_required', conclusion: 'action_required' }
+  // the API schema allows a null conclusion on a completed run (workflow-run.conclusion: string | null)
+  const concludedWithoutConclusion = { ...failedCi, conclusion: null }
 
   async function run(command: string, commenter?: string) {
     return runBundle({
@@ -81,6 +84,18 @@ describe('dist/index.js /retest and /ok-to-test arms', () => {
       expect(result.errors).toEqual([])
       expectRequests(authReads, [runsRead, commentPost])
       expect(comments()).toEqual(['No failed GitHub Actions workflow runs on `headsha`: 1 in progress, 1 successful. Checks from other CI systems cannot be re-run here.'])
+    })
+
+    it('with a completed run without a conclusion counts it neither failed nor successful and comments without a summary', async () => {
+      routeAuthorizedPullRequest()
+      routeRuns([concludedWithoutConclusion, prow])
+
+      const result = await run('/retest')
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expectRequests(authReads, [runsRead, commentPost])
+      expect(comments()).toEqual(['No failed GitHub Actions workflow runs on `headsha`. Checks from other CI systems cannot be re-run here.'])
     })
 
     it('with no run on the head but the current workflow comments without a summary', async () => {

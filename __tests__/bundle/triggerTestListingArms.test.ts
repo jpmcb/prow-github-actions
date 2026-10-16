@@ -10,9 +10,11 @@ import { runBundle } from './runBundle'
 vi.setConfig({ testTimeout: 30_000 })
 
 // the /test listing and matching arms that depend on the shape of the run list:
-// a head with no run at all (the `_none_` row of runTable) and a run whose
+// a head with no run at all (the `_none_` row of runTable), a run whose
 // `name` is null, which the API schema allows (workflow-run.name: string | null)
-// and which matchesWorkflow and runTable fall back to the workflow path for
+// and which matchesWorkflow and runTable fall back to the workflow path for,
+// and a run whose `status` is null (workflow-run.status: string | null), which
+// runTable prints as an empty status cell
 describe('dist/index.js /test listing arms', () => {
   const commentPost = `POST ${repo}/issues/1/comments`
   const rocket = `POST ${repo}/issues/comments/492700400/reactions`
@@ -72,6 +74,11 @@ describe('dist/index.js /test listing arms', () => {
     { id: 3, name: 'Prow', path: '.github/workflows/prow.yml', head_sha: 'headsha', status: 'in_progress', conclusion: null },
   ]
 
+  const statuslessRuns = [
+    { id: 1, name: 'CI', path: '.github/workflows/ci.yml', head_sha: 'headsha', status: null, conclusion: null },
+    { id: 3, name: 'Prow', path: '.github/workflows/prow.yml', head_sha: 'headsha', status: 'in_progress', conclusion: null },
+  ]
+
   it('with no run on the head besides the current workflow lists a `_none_` row and re-runs nothing', async () => {
     routeTest(onlyTheCurrentWorkflow)
 
@@ -103,6 +110,17 @@ describe('dist/index.js /test listing arms', () => {
     expect(result.errors).toEqual([])
     expectAuthorized([runsRead, commentPost])
     expect(comments()).toEqual([[...header, '`.github/workflows/ci.yml` | completed | failure'].join('\n')])
+  })
+
+  it('? lists a run without a status with an empty status cell', async () => {
+    routeTest(statuslessRuns)
+
+    const result = await runTest('/test ?')
+
+    expect(result.status, result.stdout).toBe(0)
+    expect(result.errors).toEqual([])
+    expectAuthorized([runsRead, commentPost])
+    expect(comments()).toEqual([[...header, '`CI` |  | '].join('\n')])
   })
 
   it('<file> re-runs a completed run without a name when its workflow file matches, then reacts with a rocket', async () => {
