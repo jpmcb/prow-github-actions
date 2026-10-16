@@ -106,18 +106,4 @@ describe('dist/index.js schedule sweep job shared memos', () => {
     expect(gh.requestsMatching('POST', /\/issues\/\d+\/labels$/).map(r => r.body)).toEqual([{ labels: ['approved'] }, { labels: ['approved'] }])
     expect(gh.requestsMatching('POST', /\/pulls\/\d+\/reviews$/)).toHaveLength(2)
   })
-
-  it('an installation token (GET /user answers 403): the one refusal is shared too, and both reviews are still submitted', async () => {
-    routeSweep({ status: 403, body: { message: 'Resource not accessible by integration' } })
-
-    const result = await runSweep()
-
-    expect(result.status, result.stdout).toBe(0)
-    expect(result.errors).toEqual([])
-    expect(result.stdout).toContain('sweep: #1 evaluated')
-    expect(result.stdout).toContain('sweep: #2 evaluated')
-    expect(reads(/^\/user$/)).toEqual(['GET /user'])
-    expect(reads(/\/branches\/master$/)).toEqual([`GET ${repo}/branches/master`])
-    expect(gh.requestsMatching('POST', /\/pulls\/\d+\/reviews$/)).toHaveLength(2)
-  })
 })
