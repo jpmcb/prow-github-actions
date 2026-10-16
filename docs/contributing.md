@@ -27,7 +27,9 @@ and `./lib/utils` are exported); the `Context` type lives in
 `src/utils/context.ts`.
 
 [Dependabot](../.github/dependabot.yml) keeps npm dependencies and pinned
-actions up to date on a weekly schedule.
+actions up to date on a weekly schedule. A bump of a bundled runtime dependency
+changes `dist/index.js`, so its pull request fails the `dist/` check until a
+maintainer runs `npm run pack` on the Dependabot branch and pushes the result.
 
 This repository runs the bot on itself through the reusable workflow
 ([`prow.yml`](../.github/workflows/prow.yml)) from a single caller,
