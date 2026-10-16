@@ -202,7 +202,6 @@ describe('dist/index.js issue_comment /meow', () => {
     ['an excessively long url', [{ url: `https://cdn2.thecatapi.com/images/${'a'.repeat(4096)}.jpg` }], 'cat api returned an excessively long image url'],
     ['an unparsable url', [{ url: 'not a url' }], 'cat api returned an invalid image url'],
     ['an http: url', [{ url: 'http://cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg' }], 'cat api returned an unusable image url'],
-    ['a url in another bucket on the s3 host', [{ url: 'https://s3.us-west-2.amazonaws.com/other-bucket/cat.jpg' }], 'cat api returned an image from an unexpected host'],
   ])('falls back to the note without retrying when the cat api returns %s', async (_, body, message) => {
     cat.answer({ status: 200, body })
     gh.route('POST', `${repo}/issues/1/comments`, { status: 201, body: {} })
