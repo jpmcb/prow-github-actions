@@ -43734,8 +43734,8 @@ const hopelessConclusions = new Set(['failure', 'cancelled', 'timed_out', 'actio
 // the pull requests the scheduled jobs evaluated in this run: `sweep` and `lgtm` both reach the same ones
 const evaluatedThisRun = new Set();
 /**
- * fetchMergeability reads the pull request and, while GitHub reports its
- * mergeability as `unknown`, re-reads it after growing waits. A state that
+ * fetchMergeability starts from `options.initial` and, while GitHub reports
+ * the mergeability as `unknown`, re-reads the pull request after growing waits. A state that
  * is still unknown after the last wait is returned as is.
  *
  * @param octokit - a hydrated github client
@@ -43745,7 +43745,7 @@ const evaluatedThisRun = new Set();
  */
 async function fetchMergeability(octokit, context, number, options) {
     const { retryIf } = options;
-    let pr = options.initial ?? await getPull(octokit, context, number);
+    let pr = options.initial;
     for (const delay of unknownRetryDelaysMs) {
         if (!isUnknown(pr) || !retryIf(pr)) {
             return pr;

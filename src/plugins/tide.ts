@@ -56,8 +56,8 @@ export const successfulResults: ReadonlySet<MergeResult> = new Set<MergeResult>(
 export interface FetchMergeabilityOptions {
   /** called before each wait; returning false stops retrying an unknown state  */
   retryIf: (pr: Mergeability) => boolean
-  /** a read of the pull request made moments ago, spared a re-read when its state is known */
-  initial?: Mergeability
+  /** the read of the pull request made moments ago; re-read only while its state is unknown */
+  initial: Mergeability
 }
 
 // GitHub computes mergeability lazily: the first GET after a push starts the job and answers
@@ -78,8 +78,8 @@ const hopelessConclusions = new Set(['failure', 'cancelled', 'timed_out', 'actio
 const evaluatedThisRun = new Set<number>()
 
 /**
- * fetchMergeability reads the pull request and, while GitHub reports its
- * mergeability as `unknown`, re-reads it after growing waits. A state that
+ * fetchMergeability starts from `options.initial` and, while GitHub reports
+ * the mergeability as `unknown`, re-reads the pull request after growing waits. A state that
  * is still unknown after the last wait is returned as is.
  *
  * @param octokit - a hydrated github client
@@ -95,7 +95,7 @@ export async function fetchMergeability(
 ): Promise<Mergeability> {
   const { retryIf } = options
 
-  let pr = options.initial ?? await getPull(octokit, context, number)
+  let pr = options.initial
   for (const delay of unknownRetryDelaysMs) {
     if (!isUnknown(pr) || !retryIf(pr)) {
       return pr
@@ -417,7 +417,7 @@ function isUnknown(pr: Mergeability): boolean {
   return pr.state === 'unknown' || pr.mergeable === null
 }
 
-async function getPull(octokit: Octokit, context: Context, number: number): Promise<Mergeability> {
+export async function getPull(octokit: Octokit, context: Context, number: number): Promise<Mergeability> {
   const { data } = await octokit.pulls.get({ ...context.repo, pull_number: number })
   return {
     state: data.mergeable_state,
