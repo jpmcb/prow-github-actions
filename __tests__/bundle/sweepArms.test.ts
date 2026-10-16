@@ -153,6 +153,28 @@ describe('dist/index.js schedule sweep job arms', () => {
       expect(freshnessReads().map(r => `GET ${r.path}`)).toEqual([freshnessRead])
       expect(requestedReviewers()).toEqual([])
     })
+
+    // requested_reviewers is optional on the pulls listing item (sweep.ts:153 `pr.requested_reviewers ?? []`): a fresh
+    // pull request listed without it has no requested reviewers, so blunderbuss reads the one review and asks for two
+    it('a fresh pull request listed without requested_reviewers: the one review is read and two reviewers are requested', async () => {
+      const pr = forkPr()
+      delete pr.requested_reviewers
+      routeSweep(pr)
+
+      const result = await runSweep()
+
+      expect(result.status, result.stdout).toBe(0)
+      expect(result.errors).toEqual([])
+      expect(result.stdout).toContain('sweep: #1 evaluated')
+      expect(result.stdout).not.toContain('is a draft or already has requested reviewers')
+      expect(freshnessReads().map(r => `GET ${r.path}`)).toEqual([freshnessRead])
+      const posts = requestedReviewers()
+      expect(posts).toHaveLength(1)
+      const { reviewers } = posts[0].body as { reviewers: string[] }
+      expect(reviewers).toHaveLength(2)
+      expect(['alice', 'bob', 'carol']).toEqual(expect.arrayContaining(reviewers))
+      expect(result.stdout).toContain(`blunderbuss: requested review from ${reviewers.join(', ')} on #1`)
+    })
   })
 
   // the token's identity (approveReview.ts tokenIdentity, read for `approve.github_review`) and the tip of the base
