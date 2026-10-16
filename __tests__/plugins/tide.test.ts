@@ -4,7 +4,7 @@ import { http } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchMergeability, loadTide, mergeOnce, tideOnCheckSuite, tideOnComment, tideOnPullRequest, tideOnReview, tryMergePullRequest, unknownRetryDelaysMs } from '../../src/plugins/tide'
+import { fetchMergeability, getPull, loadTide, mergeOnce, tideOnCheckSuite, tideOnComment, tideOnPullRequest, tideOnReview, tryMergePullRequest, unknownRetryDelaysMs } from '../../src/plugins/tide'
 import { resolveTide } from '../../src/utils/config'
 import { newOctokit } from '../../src/utils/octokit'
 import { resetOwnersCaches } from '../../src/utils/owners'
@@ -77,10 +77,11 @@ beforeEach(() => {
 const unknown = { mergeable: null, mergeable_state: 'unknown' }
 
 describe('fetchMergeability', () => {
-  it('maps the pull request fields', async () => {
+  it('returns a known initial read without a re-read', async () => {
     servePull(pull(['lgtm', 'kind/bug'], { locked: true }))
+    const initial = await getPull(octokit, context, 1)
 
-    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true })).resolves.toEqual({
+    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true, initial })).resolves.toEqual({
       state: 'clean',
       mergeable: true,
       labels: ['lgtm', 'kind/bug'],
@@ -98,7 +99,7 @@ describe('fetchMergeability', () => {
   it('re-reads an unknown state after 1, 2 and 4 seconds until it is computed', async () => {
     const gets = servePull(pull([], unknown), pull([], unknown), pull([], { mergeable_state: 'behind' }))
 
-    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true })).resolves.toMatchObject({ state: 'behind', mergeable: true })
+    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true, initial: await getPull(octokit, context, 1) })).resolves.toMatchObject({ state: 'behind', mergeable: true })
     expect(gets).toHaveLength(3)
     expect(sleep.mock.calls.map(call => call[0])).toEqual([1000, 2000])
   })
@@ -107,7 +108,7 @@ describe('fetchMergeability', () => {
     const gets = servePull(pull([], unknown))
     const info = vi.spyOn(core, 'info')
 
-    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true })).resolves.toMatchObject({ state: 'unknown', mergeable: null })
+    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true, initial: await getPull(octokit, context, 1) })).resolves.toMatchObject({ state: 'unknown', mergeable: null })
     expect(gets).toHaveLength(unknownRetryDelaysMs.length + 1)
     expect(sleep.mock.calls.map(call => call[0])).toEqual(unknownRetryDelaysMs)
     expect(info).toHaveBeenCalledWith('mergeability of pr #1 is still unknown after 3 retries')
@@ -117,7 +118,7 @@ describe('fetchMergeability', () => {
     const gets = servePull(pull([], unknown), pull([], unknown), pull([], unknown), pull([], { mergeable_state: 'behind' }))
     const info = vi.spyOn(core, 'info')
 
-    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true })).resolves.toMatchObject({ state: 'behind', mergeable: true })
+    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true, initial: await getPull(octokit, context, 1) })).resolves.toMatchObject({ state: 'behind', mergeable: true })
     expect(gets).toHaveLength(unknownRetryDelaysMs.length + 1)
     expect(sleep.mock.calls.map(call => call[0])).toEqual(unknownRetryDelaysMs)
     expect(info).not.toHaveBeenCalled()
@@ -126,14 +127,14 @@ describe('fetchMergeability', () => {
   it('treats a null mergeable as unknown even when the state says otherwise', async () => {
     const gets = servePull(pull([], { mergeable: null, mergeable_state: 'clean' }), pull([]))
 
-    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true })).resolves.toMatchObject({ mergeable: true })
+    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true, initial: await getPull(octokit, context, 1) })).resolves.toMatchObject({ mergeable: true })
     expect(gets).toHaveLength(2)
   })
 
   it('stops retrying when retryIf says the wait is pointless', async () => {
     const gets = servePull(pull([], unknown))
 
-    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => false })).resolves.toMatchObject({ state: 'unknown' })
+    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => false, initial: await getPull(octokit, context, 1) })).resolves.toMatchObject({ state: 'unknown' })
     expect(gets).toHaveLength(1)
     expect(sleep).not.toHaveBeenCalled()
   })
@@ -143,7 +144,7 @@ describe('fetchMergeability', () => {
     expect(draft).toBe(false)
     servePull(noDraft)
 
-    await expect(fetchMergeability(octokit, context, 1, { retryIf: () => true })).resolves.toMatchObject({ draft: false })
+    await expect(getPull(octokit, context, 1)).resolves.toMatchObject({ draft: false })
   })
 })
 
