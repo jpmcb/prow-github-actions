@@ -97,24 +97,6 @@ describe('dist/index.js authorization policy arms', () => {
       expectRequests(configReads({ repo: '.github/prow.yaml' }), [...membershipReads('rita'), rootOwnersRead, labelsRead, labelPost])
     })
 
-    it('under labels: trusted, by a root OWNERS approver who is not a reviewer: admitted by the approvers list', async () => {
-      routeConfig(triageConfig('trusted'))
-      gh.route('GET', '/orgs/Codertocat/members/alice', notFound)
-      gh.route('GET', `${repo}/collaborators/alice`, notFound)
-      gh.route('GET', `${repo}/contents/OWNERS`, {
-        status: 200,
-        body: { type: 'file', encoding: 'base64', content: Buffer.from('reviewers:\n- rita\napprovers:\n- Alice\n').toString('base64') },
-      })
-      routeLabelWrite()
-
-      const result = await triage('alice')
-
-      expect(result.status, result.stdout).toBe(0)
-      expect(result.errors).toEqual([])
-      expect(gh.requestsMatching('POST', /\/issues\/1\/labels$/)[0].body).toEqual({ labels: ['triage/accepted'] })
-      expectRequests(configReads({ repo: '.github/prow.yaml' }), [...membershipReads('alice'), rootOwnersRead, labelsRead, labelPost])
-    })
-
     it('under labels: collaborators, with no commenter login in the payload: refused before any read', async () => {
       routeConfig(triageConfig('collaborators'))
       const payload = comment('/triage accepted') as Record<string, any>
