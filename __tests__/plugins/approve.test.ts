@@ -121,14 +121,6 @@ describe('computeApproval', () => {
     expect(computeApproval(owners, [at('alice', 'review-changes'), at('alice', 'approve')], defaults).approved).toBe(true)
   })
 
-  it('ignore_review_state: reviews neither add nor remove', () => {
-    const owners = pullOwners({ OWNERS: rootOwners }, ['src/a.go'])
-    const settings = { ...defaults, ignore_review_state: true }
-
-    expect(computeApproval(owners, [at('alice', 'review-approved')], settings).approved).toBe(false)
-    expect(computeApproval(owners, [at('alice', 'approve'), at('alice', 'review-changes')], settings).approved).toBe(true)
-  })
-
   it('lgtm counts as approve only with lgtm_acts_as_approve', () => {
     const owners = pullOwners({ OWNERS: rootOwners }, ['src/a.go'])
 

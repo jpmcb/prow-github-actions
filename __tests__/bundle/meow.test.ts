@@ -163,7 +163,7 @@ describe('dist/index.js issue_comment /meow', () => {
 
     expect(result.status, result.stdout).toBe(0)
     expect(cat.requests.map(r => r.path)).toEqual(['/v1/images/search?limit=1&size=med'])
-    expect(result.stdout).toMatch(/::warning::Could not fetch a cat image: Error: cat api responded with (302|a redirect)/)
+    expect(result.stdout).toMatch(/::warning::Could not fetch a cat image: Error: cat api responded with 302/)
     expect(postedComments()).toEqual([fallback])
   })
 

@@ -77,16 +77,14 @@ async function fetchCatImage(): Promise<URL> {
         signal: AbortSignal.timeout(meowConfig.timeoutMs),
       })
 
-      if (response.ok && response.type !== 'opaqueredirect')
+      if (response.ok)
         return parseCatImage(await response.json())
 
       // undici holds the socket until the body is read
       await cancelResponseBody(response)
 
       // retry a 5xx; a 429, a redirect, and other 4xx fall back
-      const error = new Error(
-        `cat api responded with ${response.status || 'a redirect'}`,
-      )
+      const error = new Error(`cat api responded with ${response.status}`)
       if (response.status >= 500) {
         lastError = error
         continue
