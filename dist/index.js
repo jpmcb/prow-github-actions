@@ -44631,9 +44631,9 @@ function effectiveKind(kind, settings) {
         case 'cancel':
             return 'remove';
         case 'review-approved':
-            return settings.ignore_review_state ? 'ignore' : 'add';
+            return 'add';
         case 'review-changes':
-            return settings.ignore_review_state ? 'ignore' : 'remove';
+            return 'remove';
         case 'lgtm':
             return settings.lgtm_acts_as_approve ? 'add' : 'ignore';
         case 'lgtm-cancel':
@@ -44780,12 +44780,12 @@ async function syncLabel(octokit, context, owners, approved) {
     }
 }
 async function upsertNotifier(octokit, context, pullNumber, comments, body) {
-    const existing = comments.find(comment => isBot(comment.user) && (comment.body ?? '').includes(notifierMarker));
+    const existing = comments.find((comment) => isBot(comment.user) && typeof comment.body === 'string' && comment.body.includes(notifierMarker));
     if (existing === undefined) {
         await createComment(octokit, context, pullNumber, body);
         return;
     }
-    if ((existing.body ?? '').trim() === body.trim()) {
+    if (existing.body.trim() === body.trim()) {
         core_debug(`approve: the notifier on #${pullNumber} is up to date`);
         return;
     }
@@ -46178,12 +46178,12 @@ async function fetchCatImage() {
                 redirect: 'manual',
                 signal: AbortSignal.timeout(meowConfig.timeoutMs),
             });
-            if (response.ok && response.type !== 'opaqueredirect')
+            if (response.ok)
                 return parseCatImage(await response.json());
             // undici holds the socket until the body is read
             await cancelResponseBody(response);
             // retry a 5xx; a 429, a redirect, and other 4xx fall back
-            const error = new Error(`cat api responded with ${response.status || 'a redirect'}`);
+            const error = new Error(`cat api responded with ${response.status}`);
             if (response.status >= 500) {
                 lastError = error;
                 continue;
