@@ -45,12 +45,13 @@ export default mergeConfig(base, defineConfig({
       autoAttachSubprocess: true,
       excludeAfterRemap: true,
       // Regression floor for the bundle-only run, set just under what main reaches
-      // (99.54 / 96.25 / 98.79 / 99.56 at d93ecb8) so a scenario that stops
-      // exercising a src/ path fails this run instead of silently lowering the figure.
+      // (99.95 / 97.96 / 100 / 99.96 at 1062ce7; 99.54 / 96.25 / 98.79 / 99.56 when
+      // first set at d93ecb8) so a scenario that stops exercising a src/ path fails
+      // this run instead of silently lowering the figure.
       thresholds: {
         lines: 99,
-        branches: 95,
-        functions: 98,
+        branches: 97,
+        functions: 99,
         statements: 99,
       },
     },
