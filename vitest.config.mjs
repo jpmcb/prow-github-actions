@@ -17,11 +17,13 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       // lcovonly + json-summary are machine-readable for CI artifacts and job summaries
       reporter: ['text', 'text-summary', 'lcovonly', 'json-summary'],
+      // Regression floor set just under what main reaches (100 / 99.7 / 100 / 100
+      // at 1062ce7) so a drop of about one point fails build-test.
       thresholds: {
-        lines: 95,
-        branches: 93,
-        functions: 98,
-        statements: 95,
+        lines: 99,
+        branches: 99,
+        functions: 99,
+        statements: 99,
       },
     },
   },
